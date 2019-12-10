@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.controllers
+package uk.gov.hmrc.digitalservicestax.data
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import enumeratum._
 
-import scala.concurrent.Future
+sealed trait Activity extends EnumEntry
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(appConfig: AppConfig, cc: ControllerComponents)
-    extends BackendController(cc) {
+object Activity extends Enum[Activity] { 
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
+  val values = findValues
+
+  case object SocialMedia extends Activity
+  case object SearchEngine extends Activity
+  case object Marketplace extends Activity
 }
