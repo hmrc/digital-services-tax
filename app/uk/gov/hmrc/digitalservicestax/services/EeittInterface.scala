@@ -24,78 +24,104 @@ import cats.{Id, ~>}
 import cats.data.NonEmptySet
 import java.time._, format.DateTimeFormatter
 import enumeratum._, values._
+import scala.collection.immutable.ListMap
 
-sealed abstract class Honorific(override val entryName: String) extends EnumEntry
+sealed trait Honorific extends EnumEntry
 
 object Honorific extends Enum[Honorific] {
   val values = findValues
-  case object Mr extends Honorific("0001")
-  case object Mrs extends Honorific("0002")
-  case object Miss extends Honorific("0003")
-  case object Ms extends Honorific("0004")
-  case object Dr extends Honorific("0005")
-  case object Sir extends Honorific("0006")
-  case object Rev extends Honorific("0007")
-  case object PersonalRepresentativeOf extends Honorific("0008")
-  case object Professor extends Honorific("0009")
-  case object Lord extends Honorific("0010")
-  case object Lady extends Honorific("0011")
-  case object Dame extends Honorific("0012")
+  case object Mr extends Honorific
+  case object Mrs extends Honorific
+  case object Miss extends Honorific
+  case object Ms extends Honorific
+  case object Dr extends Honorific
+  case object Sir extends Honorific
+  case object Rev extends Honorific
+  case object PersonalRepresentativeOf extends Honorific
+  case object Professor extends Honorific
+  case object Lord extends Honorific
+  case object Lady extends Honorific
+  case object Dame extends Honorific
 }
 
-case class Customer(
-  title: Honorific,
-  forename: String,
-  surname: String,
-  dateOfBirth: LocalDate
-)
-
 case class ContactDetails(
-  address: Address,  
+  name: String, 
   telephone: String,
-  mobile: Option[String], 
-  fax: Option[String],
   emailAddress: String
 )
 
-case class SubscriptionRequest(
-  orgName: String,
-  orgType: OrganisationType,
-  customer: Customer,
-  contactDetails: ContactDetails,
-  alternativeCorrespondence: Option[ContactDetails]
+sealed trait Identification
+
+case object UnknownIdentification extends Identification
+
+case class CustomerData(
+  id: String,
+  organisationName: String,
+  title: Honorific,
+  firstName: String,
+  lastName: String,
+  dateOfBirth: LocalDate
 )
 
-sealed abstract class OrganisationType(val value: Short) extends ShortEnumEntry
+case class NominatedCompany(
+  address: Address,
+  telephoneNumber: String,
+  emailAddress: String
+)
 
-object OrganisationType extends ShortEnum[OrganisationType] {
+case class UltimateOwner(
+  name: String,
+  reference: String,
+  address: Address
+)
+
+case class SubscriptionRequest(
+  identification: List[Identification],
+  customer: CustomerData,
+  nominatedCompany: NominatedCompany, 
+  primaryPerson: ContactDetails,
+  ultimateOwner: UltimateOwner,
+  firstPeriod: (LocalDate, LocalDate)
+)
+
+sealed trait OrganisationType extends EnumEntry
+
+object OrganisationType extends Enum[OrganisationType] {
   val values = findValues
-  case object SoleProprietor              extends OrganisationType(1)
-  case object LimitedLiabilityPartnership extends OrganisationType(2)
-  case object Partnership                 extends OrganisationType(3)
-  case object UnincorporatedBody          extends OrganisationType(5)
-  case object Trust                       extends OrganisationType(6)
-  case object LimitedCompany              extends OrganisationType(7)
-  case object LloydsSyndicate             extends OrganisationType(12)
+  case object SoleProprietor              extends OrganisationType
+  case object LimitedLiabilityPartnership extends OrganisationType
+  case object Partnership                 extends OrganisationType
+  case object UnincorporatedBody          extends OrganisationType
+  case object Trust                       extends OrganisationType
+  case object LimitedCompany              extends OrganisationType
+  case object LloydsSyndicate             extends OrganisationType
 }
 
 object EeittInterface {
 
+  def purgeNull(json: JsObject): JsObject = json match {
+    case JsObject(inner) =>
+      val data: Map[String, JsValue] = (inner collect {
+        case (k, o: JsObject) => Some(k -> purgeNull(o))
+        case (_, JsNull)      => None
+        case (k, other)       => Some(k -> other)
+      }).flatten.toMap
+      JsObject(data)
+  }
+
   private implicit def regimeSpecificWrites = new Writes[Map[String, String]] {
     def writes(value: Map[String, String]): JsValue =
       JsArray(
-        value.toList.zipWithIndex map { case ((key, value), i) =>
-          Json.obj(
-            "paramSequence" -> i.toString,
-            "paramName" -> key,
-            "paramValue" -> value
-          )
+        value.toList.zipWithIndex flatMap {
+          case ((key, ""), i) => Nil
+          case ((key, value), i) =>
+            List(Json.obj(
+              "paramSequence" -> i.toString,
+              "paramName" -> key,
+              "paramValue" -> value
+            ))
         }
       )
-  }
-
-  private implicit def shortEnumEntryWrites[A <: ShortEnumEntry] = new Writes[A] {
-    def writes(a: A): JsValue = JsNumber(a.value)
   }
 
   private implicit def enumEntryWrites[A <: EnumEntry] = new Writes[A] {
@@ -108,80 +134,97 @@ object EeittInterface {
       def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
     }
 
-    implicit def contactDetailsWrites = new Writes[ContactDetails] {
-      def writes(value: ContactDetails): JsValue = {
-        import value._
-        Json.obj(
-	  "addressNotInUK" -> {address match {
-            case _: UkAddress => false
-            case _ => true
-          }},
-	  "addressInputModeIndicator" -> "2",
-	  "houseNumberName" -> address.line1,
-	  "addressLine1" -> address.line2,
-	  "addressLine2" -> address.line3,
-	  "addressLine3" -> address.line4,
-//	      "addressLine4" -> "BizContact Address Lfour",
-	  "postCode" -> (Some(address) collect {case uk: UkAddress => uk.postalCode}),
-	  "telephoneNumber" -> telephone,
-	  "mobileNumber" -> mobile,
-	  "email" -> emailAddress,
-	  "fax" -> fax
-        )
+    implicit val writesOrgType = new Writes[OrganisationType] {
+      import OrganisationType._
+      def writes(b: OrganisationType): JsValue = b match {
+        case SoleProprietor              => JsString("1")
+        case LimitedLiabilityPartnership => JsString("2")
+        case Partnership                 => JsString("3")
+        case UnincorporatedBody          => JsString("5")
+        case Trust                       => JsString("6")
+        case LimitedCompany              => JsString("7")
+        case LloydsSyndicate             => JsString("12")
       }
     }
+
+    implicit val writesHon = new Writes[Honorific] {
+      import Honorific._
+
+      def writes(b: Honorific): JsValue = b match {
+        case Mr => JsString("0001")
+        case Mrs => JsString("0002")
+        case Miss => JsString("0003")
+        case Ms => JsString("0004")
+        case Dr => JsString("0005")
+        case Sir => JsString("0006")
+        case Rev => JsString("0007")
+        case PersonalRepresentativeOf => JsString("0008")
+        case Professor => JsString("0009")
+        case Lord => JsString("0010")
+        case Lady => JsString("0011")
+        case Dame => JsString("0012")
+      }
+    }
+
+    def strDate(d: LocalDate): String =
+      d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
 
     def writes(o: SubscriptionRequest): JsValue = {
       import o._
 
-      Json.obj(
+      val data = Json.obj(
         "registrationDetails" -> Json.obj(
           "isrScenario" -> "ZDS2",
           "commonDetails" -> Json.obj(
             "legalEntity" -> Json.obj(
-	      "organisationType" -> orgType,
 	      "dateOfApplication" -> LocalDate.now.toString, // should this always be todays date?
-	      "taxStartDate" -> LocalDate.now.toString // should this always be todays date?
+
+	      "taxStartDate" -> firstPeriod._1 // should this always be todays date?
             ),
             "customerIdentificationNumber" -> Json.obj(
-//	      "custIDNumber" -> "???", // what should this be?
-	      "noIdentifier" -> false, // Customer Identifier Indicator where 1: True, 0: False. Expected to always be False for MDTP submissions
-	      "organisationName" -> orgName,
-	      "title" -> customer.title,
-	      "custFirstName" -> customer.forename,
-	      "custLastName" -> customer.surname,
-	      "custDOB" -> customer.dateOfBirth,
-	      "dataMismatchIndicator" -> false // ????
+              //	      "custIDNumber" -> "???", // what should this be?
+	      "noIdentifier" -> false,  // Customer Identifier Indicator where 1: True, 0: False. Expected to always be False for MDTP submissions
+              "title" -> customer.title,
+              "custFirstName" -> customer.firstName,
+              "custLastName" -> customer.lastName,
+              "custDOB" -> customer.dateOfBirth
+//	      "organisationName" -> customer.organisationName,
             ),
-	    "aboutBusiness" -> Json.obj(
-	      "organisationName" -> orgName,
-	      "title" -> customer.title,
-	      "firstName" ->  customer.forename,
-	      "lastName" -> customer.surname,
-	      "dateOfBirth" -> customer.dateOfBirth,
-	      "tradingName" -> orgName
-	    ),
-            "businessContactDetails" -> contactDetails,
-            "correspondenceAddressDifferent" -> alternativeCorrespondence.isDefined,
-            "correspondenceContactDetails" -> alternativeCorrespondence
-          ),
-          "regimeSpecificDetails" -> Map[String, String](
-
-          )
-        ),
-        "siteDetails" -> Json.obj(
-          "isrScenario" -> "ZAG5", //???
-          "formData" -> JsArray(
-            List(
-              Json.obj(
-                "commonDetails" -> Json.obj(
-                  "action" -> "1"
-                )
-              )
+            "businessContactDetails" -> Json.obj(
+              "addressInputModeIndicator" -> "2",
+              "addressLine1" -> nominatedCompany.address.line1,
+              "addressLine2" -> Some(nominatedCompany.address.line2).filter(_.nonEmpty),
+              "addressLine3" -> Some(nominatedCompany.address.line3).filter(_.nonEmpty),
+              "addressLine4" -> Some(nominatedCompany.address.line4).filter(_.nonEmpty),
+              "postCode" -> Some(nominatedCompany.address.postalCode).filter(_.nonEmpty),
+              "addressNotInUK" -> nominatedCompany.address.isInstanceOf[ForeignAddress],
+              "nonUKCountry" -> Some(nominatedCompany.address).collect{ case f: ForeignAddress => f.countryCode },
+              "email" -> Some(nominatedCompany.emailAddress).filter(_.nonEmpty),
+              "telephoneNumber" -> Some(nominatedCompany.telephoneNumber).filter(_.nonEmpty)
             )
+          ),
+          "regimeSpecificDetails" -> ListMap[String, String](
+            "A_DST_PRIM_NAME" -> primaryPerson.name,
+            "A_DST_PRIM_TELEPHONE" -> primaryPerson.telephone,
+            "A_DST_PRIM_EMAIL" -> primaryPerson.emailAddress,
+            "A_DST_GLOBAL_NAME" -> ultimateOwner.name,
+            "A_DATA_ORIGIN" -> "1",
+            "A_DST_PERIOD_END_DATE" -> strDate(firstPeriod._2),
+            "A_TAX_START_DATE" -> strDate(firstPeriod._1),
+            "A_BUS_ADR_LINE_5" -> nominatedCompany.address.line5,
+            "A_CORR_ADR_LINE_1" -> ultimateOwner.address.line1,                                                
+            "A_CORR_ADR_LINE_2" -> ultimateOwner.address.line2,                                    
+            "A_CORR_ADR_LINE_3" -> ultimateOwner.address.line3,                        
+            "A_CORR_ADR_LINE_4" -> ultimateOwner.address.line4,            
+            "A_CORR_ADR_LINE_5" -> ultimateOwner.address.line5,
+            "A_CORR_ADR_POST_CODE" -> ultimateOwner.address.postalCode,
+            "A_CORR_ADR_COUNTRY_CODE" -> ultimateOwner.address.countryCode,
+            "A_DST_GLOBAL_ID" -> ultimateOwner.reference
           )
         )
       )
+
+      purgeNull(data)
     }
   }
 

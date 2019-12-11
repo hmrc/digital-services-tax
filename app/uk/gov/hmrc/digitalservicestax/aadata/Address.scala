@@ -18,31 +18,33 @@ package uk.gov.hmrc.digitalservicestax.data
 
 sealed trait Address {
   def line1: String
-  def line2: Option[String]
-  def line3: Option[String]
-  def line4: Option[String]
+  def line2: String
+  def line3: String
+  def line4: String
+  def line5: String  
   def countryCode: String
-  def postalCodeOpt: Option[String]
+  def postalCode: String
   def lines: List[String] =
-    {line1 :: List(line2, line3, line4, postalCodeOpt).flatten} :+ countryCode
+    line1 :: line2 :: line3 :: line4 :: line5 :: postalCode :: countryCode :: Nil
 }
 
 case class UkAddress(
   line1: String,
-  line2: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line2: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line3: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line4: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line5: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"  
   postalCode: String // "^[A-Z]{1,2}[0-9][0-9A-Z]?\\s?[0-9][A-Z]{2}|BFPO\\s?[0-9]{1,10}$"
 ) extends Address {
   def countryCode: String = "GB"
-  def postalCodeOpt = Some(postalCode)
 }
 
 case class ForeignAddress(
   line1: String,
-  line2: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: Option[String], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  postalCodeOpt: Option[String], // "^[A-Z]{1,2}[0-9][0-9A-Z]?\\s?[0-9][A-Z]{2}|BFPO\\s?[0-9]{1,10}$"
+  line2: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line3: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line4: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line5: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"  
+  postalCode: String, // "^[A-Z]{1,2}[0-9][0-9A-Z]?\\s?[0-9][A-Z]{2}|BFPO\\s?[0-9]{1,10}$"
   countryCode: String
 ) extends Address
