@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.controllers
+package uk.gov.hmrc.digitalservicestax.data
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
+case class ActivityReturn (
+  alternateChargeProvision : Boolean,
+  loss : Boolean,
+  margin : Int
+)
 
-import scala.concurrent.Future
-
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(appConfig: AppConfig, cc: ControllerComponents)
-    extends BackendController(cc) {
-
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
+object ActivityReturn {
+  def empty = ActivityReturn(
+    false, false, 0
+  )
 }
