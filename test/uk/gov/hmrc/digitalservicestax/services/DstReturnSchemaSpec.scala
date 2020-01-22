@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,54 @@ package services
 
 import data._
 import org.scalatest.{FlatSpec, Matchers}
-import java.time.LocalDate
 
-class DstReturnSchemaSpec extends FlatSpec with Matchers {
+import java.time.LocalDate
+import org.scalatestplus.scalacheck.Checkers
+import org.scalacheck.cats.implicits._
+import cats.implicits._
+import cats.Applicative
+import org.scalacheck._
+import Arbitrary._
+
+class DstReturnSchemaSpec extends FlatSpec with Matchers with Checkers {
+
+  implicit def genMap: Gen[Map[Activity, Int]] = ???
+  implicit def gencomap: Gen[Map[GroupCompany, Money]] = ???
+
+  implicit def genBankAccount: Gen[BankAccount] = {
+    val genDomestic: Gen[DomesticBankAccount] = (
+      arbitrary[String],
+      arbitrary[String],
+      arbitrary[Option[String]]
+    ).mapN(DomesticBankAccount.apply)
+    val genForeign: Gen[ForeignBankAccount] = arbitrary[String].map{ForeignBankAccount.apply}
+    Gen.oneOf(genDomestic, genForeign)
+  }
+
+  implicit def genRepayment: Gen[RepaymentDetails] = {
+    (
+      arbitrary[String],
+      genBankAccount
+    ).mapN(RepaymentDetails.apply)
+  }
+
+  implicit def returnGen: Arbitrary[Return] = {
+
+    Arbitrary((
+      genMap,
+      arbitrary[Money],
+      gencomap,
+      arbitrary[Money],
+      arbitrary[Money],      
+      Gen.option(genRepayment)
+    ).mapN(Return.apply))
+  }
 
   "A return API call" should "conform to the schema" in {
-    val r = ReturnRequest(
-      "BCD", //identification
-      Period(LocalDate.of(2018,1,1), LocalDate.of(2019,12,31)), //period: (LocalDate, LocalDate),
-      Map.empty,
-      None,
-      FinancialInformation(false, 1, 1),
-      Nil,
-      false
-    )
-
-    val json = EeittInterface.returnRequestWriter.writes(r)
-    SchemaChecker.EeittReturn.request.errorsIn(json) shouldBe (None)
+    check{ ret: Return => 
+      val json = EeittInterface.returnRequestWriter("",Period(???,???)).writes(ret)
+      SchemaChecker.EeittReturn.request.errorsIn(json).isEmpty
+    }
   }
 
   "A registration API call" should "conform to the schema" in {
