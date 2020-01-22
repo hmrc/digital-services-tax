@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import play.api.libs.json._
 import cats.syntax.either._
 import cats.{Id, ~>}
 import cats.data.NonEmptySet
-import java.time._, format.DateTimeFormatter
+import java.time.{Period => _, _}, format.DateTimeFormatter
 import enumeratum._, values._
 import scala.collection.immutable.ListMap
 
@@ -228,26 +228,26 @@ object EeittInterface {
     }
   }
 
-  implicit val returnRequestWriter = new Writes[ReturnRequest] {
-    def writes(o: ReturnRequest): JsValue = {
+  def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false) = new Writes[Return] {
+    def writes(o: Return): JsValue = {
       import o._
 
       def bool(in: Boolean): String = if(in) "X" else " "
 
       import Activity._
       val activityEntries: Seq[(String, String)] =
-        activity.toList flatMap { case (activityType,v) =>
+        alternateCharge.toList flatMap { case (activityType,v) =>
 
           val key = activityType match {
             case SocialMedia => "SOCIAL"
             case SearchEngine => "SEARCH"
-            case Marketplace => "MARKET"
+            case OnlineMarketplace => "MARKET"
           }
 
           List(
-            s"DST_${key}_CHARGE_PROVISION" -> bool(v.alternateChargeProvision),
-            s"DST_${key}_LOSS" -> bool(v.loss),
-            s"DST_${key}_OP_MARGIN" -> v.margin.toString
+            s"DST_${key}_CHARGE_PROVISION" -> bool(true),
+            s"DST_${key}_LOSS" -> bool(v == 0),
+            s"DST_${key}_OP_MARGIN" -> v.toString
           )
         }
 
@@ -256,28 +256,36 @@ object EeittInterface {
           val key = activityType match {
             case SocialMedia => "SOCIAL"
             case SearchEngine => "SEARCHENGINE"
-            case Marketplace => "MARKETPLACE"
+            case OnlineMarketplace => "MARKETPLACE"
           }
 
-          (s"DST_SUBJECT_${key}" -> bool(activity.isDefinedAt(activityType)))
+          (s"DST_SUBJECT_${key}" -> bool(alternateCharge.isDefinedAt(activityType)))
         }
 
       val repaymentInfo: Seq[(String, String)] =
-        repaymentDetails.fold(Seq.empty[(String, String)]){ bank => Seq(
-          "BANK_NON_UK" -> bool(!bank.isUkAccount),
-          "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
-          "BANK_SORT_CODE" -> bank.sortCode, // Branch sort code CHAR6
-          "BANK_ACC_NO" -> bank.accountNumber, // Account number CHAR8
-          "BANK_IBAN" -> bank.iban, // IBAN if non-UK bank account CHAR34
-          "BANK_NAME" -> bank.bankName, // Name of account CHAR40
-          "BUILDING_SOC_ROLE" -> bank.buildingSocietyRef // Building Society reference CHAR20
-        )  }
+        repayment.fold(Seq.empty[(String, String)]){
+          case RepaymentDetails(acctName, DomesticBankAccount(sortCode, acctNo, bsNo)) =>
+            Seq(
+              "BANK_NAME" -> acctName,  // Name of account CHAR40
+              "BANK_NON_UK" -> bool(false),
+//              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
+              "BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
+              "BANK_ACC_NO" -> acctNo // Account number CHAR8
+            ) ++ bsNo.map { a => 
+              "BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
+            }.toSeq
 
-      val breakdownEntries: Seq[(String, String)] = breakdown flatMap { e =>
+          case RepaymentDetails(acctName, ForeignBankAccount(iban)) => Seq(
+            "BANK_IBAN" -> iban, // IBAN if non-UK bank account CHAR34
+            "BANK_NAME" -> acctName // Name of account CHAR40
+          )
+        }
+
+      val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
         Seq(
-          "DST_GROUP_MEMBER" -> e.memberName, // Group Member Company Name CHAR40
-          "DST_GROUP_MEM_ID" -> e.utr, // Company registration reference number (UTR) CHAR40
-          "DST_GROUP_MEM_LIABILITY" -> e.memberLiability.toString // DST liability amount per group member BETRW_KK
+          "DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
+          "DST_GROUP_MEM_ID" -> company.utr, // Company registration reference number (UTR) CHAR40
+          "DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
         )
       }
 
@@ -285,11 +293,11 @@ object EeittInterface {
         "REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
         "PERIOD_FROM" -> period.start.toString, // MANDATORY Period From  DATS
         "PERIOD_TO" -> period.start.toString, // MANDATORY Period To  DATS
-        "DST_FIRST_RETURN" -> bool(isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
-        "DST_RELIEF" -> finInfo.crossBorderRelief.toString, // Are you claiming relief for relevant cross-border transactions? CHAR1
-        "DST_TAX_ALLOWANCE" -> finInfo.taxFreeAllowance.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
-        "DST_GROUP_LIABILITY" -> finInfo.totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
-        "DST_REPAYMENT_REQ" -> bool(repaymentDetails.isDefined), // Repayment for overpayment required? CHAR1
+        "DST_FIRST_RETURN" -> bool(!isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
+        "DST_RELIEF" -> bool(crossBorderReliefAmount > 0), // Are you claiming relief for relevant cross-border transactions? CHAR1
+        "DST_TAX_ALLOWANCE" -> allowanceAmount.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
+        "DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
+        "DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
         "DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
       ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
 
-case class ReturnRequest(
-  dstRegNo: String,
-  period: Period,
-  activity: Map[Activity, ActivityReturn],
-  repaymentDetails: Option[RepaymentDetails],
-  finInfo: FinancialInformation,
-  breakdown: List[LiabilityBreakdownEntry],
-  isAmend: Boolean = false
+case class Registration (
+       company: Company,
+       alternativeContact: Option[Address], 
+       ultimateParent: Option[Company], 
+       contact: ContactDetails, 
+       dateLiable: LocalDate, 
+       accountingPeriodEnd: LocalDate
 )

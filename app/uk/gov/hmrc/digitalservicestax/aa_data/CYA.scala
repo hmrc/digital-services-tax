@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import enumeratum._
-
-sealed trait Activity extends EnumEntry
-
-object Activity extends Enum[Activity] { 
-
-  val values = findValues
-
-  case object SocialMedia extends Activity
-  case object SearchEngine extends Activity
-  case object Marketplace extends Activity
-}
+case class CYA[A] (
+  value: A
+)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import java.time.LocalDate
-
-case class Period(
-  start: LocalDate,
-  end: LocalDate
+case class Return(
+  alternateCharge: Map[Activity, Int],
+  crossBorderReliefAmount: Money,
+  companiesAmount: Map[GroupCompany, Money],
+  allowanceAmount: Money, 
+  totalLiability: Money,
+  repayment: Option[RepaymentDetails]
 )

@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.config
+package uk.gov.hmrc.digitalservicestax.data
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import enumeratum._
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
-
-  val authBaseUrl: String = servicesConfig.baseUrl("auth")
-
-  val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
+sealed trait Activity extends EnumEntry
+object Activity extends Enum[Activity] {
+  def values = findValues
+  case object SocialMedia       extends Activity
+  case object SearchEngine      extends Activity
+  case object OnlineMarketplace extends Activity  
 }

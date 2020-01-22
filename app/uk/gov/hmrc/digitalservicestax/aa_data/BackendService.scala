@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.config
+package uk.gov.hmrc.digitalservicestax.data
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import scala.language.higherKinds
+import cats.~>
+trait BackendService[F[_]] {
+  def matchedCompany(): F[Option[Company]]
+  def lookup(utr: UTR, postcode: Postcode): F[Option[Company]]
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
-
-  val authBaseUrl: String = servicesConfig.baseUrl("auth")
-
-  val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
+  def natTransform[G[_]](transform: F ~> G) = {
+    val old = this
+    new BackendService[G] {
+      def matchedCompany(): G[Option[Company]] =
+        transform(old.matchedCompany())
+      def lookup(utr: UTR, postcode: Postcode): G[Option[Company]] =
+        transform(old.lookup(utr, postcode))
+    }
+  }
 }

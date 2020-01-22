@@ -9,7 +9,9 @@ object AppDependencies {
     "org.typelevel"          %% "cats-core"                % "2.0.0",
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.1.0",
-    "com.beachape"           %% "enumeratum"               % "1.5.13"
+    "com.beachape"           %% "enumeratum"               % "1.5.13",
+    "com.chuusai"            %% "shapeless"               % "2.3.3"
+
   )
 
   val test = Seq(
