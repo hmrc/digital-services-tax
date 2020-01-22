@@ -22,7 +22,8 @@ object AppDependencies {
     "org.scalatestplus.play" %% "scalatestplus-play"       % "3.1.2"                 % "test, it", 
     "com.github.fge"          % "json-schema-validator"    % "2.2.6"                 % "test",
     "org.scalacheck"         %% "scalacheck"               % "1.14.1"                % "test",
-    "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % "test"
+    "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % "test",
+    "com.beachape"           %% "enumeratum-scalacheck"    % "1.5.16"                      % "test"
   )
 
 }

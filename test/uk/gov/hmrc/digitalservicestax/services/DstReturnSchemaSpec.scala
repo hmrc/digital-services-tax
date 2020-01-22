@@ -21,51 +21,73 @@ import data._
 import org.scalatest.{FlatSpec, Matchers}
 
 import java.time.LocalDate
-import org.scalatestplus.scalacheck.Checkers
+import org.scalatestplus.scalacheck._
 import org.scalacheck.cats.implicits._
 import cats.implicits._
 import cats.Applicative
-import org.scalacheck._
-import Arbitrary._
+import org.scalacheck._, Arbitrary._
+import enumeratum.scalacheck._
 
-class DstReturnSchemaSpec extends FlatSpec with Matchers with Checkers {
+class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
-  implicit def genMap: Gen[Map[Activity, Int]] = ???
-  implicit def gencomap: Gen[Map[GroupCompany, Money]] = ???
+  def nonEmptyString: Gen[String] = arbitrary[String].filter(_.nonEmpty)
 
-  implicit def genBankAccount: Gen[BankAccount] = {
+  def genMap: Gen[Map[Activity, Int]] = Gen.mapOf(
+    (
+      arbitrary[Activity],
+      arbitrary[Int]
+    ).tupled
+  )
+
+  def genGroupCo: Gen[GroupCompany] = (
+    nonEmptyString,
+    nonEmptyString
+  ).mapN(GroupCompany.apply)
+
+  def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
+    (
+      genGroupCo,
+      arbitrary[Money]
+    ).tupled
+  )
+
+  def genBankAccount: Gen[BankAccount] = {
     val genDomestic: Gen[DomesticBankAccount] = (
-      arbitrary[String],
-      arbitrary[String],
+      nonEmptyString,
+      nonEmptyString,
       arbitrary[Option[String]]
     ).mapN(DomesticBankAccount.apply)
-    val genForeign: Gen[ForeignBankAccount] = arbitrary[String].map{ForeignBankAccount.apply}
+    val genForeign: Gen[ForeignBankAccount] = nonEmptyString.map{ForeignBankAccount.apply}
     Gen.oneOf(genDomestic, genForeign)
   }
 
-  implicit def genRepayment: Gen[RepaymentDetails] = {
+  def genRepayment: Gen[RepaymentDetails] = 
     (
-      arbitrary[String],
+      nonEmptyString,
       genBankAccount
     ).mapN(RepaymentDetails.apply)
-  }
 
-  implicit def returnGen: Arbitrary[Return] = {
+  implicit def returnGen: Arbitrary[Return] = Arbitrary((
+    genMap,
+    arbitrary[Money],
+    gencomap,
+    arbitrary[Money],
+    arbitrary[Money],
+    Gen.option(genRepayment)
+  ).mapN(Return.apply))
 
-    Arbitrary((
-      genMap,
-      arbitrary[Money],
-      gencomap,
-      arbitrary[Money],
-      arbitrary[Money],      
-      Gen.option(genRepayment)
-    ).mapN(Return.apply))
-  }
+  def date(start: LocalDate, end: LocalDate): Gen[LocalDate] = 
+    Gen.choose(start.toEpochDay, end.toEpochDay).map(LocalDate.ofEpochDay)
+
+  implicit def periodArb: Arbitrary[Period] = Arbitrary((
+    date(LocalDate.of(2010, 1, 1), LocalDate.of(2020, 1, 1)),
+    date(LocalDate.of(2010, 1, 1), LocalDate.of(2020, 1, 1))    
+  ).mapN(Period.apply))
 
   "A return API call" should "conform to the schema" in {
-    check{ ret: Return => 
-      val json = EeittInterface.returnRequestWriter("",Period(???,???)).writes(ret)
-      SchemaChecker.EeittReturn.request.errorsIn(json).isEmpty
+    forAll { (period: Period, ret: Return) => 
+      val json = EeittInterface.returnRequestWriter("",period).writes(ret)
+      SchemaChecker.EeittReturn.request.errorsIn(json) should be (None)
     }
   }
 
