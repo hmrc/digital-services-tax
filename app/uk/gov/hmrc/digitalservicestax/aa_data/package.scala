@@ -21,7 +21,6 @@ import shapeless.{:: => _, _}, tag._
 package object data {
 
   type UTR = String @@ UTR.Tag
-
   object UTR extends RegexValidatedString(
     "^[0-9]{10}$"
   )
