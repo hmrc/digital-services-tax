@@ -26,77 +26,6 @@ import java.time.{Period => _, _}, format.DateTimeFormatter
 import enumeratum._, values._
 import scala.collection.immutable.ListMap
 
-sealed trait Honorific extends EnumEntry
-
-object Honorific extends Enum[Honorific] {
-  val values = findValues
-  case object Mr extends Honorific
-  case object Mrs extends Honorific
-  case object Miss extends Honorific
-  case object Ms extends Honorific
-  case object Dr extends Honorific
-  case object Sir extends Honorific
-  case object Rev extends Honorific
-  case object PersonalRepresentativeOf extends Honorific
-  case object Professor extends Honorific
-  case object Lord extends Honorific
-  case object Lady extends Honorific
-  case object Dame extends Honorific
-}
-
-case class ContactDetails(
-  name: String, 
-  telephone: String,
-  emailAddress: String
-)
-
-sealed trait Identification
-
-case object UnknownIdentification extends Identification
-
-case class CustomerData(
-  id: String,
-  organisationName: String,
-  title: Honorific,
-  firstName: String,
-  lastName: String,
-  dateOfBirth: LocalDate
-)
-
-case class NominatedCompany(
-  address: Address,
-  telephoneNumber: String,
-  emailAddress: String
-)
-
-case class UltimateOwner(
-  name: String,
-  reference: String,
-  address: Address
-)
-
-case class SubscriptionRequest(
-  identification: List[Identification],
-  customer: CustomerData,
-  nominatedCompany: NominatedCompany, 
-  primaryPerson: ContactDetails,
-  ultimateOwner: UltimateOwner,
-  firstPeriod: (LocalDate, LocalDate)
-)
-
-sealed trait OrganisationType extends EnumEntry
-
-object OrganisationType extends Enum[OrganisationType] {
-  val values = findValues
-  case object SoleProprietor              extends OrganisationType
-  case object LimitedLiabilityPartnership extends OrganisationType
-  case object Partnership                 extends OrganisationType
-  case object UnincorporatedBody          extends OrganisationType
-  case object Trust                       extends OrganisationType
-  case object LimitedCompany              extends OrganisationType
-  case object LloydsSyndicate             extends OrganisationType
-}
-
 object EeittInterface {
 
   def purgeNull(json: JsObject): JsObject = json match {
@@ -128,104 +57,72 @@ object EeittInterface {
     def writes(a: A): JsValue = JsString(a.entryName)
   }
 
-  implicit val subscriptionRequestWriter = new Writes[SubscriptionRequest] {
+  implicit val registrationWriter = new Writes[Registration] {
+     implicit val trueFalseIndicatorType = new Writes[Boolean] {
+       def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
+     }
 
-    implicit val trueFalseIndicatorType = new Writes[Boolean] {
-      def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
-    }
+     def strDate(d: LocalDate): String =
+       d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
 
-    implicit val writesOrgType = new Writes[OrganisationType] {
-      import OrganisationType._
-      def writes(b: OrganisationType): JsValue = b match {
-        case SoleProprietor              => JsString("1")
-        case LimitedLiabilityPartnership => JsString("2")
-        case Partnership                 => JsString("3")
-        case UnincorporatedBody          => JsString("5")
-        case Trust                       => JsString("6")
-        case LimitedCompany              => JsString("7")
-        case LloydsSyndicate             => JsString("12")
-      }
-    }
+     def writes(o: Registration): JsValue = {
+       import o._
 
-    implicit val writesHon = new Writes[Honorific] {
-      import Honorific._
+       val contactAddress = alternativeContact getOrElse company.address
 
-      def writes(b: Honorific): JsValue = b match {
-        case Mr => JsString("0001")
-        case Mrs => JsString("0002")
-        case Miss => JsString("0003")
-        case Ms => JsString("0004")
-        case Dr => JsString("0005")
-        case Sir => JsString("0006")
-        case Rev => JsString("0007")
-        case PersonalRepresentativeOf => JsString("0008")
-        case Professor => JsString("0009")
-        case Lord => JsString("0010")
-        case Lady => JsString("0011")
-        case Dame => JsString("0012")
-      }
-    }
+       val data = Json.obj(
+         "registrationDetails" -> Json.obj(
+           "isrScenario" -> "ZDS2",
+           "commonDetails" -> Json.obj(
+             "legalEntity" -> Json.obj(
+ 	      "dateOfApplication" -> LocalDate.now.toString, // should this always be todays date?
+ 	      "taxStartDate" -> dateLiable // should this always be todays date?
+             ),
+             "customerIdentificationNumber" -> Json.obj(
+               //	      "custIDNumber" -> "???", // what should this be?
+ 	      "noIdentifier" -> false,  // Customer Identifier Indicator where 1: True, 0: False. Expected to always be False for MDTP submissions
+//               "title" -> customer.title,
+               "custFirstName" -> contact.forename,
+               "custLastName" -> contact.surname
+//               "custDOB" -> customer.dateOfBirth
+ //	      "organisationName" -> customer.organisationName,
+             ),
+             "businessContactDetails" -> Json.obj(
+               "addressInputModeIndicator" -> "2",
+               "addressLine1" -> contactAddress.line1,
+               "addressLine2" -> Some(contactAddress.line2).filter(_.nonEmpty),
+               "addressLine3" -> Some(contactAddress.line3).filter(_.nonEmpty),
+               "addressLine4" -> Some(contactAddress.line4).filter(_.nonEmpty),
+               "postCode" -> Some(contactAddress.postalCode).filter(_.nonEmpty),
+               "addressNotInUK" -> contactAddress.isInstanceOf[ForeignAddress],
+               "nonUKCountry" -> Some(contactAddress).collect{ case f: ForeignAddress => f.countryCode },
+               "email" -> Some(contact.email).filter(_.nonEmpty),
+               "telephoneNumber" -> Some(contact.phoneNumber).filter(_.nonEmpty)
+             )
+           ),
+           "regimeSpecificDetails" -> ListMap[String, String](
+             "A_DST_PRIM_NAME" -> {contact.forename + " " + contact.surname},
+             "A_DST_PRIM_TELEPHONE" -> contact.phoneNumber,
+             "A_DST_PRIM_EMAIL" -> contact.email,
+             "A_DST_GLOBAL_NAME" -> company.name,
+             "A_DATA_ORIGIN" -> "1",
+             "A_DST_PERIOD_END_DATE" -> strDate(accountingPeriodEnd),
+             "A_TAX_START_DATE" -> strDate(dateLiable),
+             "A_BUS_ADR_LINE_5" -> contactAddress.line5,
+             "A_CORR_ADR_LINE_1" -> company.address.line1,                                                
+             "A_CORR_ADR_LINE_2" -> company.address.line2,                                    
+             "A_CORR_ADR_LINE_3" -> company.address.line3,                        
+             "A_CORR_ADR_LINE_4" -> company.address.line4,            
+             "A_CORR_ADR_LINE_5" -> company.address.line5,
+             "A_CORR_ADR_POST_CODE" -> company.address.postalCode,
+             "A_CORR_ADR_COUNTRY_CODE" -> company.address.countryCode
+//             "A_DST_GLOBAL_ID" -> ultimateOwner.reference
+           )
+         )
+       )
 
-    def strDate(d: LocalDate): String =
-      d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
-
-    def writes(o: SubscriptionRequest): JsValue = {
-      import o._
-
-      val data = Json.obj(
-        "registrationDetails" -> Json.obj(
-          "isrScenario" -> "ZDS2",
-          "commonDetails" -> Json.obj(
-            "legalEntity" -> Json.obj(
-	      "dateOfApplication" -> LocalDate.now.toString, // should this always be todays date?
-
-	      "taxStartDate" -> firstPeriod._1 // should this always be todays date?
-            ),
-            "customerIdentificationNumber" -> Json.obj(
-              //	      "custIDNumber" -> "???", // what should this be?
-	      "noIdentifier" -> false,  // Customer Identifier Indicator where 1: True, 0: False. Expected to always be False for MDTP submissions
-              "title" -> customer.title,
-              "custFirstName" -> customer.firstName,
-              "custLastName" -> customer.lastName,
-              "custDOB" -> customer.dateOfBirth
-//	      "organisationName" -> customer.organisationName,
-            ),
-            "businessContactDetails" -> Json.obj(
-              "addressInputModeIndicator" -> "2",
-              "addressLine1" -> nominatedCompany.address.line1,
-              "addressLine2" -> Some(nominatedCompany.address.line2).filter(_.nonEmpty),
-              "addressLine3" -> Some(nominatedCompany.address.line3).filter(_.nonEmpty),
-              "addressLine4" -> Some(nominatedCompany.address.line4).filter(_.nonEmpty),
-              "postCode" -> Some(nominatedCompany.address.postalCode).filter(_.nonEmpty),
-              "addressNotInUK" -> nominatedCompany.address.isInstanceOf[ForeignAddress],
-              "nonUKCountry" -> Some(nominatedCompany.address).collect{ case f: ForeignAddress => f.countryCode },
-              "email" -> Some(nominatedCompany.emailAddress).filter(_.nonEmpty),
-              "telephoneNumber" -> Some(nominatedCompany.telephoneNumber).filter(_.nonEmpty)
-            )
-          ),
-          "regimeSpecificDetails" -> ListMap[String, String](
-            "A_DST_PRIM_NAME" -> primaryPerson.name,
-            "A_DST_PRIM_TELEPHONE" -> primaryPerson.telephone,
-            "A_DST_PRIM_EMAIL" -> primaryPerson.emailAddress,
-            "A_DST_GLOBAL_NAME" -> ultimateOwner.name,
-            "A_DATA_ORIGIN" -> "1",
-            "A_DST_PERIOD_END_DATE" -> strDate(firstPeriod._2),
-            "A_TAX_START_DATE" -> strDate(firstPeriod._1),
-            "A_BUS_ADR_LINE_5" -> nominatedCompany.address.line5,
-            "A_CORR_ADR_LINE_1" -> ultimateOwner.address.line1,                                                
-            "A_CORR_ADR_LINE_2" -> ultimateOwner.address.line2,                                    
-            "A_CORR_ADR_LINE_3" -> ultimateOwner.address.line3,                        
-            "A_CORR_ADR_LINE_4" -> ultimateOwner.address.line4,            
-            "A_CORR_ADR_LINE_5" -> ultimateOwner.address.line5,
-            "A_CORR_ADR_POST_CODE" -> ultimateOwner.address.postalCode,
-            "A_CORR_ADR_COUNTRY_CODE" -> ultimateOwner.address.countryCode,
-            "A_DST_GLOBAL_ID" -> ultimateOwner.reference
-          )
-        )
-      )
-
-      purgeNull(data)
-    }
+       purgeNull(data)
+     }
   }
 
   def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false) = new Writes[Return] {
@@ -265,13 +162,13 @@ object EeittInterface {
       val repaymentInfo: Seq[(String, String)] =
         repayment.fold(Seq.empty[(String, String)]){
           case RepaymentDetails(acctName, DomesticBankAccount(sortCode, acctNo, bsNo)) =>
-            Seq(
+            Seq[(String, String)](
               "BANK_NAME" -> acctName,  // Name of account CHAR40
               "BANK_NON_UK" -> bool(false),
 //              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
               "BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
               "BANK_ACC_NO" -> acctNo // Account number CHAR8
-            ) ++ bsNo.map { a => 
+            ) ++ Some(bsNo).filter(_.nonEmpty).map { a => 
               "BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
             }.toSeq
 

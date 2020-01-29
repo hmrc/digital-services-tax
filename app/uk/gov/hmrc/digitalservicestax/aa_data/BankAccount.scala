@@ -20,15 +20,15 @@ package uk.gov.hmrc.digitalservicestax.data
 
 sealed trait BankAccount
 
-case class ForeignBankAccount(iban: String) extends BankAccount
+case class ForeignBankAccount(iban: IBAN) extends BankAccount
 
 case class DomesticBankAccount(
-  sortCode: String,
-  accountNo: String,
-  buildingSocietyNumber: Option[String]
+  sortCode: SortCode,
+  accountNo: AccountNumber,
+  buildingSocietyNumber: String
 ) extends BankAccount
 
 case class RepaymentDetails(
-  accountName: String,
+  accountName: NonEmptyString,
   bankAccount: BankAccount
 )

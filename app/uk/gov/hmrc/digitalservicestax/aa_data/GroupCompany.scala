@@ -17,6 +17,6 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 case class GroupCompany(
-  name: String,
-  utr: String
+  name: NonEmptyString,
+  utr: UTR
 )

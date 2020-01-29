@@ -17,7 +17,8 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 case class ContactDetails(
-  name : String,
-  phoneNumber: String,
-  email: String
+  forename : NonEmptyString,  
+  surname : NonEmptyString,
+  phoneNumber: PhoneNumber,
+  email: Email
 )

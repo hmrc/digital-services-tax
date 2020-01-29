@@ -17,6 +17,6 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 case class Company (
-  name: String,
+  name: NonEmptyString,
   address: Address
 )

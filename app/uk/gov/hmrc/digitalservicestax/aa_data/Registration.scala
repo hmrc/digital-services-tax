@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.data
+package uk.gov.hmrc.digitalservicestax
+package data
+
+import services._
 
 import java.time.LocalDate
 
 case class Registration (
-       company: Company,
-       alternativeContact: Option[Address], 
-       ultimateParent: Option[Company], 
-       contact: ContactDetails, 
-       dateLiable: LocalDate, 
-       accountingPeriodEnd: LocalDate
+  identification: UTR, 
+  company: Company,
+  alternativeContact: Option[Address],
+  ultimateParent: Option[Company],
+  contact: ContactDetails,
+  dateLiable: LocalDate,
+  accountingPeriodEnd: LocalDate
 )

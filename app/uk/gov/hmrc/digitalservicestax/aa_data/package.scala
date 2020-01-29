@@ -20,17 +20,77 @@ import shapeless.{:: => _, _}, tag._
 
 package object data {
 
-  type UTR = String @@ UTRTag
+  type UTR = String @@ UTR.Tag
 
-  object UTR extends RegexValidatedString[UTRTag](
+  object UTR extends RegexValidatedString(
     "^[0-9]{10}$"
   )
-  type Postcode = String @@ PostcodeTag
-  object Postcode extends RegexValidatedString[PostcodeTag](
-    """^(GIR 0A{2})|((([A-Z][0-9]{1,2})|(([A-Z][A-HJ-Y][0-9]{1,2})|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z]))))\s?[0-9][A-Z]{2})$""", 
+
+  type Postcode = String @@ Postcode.Tag
+  object Postcode extends RegexValidatedString(
+    """^(GIR 0A{2})|((([A-Z][0-9]{1,2})|(([A-Z][A-HJ-Y][0-9]{1,2})|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z]))))[ ]?[0-9][A-Z]{2})$""",
     _.toUpperCase
   )
 
   type Money = BigDecimal
 
+  type NonEmptyString = String @@ NonEmptyString.Tag
+  object NonEmptyString extends ValidatedType[String]{
+    def validateAndTransform(in: String): Option[String] =
+      Some(in).filter(_.nonEmpty)
+  }
+
+  type CountryCode = String @@ CountryCode.Tag
+  object CountryCode extends RegexValidatedString(
+    """^[A-Z][A-Z]$""", 
+    _.toUpperCase match {
+      case "UK" => "GB"
+      case other => other
+    }
+  )
+
+  type SortCode = String @@ SortCode.Tag
+  object SortCode extends RegexValidatedString(
+    """^([0-9]{2}-){2}[0-9]{2}$""",
+    {in =>
+      val digitsOnly: String = in.filter(_.isDigit)
+      digitsOnly.toList match {
+        case aa :: ab :: ba :: bb :: ca :: cb :: Nil => s"$aa$ab-$ba$bb-$ca$cb"
+        case _ => "bad"
+      }
+    }
+  )
+
+  type AccountNumber = String @@ AccountNumber.Tag
+  object AccountNumber extends RegexValidatedString(
+    """^[0-9]{8}$""",
+    _.filter(_.isDigit)
+  )
+
+  type IBAN = String @@ IBAN.Tag
+  object IBAN extends RegexValidatedString(
+    """^[0-9]{8}$""", // TODO
+    _.filter(_.isDigit)
+  )
+
+  type PhoneNumber = String @@ PhoneNumber.Tag
+  object PhoneNumber extends RegexValidatedString(
+    """^[0-9]{8}$""", // TODO
+    _.filter(_.isDigit)
+  )
+
+  type Email = String @@ Email.Tag
+  object Email extends ValidatedType[String]{
+    def validateAndTransform(email: String): Option[String] = {
+      import org.apache.commons.validator.routines.EmailValidator
+      Some(email).filter(EmailValidator.getInstance.isValid(_))
+    }
+  }
+
+  type Percent = Byte @@ Percent.Tag
+  object Percent extends ValidatedType[Byte]{
+    def validateAndTransform(in: Byte): Option[Byte] = {
+      Some(in).filter{x => x >= 0 && x <= 100}
+    }
+  }
 }
