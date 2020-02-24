@@ -16,15 +16,10 @@
 
 package uk.gov.hmrc.digitalservicestax
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, ZoneId}
-
 import shapeless.{:: => _, _}
 import tag._
 import cats.implicits._
 import cats.kernel.Monoid
-import com.ibm.icu.text.SimpleDateFormat
-import com.ibm.icu.util.{TimeZone, ULocale}
 import play.api.i18n.Messages
 
 package object data extends JsonProtocol{
@@ -110,24 +105,5 @@ package object data extends JsonProtocol{
       override def combine(a: Percent, b: Percent): Percent = Percent(base.combine(a, b))
       override def empty: Percent = Percent(base.empty)
     }
-  }
-
-  private val zone = "Europe/London"
-  private val zoneId: ZoneId = ZoneId.of(zone)
-  private val timeFomat = "h:mma"
-  def formattedTimeNow: String = LocalDateTime.now(zoneId).format(DateTimeFormatter.ofPattern(timeFomat)).toLowerCase
-
-  def formatDate(localDate: LocalDate, dateFormatPattern: String = "d MMMM yyyy"):String = {
-    val date = java.util.Date.from(localDate.atStartOfDay(zoneId).toInstant)
-    createDateFormatForPattern(dateFormatPattern).format(date)
-  }
-
-  private def createDateFormatForPattern(pattern: String): SimpleDateFormat = {
-//    val uLocale = new ULocale(messages.lang.code)
-//    val validLang: Boolean = ULocale.getAvailableLocales.contains(uLocale)
-    val locale: ULocale = ULocale.getDefault
-    val sdf = new SimpleDateFormat(pattern, locale)
-    sdf.setTimeZone(TimeZone.getTimeZone(zone))
-    sdf
   }
 }
