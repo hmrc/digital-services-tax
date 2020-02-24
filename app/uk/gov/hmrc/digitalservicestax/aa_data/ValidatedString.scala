@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import shapeless._, tag._
+import shapeless._
+import tag._
 import cats.implicits._
+
+import scala.util.matching.Regex
 
 trait ValidatedType[BaseType] {
 
   trait Tag
-  type TagType = Tag
 
-  lazy val className = this.getClass.getSimpleName
+  lazy val className: String = this.getClass.getSimpleName
 
   def validateAndTransform(in: BaseType): Option[BaseType]
 
@@ -39,6 +41,9 @@ trait ValidatedType[BaseType] {
     validateAndTransform(in) map {
       x => tag[Tag][BaseType](x)
     }
+
+  def mapTC[TC[_]: cats.Functor](implicit monA: TC[BaseType]): TC[BaseType @@ Tag] =
+    monA.map(apply)
 }
 
 class RegexValidatedString(
@@ -46,7 +51,7 @@ class RegexValidatedString(
   transform: String => String = identity
 ) extends ValidatedType[String] {
 
-  val regexCompiled = regex.r
+  val regexCompiled: Regex = regex.r
 
   def validateAndTransform(in: String): Option[String] =
     transform(in).some.filter(regexCompiled.findFirstIn(_).isDefined)
