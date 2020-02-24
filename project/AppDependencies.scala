@@ -6,6 +6,7 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
+    "com.github.fge"         %  "json-schema-validator"    % "2.2.6",
     "org.typelevel"          %% "cats-core"                % "2.0.0",
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.1.0",

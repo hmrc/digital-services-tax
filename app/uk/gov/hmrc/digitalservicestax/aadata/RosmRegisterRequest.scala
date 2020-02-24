@@ -16,8 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class FinancialInformation (
-  crossBorderRelief : Boolean,
-  taxFreeAllowance : Money,
-  totalLiability : Money
+import play.api.libs.json.Json
+
+case class RosmRegisterRequest(
+  regime: String,
+  requiresNameMatch: Boolean = false,
+  isAnAgent: Boolean = false
 )
+object RosmRegisterRequest {
+  implicit val rosmFormatter = Json.format[RosmRegisterRequest]
+}
