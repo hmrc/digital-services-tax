@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.controllers
+package uk.gov.hmrc.digitalservicestax
+package controllers
 
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
@@ -31,7 +32,6 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton()
 class RosmController @Inject()(
   val authConnector: AuthConnector,
@@ -46,15 +46,15 @@ class RosmController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def lookupWithId(utr: String): Action[AnyContent] = Action.async { implicit request =>
+  def lookupWithId(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
 
     authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector.retrieveROSMDetails(
-        utr,
-        RosmRegisterRequest(regime = serviceConfig.getString("etmp.sdil.regime"))
+        utr
       ).map {
-        case Some(r) if r.organisation.isDefined || r.individual.isDefined =>
-          JsonSchemaChecker[RosmRegisterResponse](r, "rosm-response")
+        case Some(r) if r.address.postalCode == postcode =>
+          import data.BackendAndFrontendJson._
+          JsonSchemaChecker[data.Company](r, "rosm-response")
           Ok(Json.toJson(r))
         case _ => NotFound
       }

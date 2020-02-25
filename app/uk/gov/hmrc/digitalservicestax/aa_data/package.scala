@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.kernel.Monoid
 import play.api.i18n.Messages
 
-package object data extends JsonProtocol{
+package object data extends SimpleJson {
 
   type UTR = String @@ UTR.Tag
   object UTR extends RegexValidatedString(
