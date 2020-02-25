@@ -10,7 +10,10 @@ object AppDependencies {
     "org.typelevel"          %% "cats-core"                % "2.0.0",
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.1.0",
-    "com.beachape"           %% "enumeratum"               % "1.5.13"
+    "com.beachape"           %% "enumeratum"               % "1.5.13",
+    "com.beachape"           %% "enumeratum-play-json"     % "1.5.13",
+    "com.chuusai"            %% "shapeless"                % "2.3.3",
+    "commons-validator"       % "commons-validator"        % "1.6"
   )
 
   val test = Seq(
@@ -21,7 +24,10 @@ object AppDependencies {
     "org.scalatestplus.play" %% "scalatestplus-play"       % "3.1.2"                 % "test, it", 
     "com.github.fge"          % "json-schema-validator"    % "2.2.6"                 % "test",
     "org.scalacheck"         %% "scalacheck"               % "1.14.1"                % "test",
-    "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % "test"
+    "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % "test",
+    "com.beachape"           %% "enumeratum-scalacheck"    % "1.5.16"                % "test",
+    "wolfendale"             %% "scalacheck-gen-regexp"    % "0.1.2"                 % "test"
+    
   )
 
 }

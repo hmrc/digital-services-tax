@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class FinancialInformation (
-  crossBorderRelief : Boolean,
-  taxFreeAllowance : Money,
-  totalLiability : Money
+case class Company (
+  name: NonEmptyString,
+  address: Address
 )

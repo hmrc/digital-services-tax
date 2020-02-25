@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import enumeratum._
+// TODO: add in validated string instances for iban, sort code, accountNo, etc
 
-sealed trait Activity extends EnumEntry
+sealed trait BankAccount
 
-object Activity extends Enum[Activity] { 
+case class ForeignBankAccount(iban: IBAN) extends BankAccount
 
-  val values = findValues
+case class DomesticBankAccount(
+  sortCode: SortCode,
+  accountNo: AccountNumber,
+  buildingSocietyNumber: String
+) extends BankAccount
 
-  case object SocialMedia extends Activity
-  case object SearchEngine extends Activity
-  case object Marketplace extends Activity
-}
+case class RepaymentDetails(
+  accountName: NonEmptyString,
+  bankAccount: BankAccount
+)
