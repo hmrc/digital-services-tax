@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.data.{RosmRegisterRequest, RosmRegisterResponse}
+import uk.gov.hmrc.digitalservicestax.backend._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
@@ -42,15 +42,12 @@ class RosmController @Inject()(
   cc: ControllerComponents
 ) extends BackendController(cc) with AuthorisedFunctions {
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
-
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupWithId(utr: String): Action[AnyContent] = Action.async { implicit request =>
+
     authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector.retrieveROSMDetails(
         utr,

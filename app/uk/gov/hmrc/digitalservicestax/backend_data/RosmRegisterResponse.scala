@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.data
+package uk.gov.hmrc.digitalservicestax.backend
 
-import play.api.libs.json.Json
 import java.text.Normalizer
 
 case class OrganisationResponse(
   organisationName: String
 )
 
-object OrganisationResponse {
-  implicit val organisationResponseFormat = Json.format[OrganisationResponse]
-}
-
 case class IndividualResponse(firstName: String, lastName: String)
 
-object IndividualResponse {
-
-  import play.api.libs.json._
-
-  implicit val format: Format[IndividualResponse] = Json.format[IndividualResponse]
-}
-
-abstract case class RosmResponseAddress private[data](
+abstract case class RosmResponseAddress private[backend](
   addressLine1: String,
   addressLine2: Option[String],
   addressLine3: Option[String],
@@ -46,7 +34,6 @@ abstract case class RosmResponseAddress private[data](
 )
 
 object RosmResponseAddress {
-  implicit val rosmResponseAddressFormat = Json.format[RosmResponseAddress]
 
   /** ROSM schemas permit any characters, but the SDIL schemas are more
     * restrictive. Convert all non-standard latin characters to their standard
@@ -82,10 +69,6 @@ case class RosmResponseContactDetails(
   emailAddress: Option[String]
 )
 
-object RosmResponseContactDetails {
-  implicit val rosmResponseContactDetailsFormat = Json.format[RosmResponseContactDetails]
-}
-
 case class RosmRegisterResponse(
   safeId: String,
   agentReferenceNumber: Option[String],
@@ -97,7 +80,3 @@ case class RosmRegisterResponse(
   address: RosmResponseAddress,
   contactDetails: RosmResponseContactDetails
 )
-
-object RosmRegisterResponse {
-  implicit val rosmRegisterResponseFormat = Json.format[RosmRegisterResponse]
-}

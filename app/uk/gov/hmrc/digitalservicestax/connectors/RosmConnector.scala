@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
-import uk.gov.hmrc.digitalservicestax.data.{RosmRegisterRequest, RosmRegisterResponse}
+import uk.gov.hmrc.digitalservicestax.backend.{RosmRegisterRequest, RosmRegisterResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient

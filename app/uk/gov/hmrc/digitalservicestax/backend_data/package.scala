@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend
+package uk.gov.hmrc.digitalservicestax
 
 import play.api.libs.json.Json
 
-case class RosmRegisterRequest(
-  regime: String,
-  requiresNameMatch: Boolean = false,
-  isAnAgent: Boolean = false
-)
-object RosmRegisterRequest {
-  implicit val rosmFormatter = Json.format[RosmRegisterRequest]
+package object backend {
+    implicit val organisationResponseFormat = Json.format[OrganisationResponse]
+    implicit val format = Json.format[IndividualResponse]
+    implicit val rosmResponseAddressFormat = Json.format[RosmResponseAddress]
+    implicit val rosmResponseContactDetailsFormat = Json.format[RosmResponseContactDetails]
+    implicit val rosmRegisterResponseFormat = Json.format[RosmRegisterResponse]
 }
