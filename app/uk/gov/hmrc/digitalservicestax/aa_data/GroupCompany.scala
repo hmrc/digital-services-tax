@@ -16,12 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class RepaymentDetails (
-  isUkAccount : Boolean,
-  bankName : String,
-  sortCode : String,
-  accountNumber : String,
-  iban : String,
-  accountName : String,
-  buildingSocietyRef : String
+case class GroupCompany(
+  name: NonEmptyString,
+  utr: UTR
 )

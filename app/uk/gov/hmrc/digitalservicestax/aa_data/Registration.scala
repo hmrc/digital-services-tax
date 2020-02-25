@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.data
+package uk.gov.hmrc.digitalservicestax
+package data
 
-case class LiabilityBreakdownEntry (
-  memberName : String,
-  utr : String,
-  memberLiability : Money
+//import services._
+
+import java.time.LocalDate
+
+case class Registration (
+  identification: UTR, 
+  company: Company,
+  alternativeContact: Option[Address],
+  ultimateParent: Option[Company],
+  contact: ContactDetails,
+  dateLiable: LocalDate,
+  accountingPeriodEnd: LocalDate
 )

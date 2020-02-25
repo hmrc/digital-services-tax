@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-
-case class ReturnRequest(
-  dstRegNo: String,
-  period: Period,
-  activity: Map[Activity, ActivityReturn],
-  repaymentDetails: Option[RepaymentDetails],
-  finInfo: FinancialInformation,
-  breakdown: List[LiabilityBreakdownEntry],
-  isAmend: Boolean = false
+case class Return (
+  alternateCharge: Map[Activity, Percent],
+  crossBorderReliefAmount: Money,
+  companiesAmount: Map[GroupCompany, Money],
+  allowanceAmount: Money,
+  totalLiability: Money,
+  repayment: Option[RepaymentDetails]
 )

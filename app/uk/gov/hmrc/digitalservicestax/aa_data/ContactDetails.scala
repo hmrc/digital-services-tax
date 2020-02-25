@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax
+package uk.gov.hmrc.digitalservicestax.data
 
-package object data {
-  type Percent = Int
-  type Money = Int
-}
+case class ContactDetails(
+  forename : NonEmptyString,  
+  surname : NonEmptyString,
+  phoneNumber: PhoneNumber,
+  email: Email
+)

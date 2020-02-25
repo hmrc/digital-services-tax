@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import java.time.LocalDateTime
+import enumeratum._
 
-case class DesReturnResponse(
-  processingDate: LocalDateTime,
-  formBundleNumber: String // "^[0-9]{12}$"
-)
+sealed trait Activity extends EnumEntry
+object Activity extends Enum[Activity] {
+  def values = findValues
+  case object SocialMedia       extends Activity
+  case object SearchEngine      extends Activity
+  case object OnlineMarketplace extends Activity  
+}

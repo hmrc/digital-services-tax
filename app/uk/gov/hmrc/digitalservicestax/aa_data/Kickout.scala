@@ -16,14 +16,4 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class ActivityReturn (
-  alternateChargeProvision : Boolean,
-  loss : Boolean,
-  margin : Int
-)
-
-object ActivityReturn {
-  def empty = ActivityReturn(
-    false, false, 0
-  )
-}
+case class Kickout( name: String )
