@@ -21,7 +21,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.data._
 import shapeless.tag.@@
 
-trait JsonProtocol {
+trait SimpleJson {
 
   def validatedStringFormat(A: ValidatedType[String], name: String) = new Format[String @@ A.Tag] {
     override def reads(json: JsValue): JsResult[String @@ A.Tag] = json match {
@@ -54,16 +54,7 @@ trait JsonProtocol {
   implicit val accountNumberFormat  = validatedStringFormat(AccountNumber, "account number")
   implicit val ibanFormat           = validatedStringFormat(IBAN, "IBAN number")
 
-  implicit val foreignAddressFormat: OFormat[ForeignAddress] = Json.format[ForeignAddress]
-  implicit val ukAddressFormat: OFormat[UkAddress] = Json.format[UkAddress]
-  implicit val addressFormat: OFormat[Address] = Json.format[Address]
-  implicit val companyFormat: OFormat[Company] = Json.format[Company]
-  implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
-  implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
-  implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
-  implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
-
-  implicit val percentFormat: Format[Percent] = new Format[Percent] {
+    implicit val percentFormat: Format[Percent] = new Format[Percent] {
     override def reads(json: JsValue): JsResult[Percent] = {
       json match {
         case JsNumber(value) =>
@@ -80,6 +71,18 @@ trait JsonProtocol {
 
     override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o))
   }
+}
+
+object BackendAndFrontendJson extends SimpleJson {
+
+  implicit val foreignAddressFormat: OFormat[ForeignAddress] = Json.format[ForeignAddress]
+  implicit val ukAddressFormat: OFormat[UkAddress] = Json.format[UkAddress]
+  implicit val addressFormat: OFormat[Address] = Json.format[Address]
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+  implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
+  implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
+  implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
+  implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {

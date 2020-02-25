@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.connectors
+package uk.gov.hmrc.digitalservicestax
+package connectors
+
+import data.{percentFormat => _, _}
 
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
-import uk.gov.hmrc.digitalservicestax.data.{RosmRegisterRequest, RosmRegisterResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -34,8 +35,14 @@ class RosmConnector @Inject()(val http: HttpClient,
   val desURL: String = servicesConfig.baseUrl("des")
   val serviceURL: String = "registration/organisation"
 
-  def retrieveROSMDetails(utr: String, request: RosmRegisterRequest)
-    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmRegisterResponse]] = {
-    desPost[RosmRegisterRequest, Option[RosmRegisterResponse]](s"$desURL/$serviceURL/utr/$utr", request)
+  def retrieveROSMDetails(utr: String)
+    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Company]] = {
+    import play.api.libs.json._
+    val request: JsValue = Json.obj( 
+      "regime" -> servicesConfig.getString("etmp.sdil.regime")
+    )
+    implicit val readCo: Reads[Company] = backend.RosmJsonReader
+    desPost[JsValue, Option[Company]](s"$desURL/$serviceURL/utr/$utr", request)
   }
+  
 }
