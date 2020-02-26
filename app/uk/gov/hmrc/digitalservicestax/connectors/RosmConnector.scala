@@ -19,6 +19,8 @@ package connectors
 
 import data.{percentFormat => _, _}
 import data.BackendAndFrontendJson.rosmWithoutIDResponseFormat
+
+import cats.syntax.either._
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json._
@@ -40,7 +42,9 @@ class RosmConnector @Inject()(val http: HttpClient,
   val serviceURLWithId: String = "registration/organisation"
   val serviceURLWithoutId: String = "registration/02.00.00/organisation"
 
-  def retrieveROSMDetailsWithoutID(request: RosmRegisterWithoutIDRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
+  def retrieveROSMDetailsWithoutID(
+    request: RosmRegisterWithoutIDRequest
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
     implicit val writes: Writes[RosmRegisterWithoutIDRequest] = backend_data.RosmJsonWriter
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
   }
@@ -48,10 +52,16 @@ class RosmConnector @Inject()(val http: HttpClient,
   def retrieveROSMDetails(utr: String)
     (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Company]] = {
     val request: JsValue = Json.obj(
-      "regime" -> servicesConfig.getString("etmp.sdil.regime")
+      "regime" -> "DST",
+      "requiresNameMatch" -> false,
+      "isAnAgent" -> false
     )
     implicit val readCo: Reads[Company] = backend.RosmJsonReader
-    desPost[JsValue, Option[Company]](s"$desURL/$serviceURLWithId/utr/$utr", request)
+
+    desPost[JsValue, Option[Company]](s"$desURL/$serviceURLWithId/utr/$utr", request).
+      recover {
+        case backend.RosmJsonReader.NotAnOrganisationException => None
+      }
   }
   
 }
