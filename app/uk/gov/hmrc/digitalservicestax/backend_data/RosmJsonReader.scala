@@ -22,22 +22,24 @@ import data._
 
 object RosmJsonReader extends Reads[Company] {
 
+  object NotAnOrganisationException extends NoSuchElementException("Not an organisation")
+
   implicit val jaddress = new Reads[Address] {
     def reads(json: JsValue): JsResult[Address] = JsSuccess{
       {(json \ "countryCode").as[String]} match {
         case "GB" => UkAddress(
           {json \ "addressLine1"}.as[NonEmptyString],
-          {json \ "addressLine2"}.as[String],
-          {json \ "addressLine3"}.as[String],
-          {json \ "addressLine4"}.as[String],
+          {json \ "addressLine2"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine3"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine4"}.asOpt[String].getOrElse(""),
           {json \ "postalCode"}.as[Postcode]
         )
         case country => ForeignAddress(
           {json \ "addressLine1"}.as[NonEmptyString],
-          {json \ "addressLine2"}.as[String],
-          {json \ "addressLine3"}.as[String],
-          {json \ "addressLine4"}.as[String],
-          {json \ "addressLine5"}.as[String],
+          {json \ "addressLine2"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine3"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine4"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine5"}.asOpt[String].getOrElse(""),
           {json \ "postalCode"}.as[String],
           CountryCode(country)
         )
@@ -46,6 +48,11 @@ object RosmJsonReader extends Reads[Company] {
   }
 
   def oreads(json: JsObject): JsResult[Company] = {
+
+    if ({json \ "organisation"}.isEmpty) {
+      throw NotAnOrganisationException
+    }
+
     JsSuccess(Company(
       {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
       {json \ "address"}.as[Address]
