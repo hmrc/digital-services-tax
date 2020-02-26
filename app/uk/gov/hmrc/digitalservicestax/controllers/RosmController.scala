@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
@@ -41,24 +41,31 @@ class RosmController @Inject()(
   appConfig: AppConfig,
   cc: ControllerComponents
 ) extends BackendController(cc) with AuthorisedFunctions {
-
+  val log = play.api.Logger(this.getClass())
+  log.error(s"startup ${this.getClass} logging")
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupWithId(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
-
-    authorised(AuthProviders(GovernmentGateway)) {
+//    authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
         case Some(r) if r.address.postalCode == postcode =>
+
           import data.BackendAndFrontendJson._
           JsonSchemaChecker[data.Company](r, "rosm-response")
           Ok(Json.toJson(r))
-        case _ => NotFound
+        case Some(r) =>
+          log.warn(s"Record found for UTR $utr, but postcode is '${r.address.postalCode}' " +
+            s", not user supplied '${postcode}'.")
+          NotFound
+        case _ =>
+          log.warn(s"No record found for UTR $utr")
+          NotFound
       }
 
-    }
+//    }
   }
 }

@@ -19,6 +19,7 @@ package connectors
 
 import data.{percentFormat => _, _}
 
+import cats.syntax.either._
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,10 +40,16 @@ class RosmConnector @Inject()(val http: HttpClient,
     (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Company]] = {
     import play.api.libs.json._
     val request: JsValue = Json.obj( 
-      "regime" -> servicesConfig.getString("etmp.sdil.regime")
+      "regime" -> "DST",
+      "requiresNameMatch" -> false,
+      "isAnAgent" -> false
     )
     implicit val readCo: Reads[Company] = backend.RosmJsonReader
-    desPost[JsValue, Option[Company]](s"$desURL/$serviceURL/utr/$utr", request)
+
+    desPost[JsValue, Option[Company]](s"$desURL/$serviceURL/utr/$utr", request).
+      recover {
+        case backend.RosmJsonReader.NotAnOrganisationException => None
+      }
   }
   
 }
