@@ -1,4 +1,5 @@
 # microservice specific routes
 
-GET         /rosm-registration/lookup/:utr                                   uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithId(utr)
-GET         /rosm-registration/lookup/:utr/:postcode                         uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
+GET         /rosm-registration/lookup/:utr               uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithId(utr)
+GET         /rosm-registration/lookup/:utr/:postcode     uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
+POST        /rosm-registration/organisation              uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithoutId
