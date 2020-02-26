@@ -18,12 +18,15 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import data.{percentFormat => _, _}
-
+import data.BackendAndFrontendJson.rosmWithoutIDResponseFormat
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
+import play.api.libs.json._
+import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -33,16 +36,22 @@ class RosmConnector @Inject()(val http: HttpClient,
   extends DesHelpers(servicesConfig) {
 
   val desURL: String = servicesConfig.baseUrl("des")
-  val serviceURL: String = "registration/organisation"
+
+  val serviceURLWithId: String = "registration/organisation"
+  val serviceURLWithoutId: String = "registration/02.00.00/organisation"
+
+  def retrieveROSMDetailsWithoutID(request: RosmRegisterWithoutIDRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
+    implicit val writes: Writes[RosmRegisterWithoutIDRequest] = backend_data.RosmJsonWriter
+    desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
+  }
 
   def retrieveROSMDetails(utr: String)
     (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Company]] = {
-    import play.api.libs.json._
-    val request: JsValue = Json.obj( 
+    val request: JsValue = Json.obj(
       "regime" -> servicesConfig.getString("etmp.sdil.regime")
     )
     implicit val readCo: Reads[Company] = backend.RosmJsonReader
-    desPost[JsValue, Option[Company]](s"$desURL/$serviceURL/utr/$utr", request)
+    desPost[JsValue, Option[Company]](s"$desURL/$serviceURLWithId/utr/$utr", request)
   }
   
 }
