@@ -47,7 +47,24 @@ class RosmController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def lookupWithId(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
+  def lookupWithId(utr: String): Action[AnyContent] = Action.async { implicit request =>
+//    authorised(AuthProviders(GovernmentGateway)) {
+      rosmConnector.retrieveROSMDetails(
+        utr
+      ).map {
+        case Some(r) =>
+          import data.BackendAndFrontendJson._
+          JsonSchemaChecker[data.Company](r, "rosm-response")
+          Ok(Json.toJson(r))
+        case _ =>
+          log.warn(s"No record found for UTR $utr")
+          NotFound
+      }
+
+//    }
+  }
+
+  def lookupWithIdCheckPostcode(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
 //    authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector.retrieveROSMDetails(
         utr
