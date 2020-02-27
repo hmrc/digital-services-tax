@@ -19,8 +19,8 @@ package uk.gov.hmrc.digitalservicestax.data
 import shapeless._
 import tag._
 import cats.implicits._
-
 import scala.util.matching.Regex
+import play.api.mvc.PathBindable
 
 trait ValidatedType[BaseType] {
 
@@ -44,6 +44,20 @@ trait ValidatedType[BaseType] {
 
   def mapTC[TC[_]: cats.Functor](implicit monA: TC[BaseType]): TC[BaseType @@ Tag] =
     monA.map(apply)
+
+  implicit def pathBinder(implicit baseBinder: PathBindable[BaseType]) =
+    new PathBindable[BaseType @@ Tag] {
+      import cats.syntax.either._
+
+      override def bind(key: String, value: String): Either[String, BaseType @@ Tag] =
+        baseBinder.bind(key, value) flatMap {of(_) match {
+          case Some(x) => Right(x: BaseType @@ Tag)
+          case None    => Left(s""""$value" is not a valid ${className.init}""")
+        }}
+
+      override def unbind(key: String, value: BaseType @@ Tag): String =
+        baseBinder.unbind(key, value)
+    }
 }
 
 class RegexValidatedString(

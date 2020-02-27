@@ -52,8 +52,6 @@ package object data extends SimpleJson {
     }
   )
 
-//  implicit def mon[A, TC[_]: cats.Invariant, T <: ValidatedType[A]](implicit monA: TC[A]): TC[A @@ T#Tag] = ???
-
   type SortCode = String @@ SortCode.Tag
   object SortCode extends RegexValidatedString(
     """^([0-9]{2}-){2}[0-9]{2}$""",

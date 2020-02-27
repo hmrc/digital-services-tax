@@ -60,8 +60,11 @@ class RosmController @Inject()(
 ////    }
 //  }
 
-  def lookupWithId(utr: String): Action[AnyContent] = Action.async { implicit request =>
+  def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
+
 //    authorised(AuthProviders(GovernmentGateway)) {
+
+      val utr: String = ??? // TODO
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
