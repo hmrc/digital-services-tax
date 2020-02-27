@@ -182,7 +182,8 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
   implicit def subGen: Arbitrary[Registration] = Arbitrary (
     {
       (
-//      arbitrary[UTR],
+        arbitrary[Option[UTR]],
+        arbitrary[Boolean],
         arbitrary[Company],
         arbitrary[Option[Address]],
         arbitrary[Option[Company]],
