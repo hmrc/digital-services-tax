@@ -18,22 +18,18 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{JsValue, Json}
-import play.api.{Configuration, Logger}
+import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.backend._
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import data.BackendAndFrontendJson.rosmWithoutIDResponseFormat
-import data.BackendAndFrontendJson.rosmRegisterWithoutIDRequestFormat
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton()
 class RosmController @Inject()(
@@ -50,17 +46,19 @@ class RosmController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def lookupWithoutId: Action[JsValue] = Action.async(parse.json) { implicit request =>
-//    authorised(AuthProviders(GovernmentGateway)) {
-      withJsonBody[RosmRegisterWithoutIDRequest](data => {
-        rosmConnector.retrieveROSMDetailsWithoutID(data).map {
-          case Some(r) =>
-            Ok(Json.toJson(r))
-          case _ => NotFound
-        }
-      })
-//    }
-  }
+//  def lookupWithoutId: Action[JsValue] = Action.async(parse.json) { implicit request =>
+//  import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
+  //    import backend_data.RosmFormats._
+////    authorised(AuthProviders(GovernmentGateway)) {
+//      withJsonBody[RosmRegisterWithoutIDRequest](data => {
+//        rosmConnector.retrieveROSMDetailsWithoutID(data).map {
+//          case Some(r) =>
+//            Ok(Json.toJson(r))
+//          case _ => NotFound
+//        }
+//      })
+////    }
+//  }
 
   def lookupWithId(utr: String): Action[AnyContent] = Action.async { implicit request =>
 //    authorised(AuthProviders(GovernmentGateway)) {

@@ -17,14 +17,12 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import data.{percentFormat => _, _}
-import data.BackendAndFrontendJson.rosmWithoutIDResponseFormat
-
-import cats.syntax.either._
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json._
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
+import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
