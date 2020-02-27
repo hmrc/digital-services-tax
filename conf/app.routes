@@ -1,4 +1,10 @@
 # microservice specific routes
 
-GET         /rosm-registration/lookup/:utr               uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithId(utr)
-GET         /rosm-registration/lookup/:utr/:postcode     uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
+# Connector endpoints
+# https://github.com/hmrc/digital-services-tax-frontend/blob/master/app/uk/gov/hmrc/digitalservicestax/connectors/BackendConnector.scala
+GET  /lookup-company                                      uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupCompany()
+GET  /lookup-company/:utr/:postcode                       uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
+POST /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.submitRegistration()
+GET  /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.lookupRegistration()
+POST /returns/:year				          uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.submitReturn(year: Int)
+GET  /returns                                             uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupOutstandingReturns()
