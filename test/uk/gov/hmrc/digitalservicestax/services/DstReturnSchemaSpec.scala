@@ -180,15 +180,17 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
   }
 
   implicit def subGen: Arbitrary[Registration] = Arbitrary (
-    (
-      arbitrary[UTR],
-      arbitrary[Company],
-      arbitrary[Option[Address]],
-      arbitrary[Option[Company]],
-      arbitrary[ContactDetails],
-      arbitrary[LocalDate],
-      arbitrary[LocalDate]
-    ).mapN(Registration.apply)
+    {
+      (
+//      arbitrary[UTR],
+        arbitrary[Company],
+        arbitrary[Option[Address]],
+        arbitrary[Option[Company]],
+        arbitrary[ContactDetails],
+        date(Period.firstPeriodStart, LocalDate.of(2040,1,1)),
+        arbitrary[LocalDate]
+      ).mapN(Registration.apply)
+    }
   )
 
   "A registration API call" should "conform to the schema" in {
