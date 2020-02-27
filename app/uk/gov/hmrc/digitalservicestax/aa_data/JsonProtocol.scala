@@ -18,9 +18,7 @@ package uk.gov.hmrc.digitalservicestax.data
 
 import enumeratum.EnumFormats
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.data._
 import shapeless.tag.@@
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 
 trait SimpleJson {
 
@@ -84,9 +82,6 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
-  implicit val rosmWithoutIDResponseFormat: Format[RosmWithoutIDResponse] = Json.format[RosmWithoutIDResponse]
-  implicit val rosmRegisterWithoutIDRequestFormat: OFormat[RosmRegisterWithoutIDRequest] =
-    Json.format[RosmRegisterWithoutIDRequest]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
