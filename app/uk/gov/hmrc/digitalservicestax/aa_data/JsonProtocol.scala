@@ -52,6 +52,8 @@ trait SimpleJson {
   implicit val sortCodeFormat       = validatedStringFormat(SortCode, "sort code")
   implicit val accountNumberFormat  = validatedStringFormat(AccountNumber, "account number")
   implicit val ibanFormat           = validatedStringFormat(IBAN, "IBAN number")
+  implicit val dstRegNoFormat       =
+    validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
 
     implicit val percentFormat: Format[Percent] = new Format[Percent] {
     override def reads(json: JsValue): JsResult[Percent] = {

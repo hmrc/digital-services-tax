@@ -28,7 +28,8 @@ case class Registration (
   ultimateParent: Option[Company],
   contact: ContactDetails,
   dateLiable: LocalDate,
-  accountingPeriodEnd: LocalDate
+  accountingPeriodEnd: LocalDate,
+  registrationNumber: Option[DSTRegNumber] = None
 ) {
 
   require(!dateLiable.isBefore(Period.firstPeriodStart))
