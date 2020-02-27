@@ -22,7 +22,8 @@ package data
 import java.time.LocalDate
 
 case class Registration (
-//  utr: Option[UTR], 
+  utr: Option[UTR],
+  useSafeId: Boolean,
   company: Company,
   alternativeContact: Option[Address],
   ultimateParent: Option[Company],
