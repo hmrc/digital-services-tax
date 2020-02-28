@@ -28,6 +28,7 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import services.FutureVolatilePersistence
 
 import scala.concurrent._
 
@@ -37,7 +38,8 @@ class ReturnsController @Inject()(
   val runModeConfiguration: Configuration,
   val runMode: RunMode,
   appConfig: AppConfig,
-  cc: ControllerComponents
+  cc: ControllerComponents,
+  persistence: FutureVolatilePersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
