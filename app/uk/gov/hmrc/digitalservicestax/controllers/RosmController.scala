@@ -51,7 +51,7 @@ class RosmController @Inject()(
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
 
-      val utr: String = getUtrFromAuth(enrolments)
+      val utr: String = getUtrFromAuth(enrolments).getOrElse("")
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {

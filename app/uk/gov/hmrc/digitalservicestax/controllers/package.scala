@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.digitalservicestax
 
-import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolments}
+import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.UTR
 
 package object controllers {
 
-  def getUtrFromAuth(enrolments: Enrolments): UTR = {
+  def getUtrFromAuth(enrolments: Enrolments): Option[UTR] = {
     enrolments
       .getEnrolment("IR-CT")
       .orElse(enrolments.getEnrolment("IR-SA"))
       .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
-      .fold(throw AuthorisationException.fromString("Unable to get UTR from enrolments"))(UTR(_))
   }
 
 }

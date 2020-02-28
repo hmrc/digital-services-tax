@@ -52,6 +52,7 @@ class RegistrationsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
+  // TODO move to package and consider unwrapping option
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
       RosmRegisterWithoutIDRequest(
@@ -79,7 +80,7 @@ class RegistrationsController @Inject()(
             } yield reg
           case _ =>
             for {
-              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments).some, data)
+              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments), data)
             } yield reg
         }).map {
           case Some(r) =>
