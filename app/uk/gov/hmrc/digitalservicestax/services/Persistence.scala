@@ -29,52 +29,81 @@ import cats.syntax.functor._
 import cats.instances.future._
 
 abstract class Persistence[F[_]: cats.Functor] {
-  def apply(user: String): F[Registration] = get(user).map{
-    _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
+
+  protected trait Registrations {
+    def apply(user: String): F[Registration] = get(user).map{
+      _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
+    }
+    def get(user: String): F[Option[Registration]]
+    def update(user: String, reg: Registration): F[Unit]
+    def confirm(user: String, registrationNumber: DSTRegNumber): F[Unit]
   }
-  def get(user: String): F[Option[Registration]]
-  def update(user: String, reg: Registration): F[Unit]
-  def confirm(user: String, registrationNumber: DSTRegNumber): F[Unit]
+
+  def registrations: Registrations
+
+  protected trait Returns {
+    def apply(reg: Registration): F[Map[Period, Return]] = get(reg)
+    def apply(reg: Registration, period: Period): F[Return] = get(reg, period).map{
+      _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$period"))
+    }
+
+    def get(reg: Registration): F[Map[Period, Return]]
+    def get(reg: Registration, period: Period): F[Option[Return]] =
+      get(reg).map{_.get(period)}
+
+    def update(reg: Registration, period: Period, ret: Return): F[Unit]
+    def update(reg: Registration, all: Map[Period,Return]): F[Unit]
+  }
+
+  def returns: Returns
+
 }
 
 class MongoPersistence(mc: MongoConnector)(implicit ec: ExecutionContext) extends Persistence[Future] {
 
-  protected val mongo =
-    new ReactiveRepository[Wrapper, BSONObjectID]("sdilsubscriptions", mc.db, formatWrapper, implicitly) {
-      override def indexes: Seq[Index] = Seq(
-        Index(
-          key = Seq(
-            "user" -> IndexType.Ascending
-          ),
-          unique = true
+  val registrations = new Registrations {
+    protected val mongo =
+      new ReactiveRepository[Wrapper, BSONObjectID]("sdilsubscriptions", mc.db, formatWrapper, implicitly) {
+        override def indexes: Seq[Index] = Seq(
+          Index(
+            key = Seq(
+              "user" -> IndexType.Ascending
+            ),
+            unique = true
+          )
         )
-      )
-    }
+      }
 
-  protected case class Wrapper(
-    user: String,
-    registration: Registration,
-    retrievalTime: LocalDateTime = LocalDateTime.now(),
-    _id: Option[BSONObjectID] = None
-  )
+    protected case class Wrapper(
+      user: String,
+      registration: Registration,
+      retrievalTime: LocalDateTime = LocalDateTime.now(),
+      _id: Option[BSONObjectID] = None
+    )
 
-  implicit val formatWrapper = Json.format[Wrapper]
+    implicit val formatWrapper = Json.format[Wrapper]
 
-  override def update(user: String, value: Registration): Future[Unit] =
-    mongo.insert(Wrapper(user, value)).map(_ => ())
+    override def update(user: String, value: Registration): Future[Unit] =
+      mongo.insert(Wrapper(user, value)).map(_ => ())
 
-  override def get(user: String): Future[Option[Registration]] =
-    mongo
-      .find(
-        "user" -> user
-      )
-      .map(_.map(_.registration).headOption)
+    override def get(user: String): Future[Option[Registration]] =
+      mongo
+        .find(
+          "user" -> user
+        )
+        .map(_.map(_.registration).headOption)
 
-  def confirm(user: String, newRegNo: DSTRegNumber): Future[Unit] =
-    apply(user).flatMap{old =>
-      update(user, old.copy(registrationNumber = Some(newRegNo)))
-    }
+    def confirm(user: String, newRegNo: DSTRegNumber): Future[Unit] =
+      apply(user).flatMap{old =>
+        update(user, old.copy(registrationNumber = Some(newRegNo)))
+      }
 
-  def dropDb = mongo.drop
+    def dropDb = mongo.drop
+  }
 
+  def returns = new Returns {
+    def get(reg: Registration): Future[Map[Period, Return]] = ???
+    def update(reg: Registration, period: Period, ret: Return): Future[Unit] = ??? 
+    def update(reg: Registration, all: Map[Period,Return]): Future[Unit] = ???
+  }
 }
