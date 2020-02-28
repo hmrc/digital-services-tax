@@ -29,7 +29,8 @@ case class Registration (
   dateLiable: LocalDate,
   accountingPeriodEnd: LocalDate,
   utr: Option[UTR] = None,
-  useSafeId: Boolean = false
+  useSafeId: Boolean = false,
+  registrationNumber: Option[DSTRegNumber] = None  
 ) {
 
   require(!dateLiable.isBefore(Period.firstPeriodStart))
