@@ -22,12 +22,13 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
 import scala.concurrent.ExecutionContext
 
@@ -59,12 +60,15 @@ class RosmController @Inject()(
 //      })
 ////    }
 //  }
+  private def getUtr(enrolments: Enrolments): Option[String] = {
+    enrolments.getEnrolment("IR-CT").orElse(enrolments.getEnrolment("IR-SA")).flatMap(_.getIdentifier("UTR").map(_.value))
+  }
 
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
 
-//    authorised(AuthProviders(GovernmentGateway)) {
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
 
-      val utr: String = ??? // TODO
+      val utr: String = getUtr(enrolments).getOrElse("")
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
@@ -77,11 +81,11 @@ class RosmController @Inject()(
           NotFound
       }
 
-//    }
+    }
   }
 
   def lookupWithIdCheckPostcode(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
-//    authorised(AuthProviders(GovernmentGateway)) {
+    authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
@@ -99,6 +103,6 @@ class RosmController @Inject()(
           NotFound
       }
 
-//    }
+    }
   }
 }

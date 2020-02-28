@@ -62,7 +62,6 @@ class RegistrationsController @Inject()(
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
-
   import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
   private def getUtr(enrolments: Enrolments): Option[UTR] = {
