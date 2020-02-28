@@ -47,28 +47,11 @@ class RosmController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-//  def lookupWithoutId: Action[JsValue] = Action.async(parse.json) { implicit request =>
-//  import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-  //    import backend_data.RosmFormats._
-////    authorised(AuthProviders(GovernmentGateway)) {
-//      withJsonBody[RosmRegisterWithoutIDRequest](data => {
-//        rosmConnector.retrieveROSMDetailsWithoutID(data).map {
-//          case Some(r) =>
-//            Ok(Json.toJson(r))
-//          case _ => NotFound
-//        }
-//      })
-////    }
-//  }
-  private def getUtr(enrolments: Enrolments): Option[String] = {
-    enrolments.getEnrolment("IR-CT").orElse(enrolments.getEnrolment("IR-SA")).flatMap(_.getIdentifier("UTR").map(_.value))
-  }
-
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
 
-      val utr: String = getUtr(enrolments).getOrElse("")
+      val utr: String = getUtr(enrolments)
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
