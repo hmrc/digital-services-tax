@@ -18,8 +18,7 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
+import data.{percentFormat => _, _}, BackendAndFrontendJson._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}

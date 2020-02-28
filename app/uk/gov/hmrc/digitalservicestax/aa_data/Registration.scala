@@ -22,14 +22,14 @@ package data
 import java.time.LocalDate
 
 case class Registration (
-  useSafeId: Boolean,
   company: Company,
   alternativeContact: Option[Address],
   ultimateParent: Option[Company],
   contact: ContactDetails,
   dateLiable: LocalDate,
   accountingPeriodEnd: LocalDate,
-  utr: Option[UTR] = None
+  utr: Option[UTR] = None,
+  useSafeId: Boolean = false
 ) {
 
   require(!dateLiable.isBefore(Period.firstPeriodStart))
