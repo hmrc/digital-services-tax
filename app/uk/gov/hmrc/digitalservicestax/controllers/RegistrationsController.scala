@@ -64,32 +64,23 @@ class RegistrationsController @Inject()(
 
   import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
-  private def getUtr(enrolments: Enrolments): Option[UTR] = {
-    enrolments
-      .getEnrolment("IR-CT")
-      .orElse(enrolments.getEnrolment("IR-SA"))
-      .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
-  }
-
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
       withJsonBody[Registration](data => {
-        ((data.utr, getUtr(enrolments), data.useSafeId) match {
-          case (_, _, true) =>
+        ((data.utr, data.useSafeId) match {
+          case (_, true) =>
             for {
               safeId <- getSafeId(data)
               reg <- registrationConnector.send("safeid", safeId, data)
             } yield reg
-          case (Some(utr), _, false) =>
+          case (Some(utr),false) =>
             for {
               reg <- registrationConnector.send("utr", utr.some, data)
             } yield reg
-          case (_, Some(utrFromAuth), _) =>
-            for {
-              reg <- registrationConnector.send("utr", utrFromAuth.some, data)
-            } yield reg
           case _ =>
-            throw new IllegalArgumentException(s"Missing identifier, neither utr nor safeid supplied")
+            for {
+              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments).some, data)
+            } yield reg
         }).map {
           case Some(r) =>
             Ok(Json.toJson(r))
