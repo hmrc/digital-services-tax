@@ -63,7 +63,7 @@ class MongoPersistence(mc: MongoConnector)(implicit ec: ExecutionContext) extend
 
   val registrations = new Registrations {
     protected val mongo =
-      new ReactiveRepository[Wrapper, BSONObjectID]("sdilsubscriptions", mc.db, formatWrapper, implicitly) {
+      new ReactiveRepository[Wrapper, BSONObjectID]("dstregistrations", mc.db, formatWrapper, implicitly) {
         override def indexes: Seq[Index] = Seq(
           Index(
             key = Seq(
@@ -97,8 +97,6 @@ class MongoPersistence(mc: MongoConnector)(implicit ec: ExecutionContext) extend
       apply(user).flatMap{old =>
         update(user, old.copy(registrationNumber = Some(newRegNo)))
       }
-
-    def dropDb = mongo.drop
   }
 
   def returns = new Returns {
