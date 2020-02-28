@@ -17,8 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import java.util.concurrent.Future
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
@@ -53,7 +51,7 @@ class RosmController @Inject()(
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
 
-      getUtrFromAuth(enrolments).fold(scala.concurrent.Future.successful[Result](NotFound)) { utr =>
+      getUtrFromAuth(enrolments).fold(Future.successful[Result](NotFound)) { utr =>
 
         rosmConnector.retrieveROSMDetails(
           utr
