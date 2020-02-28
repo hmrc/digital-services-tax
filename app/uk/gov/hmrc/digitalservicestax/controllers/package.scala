@@ -21,7 +21,7 @@ import uk.gov.hmrc.digitalservicestax.data.UTR
 
 package object controllers {
 
-  def getUtr(enrolments: Enrolments): UTR = {
+  def getUtrFromAuth(enrolments: Enrolments): UTR = {
     enrolments
       .getEnrolment("IR-CT")
       .orElse(enrolments.getEnrolment("IR-SA"))
