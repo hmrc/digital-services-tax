@@ -20,8 +20,10 @@ package services
 import data._
 import scala.concurrent._
 import cats.instances.future._
+import javax.inject._
 
-case class FutureVolatilePersistence()(implicit ec: ExecutionContext) extends Persistence[Future] {
+@Singleton
+class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends Persistence[Future] {
 
   private def f[A](in: A): Future[A] = Future.successful(in)
 
