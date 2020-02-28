@@ -18,20 +18,19 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import cats.Id
-
 import data._
-import scala.collection.mutable.{Map => MMap}
 
 object VolatilePersistence extends Persistence[Id] {
 
   val registrations = new Registrations {
 
-    private val _data: MMap[String, Registration] = MMap.empty
+    @volatile private var _data: Map[String, Registration] =
+      Map.empty
 
     def get(user: String) = _data.get(user)
 
     def update(user: String, reg: Registration): Unit = {
-      _data(user) = reg
+      _data = _data + (user -> reg)
     }
 
     def confirm(user: String, newRegNo: DSTRegNumber): Unit = {
@@ -41,10 +40,18 @@ object VolatilePersistence extends Persistence[Id] {
 
   val returns = new Returns {
 
-    private val _data: MMap[Registration, Map[Period, Return]] = MMap.empty.withDefault(MMap.empty)
+    @volatile private var _data: Map[Registration, Map[Period, Return]] =
+      Map.empty.withDefault(Map.empty)
 
     def get(reg: Registration): Map[Period,Return] = _data(reg).toMap
-    def update(reg: Registration,all: Map[Period,Return]): Unit = {_data(reg) = all}
-    def update(reg: Registration,period: Period,ret: Return): Unit = ???
+
+    def update(reg: Registration, all: Map[Period,Return]): Unit = {
+      _data = _data + (reg -> all)
+    }
+
+    def update(reg: Registration, period: Period, ret: Return): Unit = {
+      val updatedMap = _data(reg) + (period -> ret)
+      update(reg, updatedMap)
+    }
   }
 }
