@@ -17,9 +17,11 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
+import java.util.concurrent.Future
+
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
@@ -30,7 +32,7 @@ import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class RosmController @Inject()(
@@ -51,17 +53,19 @@ class RosmController @Inject()(
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
 
-      val utr: String = getUtrFromAuth(enrolments).getOrElse("")
-      rosmConnector.retrieveROSMDetails(
-        utr
-      ).map {
-        case Some(r) =>
-          import data.BackendAndFrontendJson._
-          JsonSchemaChecker[data.Company](r, "rosm-response")
-          Ok(Json.toJson(r))
-        case _ =>
-          log.warn(s"No record found for UTR $utr")
-          NotFound
+      getUtrFromAuth(enrolments).fold(scala.concurrent.Future.successful[Result](NotFound)) { utr =>
+
+        rosmConnector.retrieveROSMDetails(
+          utr
+        ).map {
+          case Some(r) =>
+            import data.BackendAndFrontendJson._
+            JsonSchemaChecker[data.Company](r, "rosm-response")
+            Ok(Json.toJson(r))
+          case _ =>
+            log.warn(s"No record found for UTR $utr")
+            NotFound
+        }
       }
 
     }
