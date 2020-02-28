@@ -52,7 +52,6 @@ class RegistrationsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  // TODO move to package and consider unwrapping option
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
       RosmRegisterWithoutIDRequest(
