@@ -64,16 +64,6 @@ class RegistrationsController @Inject()(
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
-
-
-
-  private def getUtr(enrolments: Enrolments): Option[UTR] = {
-    enrolments
-      .getEnrolment("IR-CT")
-      .orElse(enrolments.getEnrolment("IR-SA"))
-      .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
-  }
-
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
 
@@ -81,22 +71,20 @@ class RegistrationsController @Inject()(
         throw new java.security.AccessControlException("No internalId available")
       )
       withJsonBody[Registration](data => {
-        ((data.utr, getUtr(enrolments), data.useSafeId) match {
-          case (_, _, true) =>
+        ((data.utr, data.useSafeId) match {
+          case (_, true) =>
             for {
               safeId <- getSafeId(data)
               reg <- registrationConnector.send("safeid", safeId, data)
             } yield reg
-          case (Some(utr), _, false) =>
+          case (Some(utr),false) =>
             for {
               reg <- registrationConnector.send("utr", utr.some, data)
             } yield reg
-          case (_, Some(utrFromAuth), _) =>
-            for {
-              reg <- registrationConnector.send("utr", utrFromAuth.some, data)
-            } yield reg
           case _ =>
-            throw new IllegalArgumentException(s"Missing identifier, neither utr nor safeid supplied")
+            for {
+              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments).some, data)
+            } yield reg
         }).flatMap {
           case Some(r) =>
             (persistence.registrations(userId) = data) >> Future.successful(Ok(Json.toJson(r)))
