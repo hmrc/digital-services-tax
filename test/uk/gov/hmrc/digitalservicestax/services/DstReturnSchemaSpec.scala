@@ -189,7 +189,8 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
         date(Period.firstPeriodStart, LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
         arbitrary[Option[UTR]],
-        arbitrary[Boolean]
+        arbitrary[Boolean],
+        Gen.const(none[DSTRegNumber])
       ).mapN(Registration.apply)
     }
   )

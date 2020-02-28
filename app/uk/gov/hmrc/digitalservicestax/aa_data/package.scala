@@ -112,4 +112,10 @@ package object data extends SimpleJson {
     }
   }
 
+  type DSTRegNumber = String @@ DSTRegNumber.Tag
+  object DSTRegNumber extends RegexValidatedString(
+    "^([A-Z]{2}DST[0-9]{10})$"
+  )
+
+
 }
