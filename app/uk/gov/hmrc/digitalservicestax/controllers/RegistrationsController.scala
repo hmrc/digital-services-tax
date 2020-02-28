@@ -17,6 +17,7 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
+import cats.implicits._
 import data.{percentFormat => _, _}
 import BackendAndFrontendJson._
 import javax.inject.{Inject, Singleton}
@@ -25,10 +26,9 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
+import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector}
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -53,25 +53,24 @@ class RegistrationsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  private def getSafeId(data: Registration)(implicit hc:HeaderCarrier) = {
+  private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
       RosmRegisterWithoutIDRequest(
-        false,
-        false,
+        isAnAgent = false,
+        isAGroup = false,
         data.company,
         data.contact
-      )
-    ).map {
-      case Some(r) => r.safeId
-      case _ => ??? // TODO throw some kind of exception
-    }
+      )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
 
   import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
-  private def getUtr(enrolments: Enrolments): Option[String] = {
-    enrolments.getEnrolment("IR-CT").orElse(enrolments.getEnrolment("IR-SA")).flatMap(_.getIdentifier("UTR").map(_.value))
+  private def getUtr(enrolments: Enrolments): Option[UTR] = {
+    enrolments
+      .getEnrolment("IR-CT")
+      .orElse(enrolments.getEnrolment("IR-SA"))
+      .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
   }
 
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
@@ -85,12 +84,14 @@ class RegistrationsController @Inject()(
             } yield reg
           case (Some(utr), _, false) =>
             for {
-              reg <- registrationConnector.send("utr", utr, data)
+              reg <- registrationConnector.send("utr", utr.some, data)
             } yield reg
           case (_, Some(utrFromAuth), _) =>
             for {
-              reg <- registrationConnector.send("utr", utrFromAuth, data)
+              reg <- registrationConnector.send("utr", utrFromAuth.some, data)
             } yield reg
+          case _ =>
+            throw new IllegalArgumentException(s"Missing identifier, neither utr nor safeid supplied")
         }).map {
           case Some(r) =>
             Ok(Json.toJson(r))

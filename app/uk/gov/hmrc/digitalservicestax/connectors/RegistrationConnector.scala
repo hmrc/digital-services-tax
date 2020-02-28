@@ -21,7 +21,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json.{JsValue, Json, Writes}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
-import uk.gov.hmrc.digitalservicestax.data.Registration
+import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -39,14 +39,18 @@ class RegistrationConnector @Inject()(val http: HttpClient,
 
   def send(
     idType: String,
-    idNumber: String,
+    idNumber: Option[String],
     request: Registration
   )(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Option[RegistrationResponse]] = {
     implicit val writes: Writes[Registration] = services.EeittInterface.registrationWriter
-    desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$idType/$idNumber", Json.toJson(request))
+    (idType, idNumber) match {
+      case (t, Some(i)) =>
+        desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))
+      case _ =>
+        throw new IllegalArgumentException(s"Missing idNumber for idType: $idType")
+    }
   }
-
 }
