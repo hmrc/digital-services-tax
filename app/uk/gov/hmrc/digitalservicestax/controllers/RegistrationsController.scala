@@ -19,6 +19,7 @@ package controllers
 
 import cats.implicits._
 import data.{percentFormat => _, _}, BackendAndFrontendJson._
+import services.FutureVolatilePersistence
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -31,7 +32,7 @@ import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmCon
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-
+import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
 import scala.concurrent._
 
 
@@ -43,7 +44,8 @@ class RegistrationsController @Inject()(
   appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
-  rosmConnector: RosmConnector
+  rosmConnector: RosmConnector,
+  persistence: FutureVolatilePersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -62,10 +64,12 @@ class RegistrationsController @Inject()(
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
-  import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
-
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
+
+      val userId = uid.getOrElse(
+        throw new java.security.AccessControlException("No internalId available")
+      )
       withJsonBody[Registration](data => {
         ((data.utr, data.useSafeId) match {
           case (_, true) =>
@@ -81,25 +85,28 @@ class RegistrationsController @Inject()(
             for {
               reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments).some, data)
             } yield reg
-        }).map {
+        }).flatMap {
           case Some(r) =>
-            Ok(Json.toJson(r))
-          case _ => NotFound
+            (persistence.registrations(userId) = data) >> Future.successful(Ok(Json.toJson(r)))
+          case _ => Future.successful(NotFound)
         }
       })
     }
   }
 
   def lookupRegistration(): Action[AnyContent] = Action.async { implicit request =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { case uid =>
+      val userId = uid.getOrElse(
+        throw new java.security.AccessControlException("No internalId available")
+      )
 
-    val response: Option[Registration] = ??? // TODO
-
-    Future.successful(
-      response match {
-        case Some(r) =>
-          Ok(Json.toJson(r))
-        case None => NotFound
+      persistence.registrations.get(userId).map { response => 
+        response match {
+          case Some(r) =>
+            Ok(Json.toJson(r))
+          case None => NotFound
+        }
       }
-    )
+    }
   }
 }
