@@ -83,7 +83,7 @@ class RegistrationsController @Inject()(
             } yield reg
           case _ =>
             for {
-              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments).some, data)
+              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments), data)
             } yield reg
         }).flatMap {
           case Some(r) =>
