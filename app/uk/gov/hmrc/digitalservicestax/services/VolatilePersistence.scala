@@ -20,7 +20,7 @@ package services
 import cats.Id
 import data._
 
-object VolatilePersistence extends Persistence[Id] {
+trait VolatilePersistence extends Persistence[Id] {
 
   val registrations = new Registrations {
 

@@ -21,26 +21,47 @@ import data._
 import scala.concurrent._
 import cats.instances.future._
 import javax.inject._
+import java.time.LocalTime
+import akka.actor._
+import scala.concurrent.duration._
+
 
 @Singleton
-class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends Persistence[Future] {
+class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {
+
+  val inner = new VolatilePersistence {}
 
   private def f[A](in: A): Future[A] = Future.successful(in)
 
   val registrations = new Registrations {
-    private def V = VolatilePersistence.registrations
+    private def V = inner.registrations
 
     def get(user: String) = f(V.get(user))
 
-    def update(user: String, reg: Registration) =
-      f(V.update(user, reg))
+    private def randomDstNumber: DSTRegNumber = {
+      val r = new scala.util.Random()
+      def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
+      def digits: String = f"${r.nextInt}%010d"
+      DSTRegNumber(s"${c}${c}DST$digits")
+    }
+
+    def update(user: String, reg: Registration) = { 
+      f(V.update(user, reg)).map { _ => 
+        if (reg.registrationNumber.isEmpty) {
+          actorSystem.scheduler.scheduleOnce(1.minute) { () =>
+            confirm(user, randomDstNumber)
+          }
+        }
+        ()
+      }      
+    }
 
     def confirm(user: String, newRegNo: DSTRegNumber) =
       f(V.confirm(user, newRegNo))
   }
 
   val returns = new Returns {
-    private def V = VolatilePersistence.returns
+    private def V = inner.returns
     def get(reg: Registration) =
       f(V.get(reg))
 
@@ -53,3 +74,10 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
   }
 
 }
+
+// class CodeBlockTask @Inject() (actorSystem: ActorSystem)(implicit executionContext: ExecutionContext) {
+//   actorSystem.scheduler.scheduleOnce(1.minute) { () =>
+//     // the block of code that will be executed
+//     actorSystem.log.info("Executing something...")
+//   }
+// }
