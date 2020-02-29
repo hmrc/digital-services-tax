@@ -17,10 +17,10 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import data.{percentFormat => _, _}
+import data.{percentFormat => _, _}, BackendAndFrontendJson._
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
@@ -29,8 +29,10 @@ import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import services.FutureVolatilePersistence
-
+import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
 import scala.concurrent._
+import java.time.LocalDate
 
 @Singleton()
 class ReturnsController @Inject()(
@@ -48,11 +50,38 @@ class ReturnsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def submitReturn(year: Int): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(???) // TODO
+  def submitReturn(year: Int): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
+      val userId = uid.getOrElse(
+        throw new java.security.AccessControlException("No internalId available")
+      )
+      persistence.registrations(userId).flatMap { reg =>
+        val period: Period = reg.period(year).getOrElse(
+          throw new IllegalArgumentException(s"No period found for $year")
+        )
+        withJsonBody[Return](data => {
+          (persistence.returns(reg, period) = data) map { _ => Ok("") }
+        })
+      }
+    }
   }
 
   def lookupOutstandingReturns(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(???) // TODO
+    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
+      val userId = uid.getOrElse(
+        throw new java.security.AccessControlException("No internalId available")
+      )
+      persistence.registrations(userId).flatMap { reg =>
+        persistence.returns.get(reg) map { submittedReturns =>
+
+          val allYears: List[Period] = {reg.dateLiable.getYear to LocalDate.now.getYear}.toList flatMap (
+            reg.period(_).toList
+          )
+
+          val applicableYears: List[Period] = allYears diff submittedReturns.keys.toSeq
+          Ok(JsArray(applicableYears.map(Json.toJson(_))))
+        }
+      }
+    }
   }
 }
