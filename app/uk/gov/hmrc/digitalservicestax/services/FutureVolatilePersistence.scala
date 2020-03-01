@@ -37,23 +37,8 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
 
     def get(user: String) = f(V.get(user))
 
-    private def randomDstNumber: DSTRegNumber = {
-      val r = new scala.util.Random()
-      def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
-      def digits: String = f"${r.nextInt}%010d"
-      DSTRegNumber(s"${c}${c}DST$digits")
-    }
-
-    def update(user: String, reg: Registration) = { 
-      f(V.update(user, reg)).map { _ => 
-        if (reg.registrationNumber.isEmpty) {
-          actorSystem.scheduler.scheduleOnce(1.minute) { () =>
-            confirm(user, randomDstNumber)
-          }
-        }
-        ()
-      }      
-    }
+    def update(user: String, reg: Registration) =
+      f(V.update(user, reg))      
 
     def confirm(user: String, newRegNo: DSTRegNumber) =
       f(V.confirm(user, newRegNo))
