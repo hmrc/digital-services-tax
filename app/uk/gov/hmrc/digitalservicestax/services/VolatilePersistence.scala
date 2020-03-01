@@ -19,18 +19,31 @@ package services
 
 import cats.Id
 import data._
+import java.time.{LocalDate, LocalDateTime}
 
 trait VolatilePersistence extends Persistence[Id] {
 
+  def randomDstNumber: DSTRegNumber = {
+    val r = new scala.util.Random()
+    def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
+    def digits: String = f"${r.nextInt.abs}%010d"
+    DSTRegNumber(s"${c}${c}DST$digits")
+  }
+
   val registrations = new Registrations {
 
-    @volatile private var _data: Map[String, Registration] =
-      Map.empty
-
-    def get(user: String) = _data.get(user)
+    @volatile private var _data: Map[String, (Registration, LocalDateTime)] = Map.empty
+    def get(user: String) = {
+      _data.get(user) match {
+        case Some((r,d)) if r.registrationNumber.isEmpty && d.plusMinutes(1).isBefore(LocalDateTime.now) =>
+          update(user, r.copy(registrationNumber = Some(randomDstNumber)))
+          get(user)
+        case x => x.map{_._1}
+      }
+    }
 
     def update(user: String, reg: Registration): Unit = {
-      _data = _data + (user -> reg)
+      _data = _data + (user -> ((reg, LocalDateTime.now)))
     }
 
     def confirm(user: String, newRegNo: DSTRegNumber): Unit = {
