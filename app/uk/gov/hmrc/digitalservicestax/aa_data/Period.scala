@@ -41,4 +41,5 @@ object Period {
     override def unbind(key: String, period: Period): String =
       period.start.getYear.toString
   }
+
 }

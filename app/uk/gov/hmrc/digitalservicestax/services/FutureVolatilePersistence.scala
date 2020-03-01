@@ -25,7 +25,6 @@ import java.time.LocalTime
 import akka.actor._
 import scala.concurrent.duration._
 
-
 @Singleton
 class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {
 
@@ -74,10 +73,3 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
   }
 
 }
-
-// class CodeBlockTask @Inject() (actorSystem: ActorSystem)(implicit executionContext: ExecutionContext) {
-//   actorSystem.scheduler.scheduleOnce(1.minute) { () =>
-//     // the block of code that will be executed
-//     actorSystem.log.info("Executing something...")
-//   }
-// }
