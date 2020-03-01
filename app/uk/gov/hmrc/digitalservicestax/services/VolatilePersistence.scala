@@ -43,12 +43,10 @@ trait VolatilePersistence extends Persistence[Id] {
     }
 
     def update(user: String, reg: Registration): Unit = {
-      println(s"update $user to $reg")      
       _data = _data + (user -> ((reg, LocalDateTime.now)))
     }
 
     def confirm(user: String, newRegNo: DSTRegNumber): Unit = {
-      println(s"confirmed $user to $newRegNo")
       update(user, apply(user).copy(registrationNumber = Some(newRegNo)))
     }
   }
