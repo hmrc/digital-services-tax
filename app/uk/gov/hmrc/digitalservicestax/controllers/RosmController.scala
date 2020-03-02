@@ -80,7 +80,7 @@ class RosmController @Inject()(
           JsonSchemaChecker[data.Company](r, "rosm-response")
           Ok(Json.toJson(r))
         case Some(r) =>
-          log.warn(s"Record found for UTR $utr, but postcode is '${r.address.postalCode}' " +
+          log.warn(s"Record $r found for UTR $utr, but postcode is '${r.address.postalCode}' " +
             s", not user supplied '${postcode}'.")
           NotFound
         case _ =>

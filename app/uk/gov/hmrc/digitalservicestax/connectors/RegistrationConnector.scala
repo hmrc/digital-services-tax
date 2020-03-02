@@ -18,20 +18,23 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.Mode
+import play.api.{Logger, Mode}
 import play.api.libs.json.{JsValue, Json, Writes}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 @Singleton
 class RegistrationConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig)
+  servicesConfig: ServicesConfig,
+  appConfig: AppConfig)
   extends DesHelpers(servicesConfig) {
 
   val desURL: String = servicesConfig.baseUrl("des")
@@ -47,8 +50,13 @@ class RegistrationConnector @Inject()(val http: HttpClient,
   ): Future[Option[RegistrationResponse]] = {
     implicit val writes: Writes[Registration] = services.EeittInterface.registrationWriter
     (idType, idNumber) match {
-      case (t, Some(i)) =>
-        desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))
+      case (t, Some(i)) => {
+        val result = desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))
+        appConfig.logRegResponse.foreach(if(_) Logger.debug(
+          s"Registration response is ${Await.result(result, 20.seconds)}"
+        ))
+        result
+      }
       case _ =>
         throw new IllegalArgumentException(s"Missing idNumber for idType: $idType")
     }
