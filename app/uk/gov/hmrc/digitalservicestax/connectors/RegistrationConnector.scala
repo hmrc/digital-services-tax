@@ -51,7 +51,7 @@ class RegistrationConnector @Inject()(val http: HttpClient,
     implicit val writes: Writes[Registration] = services.EeittInterface.registrationWriter
     (idType, idNumber) match {
       case (t, Some(i)) => {
-        val result = desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))
+        val result = desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))(implicitly, implicitly, addHeaders, implicitly)
         if (appConfig.logRegResponse) Logger.debug(
           s"Registration response is ${Await.result(result, 20.seconds)}"
         )
