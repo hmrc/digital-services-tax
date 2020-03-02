@@ -45,7 +45,7 @@ object EeittInterface {
           case ((key, ""), i) => Nil
           case ((key, value), i) =>
             List(Json.obj(
-              "paramSequence" -> i.toString,
+              "paramSequence" -> "01", //i.toString, TODO work out why this parameter exists (and if there's a god)
               "paramName" -> key,
               "paramValue" -> value
             ))
