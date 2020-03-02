@@ -75,7 +75,7 @@ class RegistrationsController @Inject()(
           case (_, true) =>
             for {
               safeId <- getSafeId(data)
-              reg <- registrationConnector.send("safeid", safeId, data)
+              reg <- registrationConnector.send("safe", safeId, data)
             } yield reg
           case (Some(utr),false) =>
             for {
