@@ -52,9 +52,9 @@ class RegistrationConnector @Inject()(val http: HttpClient,
     (idType, idNumber) match {
       case (t, Some(i)) => {
         val result = desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))
-        appConfig.logRegResponse.foreach(if(_) Logger.debug(
+        if (appConfig.logRegResponse) Logger.debug(
           s"Registration response is ${Await.result(result, 20.seconds)}"
-        ))
+        )
         result
       }
       case _ =>
