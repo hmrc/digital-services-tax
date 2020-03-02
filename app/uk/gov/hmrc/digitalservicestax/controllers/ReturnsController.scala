@@ -60,7 +60,7 @@ class ReturnsController @Inject()(
           throw new IllegalArgumentException(s"No period found for $year")
         )
         withJsonBody[Return](data => {
-          (persistence.returns(reg, period) = data) map { _ => Ok("") }
+          (persistence.returns(reg, period) = data) map { _ => Ok(JsNull) }
         })
       }
     }
