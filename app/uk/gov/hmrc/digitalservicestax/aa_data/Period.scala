@@ -35,7 +35,7 @@ object Period {
       Either.catchOnly[NumberFormatException](r.period(value.toInt)).leftMap(_.getLocalizedMessage).
         flatMap {
           case Some(x) => Right(x)
-          case None    => Left(s"${r.company.name} didn't become liable until ${r.dateLiable}")
+          case None    => Left(s"${r.companyReg.company.name} didn't become liable until ${r.dateLiable}")
         }
 
     override def unbind(key: String, period: Period): String =

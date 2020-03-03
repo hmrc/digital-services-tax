@@ -17,10 +17,11 @@
 package uk.gov.hmrc.digitalservicestax
 package backend
 
+import cats.implicits._
 import play.api.libs.json._
-import data._
+import uk.gov.hmrc.digitalservicestax.data._
 
-object RosmJsonReader extends Reads[Company] {
+object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
   object NotAnOrganisationException extends NoSuchElementException("Not an organisation")
 
@@ -47,20 +48,29 @@ object RosmJsonReader extends Reads[Company] {
     }
   }
 
-  def oreads(json: JsObject): JsResult[Company] = {
+
+  def oreads(json: JsObject): JsResult[CompanyRegWrapper] = {
 
     if ({json \ "organisation"}.isEmpty) {
       throw NotAnOrganisationException
     }
 
-    JsSuccess(Company(
-      {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
-      {json \ "address"}.as[Address]
+    JsSuccess(CompanyRegWrapper (
+      Company(
+        {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+        {json \ "address"}.as[Address]
+      ),
+      safeId = SafeId(
+        {json \ "safeId"}.as[String]
+      ).some
     ))
   }
 
-  def reads(json: JsValue): JsResult[Company] = json match {
-    case o: JsObject => oreads(o)
-    case x => JsError(s"expected an object, found $x")
+  def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+    println(Json.prettyPrint(json)) // TODO remove
+    json match {
+      case o: JsObject => oreads(o)
+      case x => JsError(s"expected an object, found $x")
+    }
   }
 }

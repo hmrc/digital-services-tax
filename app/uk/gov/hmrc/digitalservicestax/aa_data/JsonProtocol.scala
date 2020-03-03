@@ -47,6 +47,7 @@ trait SimpleJson {
   implicit val postcodeFormat       = validatedStringFormat(Postcode, "postcode")
   implicit val phoneNumberFormat    = validatedStringFormat(PhoneNumber, "phone number")
   implicit val utrFormat            = validatedStringFormat(UTR, "UTR")
+  implicit val safeIfFormat         = validatedStringFormat(SafeId, "SafeId")
   implicit val emailFormat          = validatedStringFormat(Email, "email")
   implicit val countryCodeFormat    = validatedStringFormat(CountryCode, "country code")
   implicit val sortCodeFormat       = validatedStringFormat(SortCode, "sort code")
@@ -81,6 +82,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val addressFormat: OFormat[Address] = Json.format[Address]
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
   implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
+  implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]

@@ -59,7 +59,7 @@ class RegistrationsController @Inject()(
       RosmRegisterWithoutIDRequest(
         isAnAgent = false,
         isAGroup = false,
-        data.company,
+        data.companyReg.company,
         data.contact
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
@@ -71,7 +71,7 @@ class RegistrationsController @Inject()(
         throw new java.security.AccessControlException("No internalId available")
       )
       withJsonBody[Registration](data => {
-        ((data.utr, data.useSafeId) match {
+        ((data.companyReg.utr, data.companyReg.useSafeId) match {
           case (_, true) =>
             for {
               safeId <- getSafeId(data)
@@ -86,8 +86,11 @@ class RegistrationsController @Inject()(
               reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments), data)
             } yield reg
         }).flatMap {
-          case Some(r) =>
-            (persistence.registrations(userId) = data) >> Future.successful(Ok(Json.toJson(r)))
+          case Some(r) => {
+            (persistence.registrations(userId) = data) >>
+//              ??? >> // tax enrolments callback here
+              Future.successful(Ok(Json.toJson(r)))
+          }
           case _ => Future.successful(NotFound)
         }
       })

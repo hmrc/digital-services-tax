@@ -17,20 +17,17 @@
 package uk.gov.hmrc.digitalservicestax
 package data
 
-//import services._
-
 import java.time.LocalDate
 
+
 case class Registration (
-  company: Company,
+  companyReg: CompanyRegWrapper,
   alternativeContact: Option[Address],
   ultimateParent: Option[Company],
   contact: ContactDetails,
   dateLiable: LocalDate,
   accountingPeriodEnd: LocalDate,
-  utr: Option[UTR] = None,
-  useSafeId: Boolean = false,
-  registrationNumber: Option[DSTRegNumber] = None  
+  registrationNumber: Option[DSTRegNumber] = None
 ) {
 
   require(!dateLiable.isBefore(Period.firstPeriodStart))
@@ -49,6 +46,5 @@ case class Registration (
       ))
     }
   }
-
 
 }
