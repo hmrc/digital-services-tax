@@ -31,24 +31,4 @@ case class Registration (
   utr: Option[UTR] = None,
   useSafeId: Boolean = false,
   registrationNumber: Option[DSTRegNumber] = None  
-) {
-
-  require(!dateLiable.isBefore(Period.firstPeriodStart))
-
-  def period(year: Int): Option[Period] = {
-    val start = Period.firstPeriodStart
-    if (year < dateLiable.getYear) None
-    else {
-      Some(Period(
-        if (year == start.getYear) {
-          dateLiable
-        } else {
-          start.plusYears(year - start.getYear)
-        },
-        start.plusYears(1 + year - start.getYear).minusDays(1)
-      ))
-    }
-  }
-
-
-}
+)
