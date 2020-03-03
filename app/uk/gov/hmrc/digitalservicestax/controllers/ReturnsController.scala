@@ -34,6 +34,8 @@ import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
 import scala.concurrent._
 import java.time.LocalDate
 
+import cats.implicits._
+
 @Singleton()
 class ReturnsController @Inject()(
   val authConnector: AuthConnector,
@@ -41,7 +43,8 @@ class ReturnsController @Inject()(
   val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
-  persistence: FutureVolatilePersistence
+  persistence: FutureVolatilePersistence,
+  connector: connectors.ReturnConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -59,7 +62,13 @@ class ReturnsController @Inject()(
         val period: Period = reg.period(year).getOrElse(
           throw new IllegalArgumentException(s"No period found for $year")
         )
+
+        val regNo = reg.registrationNumber.getOrElse {
+          throw new IllegalStateException(s"Registration is still pending")
+        }
+        
         withJsonBody[Return](data => {
+          connector.send(regNo, period, data) >> 
           (persistence.returns(reg, period) = data) map { _ => Ok(JsNull) }
         })
       }
