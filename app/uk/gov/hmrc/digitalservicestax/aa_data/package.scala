@@ -21,6 +21,7 @@ import tag._
 import cats.implicits._
 import cats.kernel.Monoid
 import play.api.i18n.Messages
+import java.time.LocalDate
 
 package object data extends SimpleJson {
 
@@ -117,5 +118,7 @@ package object data extends SimpleJson {
     "^([A-Z]{2}DST[0-9]{10})$"
   )
 
-
+  implicit val orderDate = new cats.Order[LocalDate] {
+    def compare(x: LocalDate, y: LocalDate):Int = x.compareTo(y)
+  }
 }

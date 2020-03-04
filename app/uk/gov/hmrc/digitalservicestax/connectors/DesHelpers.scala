@@ -28,6 +28,9 @@ abstract class DesHelpers(servicesConfig: ServicesConfig) {
 
   val http: HttpClient
 
+  def desGet[O](url: String)(implicit rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
+    http.GET[O](url)(rds, addHeaders, ec)
+
   def desPost[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.POST[I, O](url, body)(wts, rds, addHeaders, ec)
 
