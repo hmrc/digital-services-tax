@@ -6,5 +6,8 @@ GET  /lookup-company                                      uk.gov.hmrc.digitalser
 GET  /lookup-company/:utr/:postcode                       uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
 POST /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.submitRegistration()
 GET  /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.lookupRegistration()
-POST /returns/:year				          uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.submitReturn(year: Int)
+POST /returns/:year				                          uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.submitReturn(year: Int)
 GET  /returns                                             uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupOutstandingReturns()
+
+# the readme says this should be a GET, but we're receiving a POST...
+POST /tax-enrolment-callback/                             uk.gov.hmrc.digitalservicestax.controllers.TaxEnrolmentCallbackController.callback(subscriptionId)

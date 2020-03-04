@@ -67,7 +67,6 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
   }
 
   def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-    println(Json.prettyPrint(json)) // TODO remove
     json match {
       case o: JsObject => oreads(o)
       case x => JsError(s"expected an object, found $x")
