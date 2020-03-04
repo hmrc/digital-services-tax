@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import java.time.LocalDate
+import java.time.{LocalDate, format}, format.DateTimeParseException
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
   val mode: Mode,
@@ -47,10 +47,26 @@ class ReturnConnector @Inject()(val http: HttpClient,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
 
+    implicit def basicDateFormat = new Reads[LocalDate] {
+      import cats.syntax.either._
+      def reads(i: JsValue): JsResult[LocalDate] = i match {
+        case JsString(s) => 
+          Either.catchOnly[DateTimeParseException]{
+            LocalDate.parse(s)
+          }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
+        case o => JsError(s"expected a JsString(YYYY-MM-DD), got a $o")
+      }
+    }
+
     implicit def readPeriods = new Reads[List[(Period, Option[LocalDate])]] {
       def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
-        val JsArray(elems) = {jsonOuter \ "obligations" \ "obligationDetails"}.as[JsArray]
-        JsSuccess(elems.map { json =>
+        val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
+
+        val periods = obligations.toList.flatMap{ j =>
+          val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
+          elems.toList
+        }
+        JsSuccess(periods.map { json =>
           (
             Period(
               {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
@@ -60,7 +76,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
             ),
             {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
           )
-        }.toList)
+        })
         
       }
     }

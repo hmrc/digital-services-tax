@@ -28,7 +28,7 @@ case class Period(
 
 object Period {
 
-  type Key = String @@ DSTRegNumber.Tag
+  type Key = String @@ Key.Tag
   object Key extends ValidatedType[String]{
     def validateAndTransform(in: String): Option[String] = 
       Some(in).filter{x => x.nonEmpty && x.size <= 4}
