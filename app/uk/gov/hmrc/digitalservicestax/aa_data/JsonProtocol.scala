@@ -104,14 +104,18 @@ object BackendAndFrontendJson extends SimpleJson {
     override def reads(json: JsValue): JsResult[Map[GroupCompany, Money]] = {
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
 
-        val Array(name, utr) = k.split(":")
-        GroupCompany(NonEmptyString(name), UTR(utr)) -> v.value
+        val Array(name, utrS) = k.split(":")
+        val utr = utrS match {
+          case "" => None
+          case x => Some(UTR(x))
+        }
+        GroupCompany(NonEmptyString(name), utr) -> v.value
       })
     }
 
     override def writes(o: Map[GroupCompany, Money]): JsObject = {
       JsObject(o.toSeq.map { case (k, v) =>
-        s"${k.name}:${k.utr}" -> JsNumber(v)
+        s"${k.name}:${k.utr.getOrElse("")}" -> JsNumber(v)
       })
     }
   }
