@@ -60,7 +60,7 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
 
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
-    UTR.gen
+    Gen.option(UTR.gen)
   ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
