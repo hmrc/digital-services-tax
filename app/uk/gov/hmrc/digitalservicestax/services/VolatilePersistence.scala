@@ -20,8 +20,18 @@ package services
 import cats.Id
 import data._
 import java.time.{LocalDate, LocalDateTime}
+import cats.implicits._
 
 trait VolatilePersistence extends Persistence[Id] {
+
+  val pendingCallbacks = new PendingCallbacks {
+
+    @volatile private var _data: Map[String, String] = Map.empty
+    def get(formBundle: String): Option[String] = _data.get(formBundle)
+    def delete(formBundle: String) = _data = _data - formBundle
+    def update(formBundle: String, internalId: String) =
+      _data = _data + (formBundle -> internalId)
+  }
 
   def randomDstNumber: DSTRegNumber = {
     val r = new scala.util.Random()
@@ -33,6 +43,8 @@ trait VolatilePersistence extends Persistence[Id] {
   val registrations = new Registrations {
 
     @volatile private var _data: Map[String, (Registration, LocalDateTime)] = Map.empty
+    
+    val fixedDstNumber = randomDstNumber
     def get(user: String) = {
       _data.get(user) match {
         case Some((r,d)) if r.registrationNumber.isEmpty && d.plusMinutes(1).isBefore(LocalDateTime.now) =>
@@ -45,25 +57,23 @@ trait VolatilePersistence extends Persistence[Id] {
     def update(user: String, reg: Registration): Unit = 
       _data = _data + (user -> ((reg, LocalDateTime.now)))
 
-    def confirm(user: String, newRegNo: DSTRegNumber): Unit = 
-      update(user, apply(user).copy(registrationNumber = Some(newRegNo)))
   }
 
   val returns = new Returns {
 
-    @volatile private var _data: Map[Registration, Map[Period, Return]] =
+    @volatile private var _data: Map[Registration, Map[Period.Key, Return]] =
       Map.empty
 
-    def get(reg: Registration): Map[Period,Return] = _data(reg)
+    def get(reg: Registration): Map[Period.Key,Return] = _data(reg)
 
-    def update(reg: Registration, all: Map[Period,Return]): Unit = {
+    def update(reg: Registration, all: Map[Period.Key,Return]): Unit = {
       _data = _data + (reg -> all)
     }
 
-    def update(reg: Registration, period: Period, ret: Return): Unit = {
+    def update(reg: Registration, period: Period.Key, ret: Return): Unit = {
       val updatedMap = {
         val existing = _data.get(reg).
-          getOrElse(Map.empty[Period, Return])
+          getOrElse(Map.empty[Period.Key, Return])
         existing + (period -> ret)
       }
       update(reg, updatedMap)

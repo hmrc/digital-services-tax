@@ -19,7 +19,7 @@ package controllers
 
 import cats.implicits._
 import data.{percentFormat => _, _}, BackendAndFrontendJson._
-import services.FutureVolatilePersistence
+import services.MongoPersistence
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -45,7 +45,7 @@ class RegistrationsController @Inject()(
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
-  persistence: FutureVolatilePersistence
+  persistence: MongoPersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
