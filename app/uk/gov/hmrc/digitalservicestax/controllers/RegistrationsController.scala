@@ -18,7 +18,8 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-import data.{percentFormat => _, _}, BackendAndFrontendJson._
+import data.{percentFormat => _, _}
+import BackendAndFrontendJson._
 import services.FutureVolatilePersistence
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
@@ -28,15 +29,16 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector}
+import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
+import uk.gov.hmrc.auth.core.retrieve._
+import v2.Retrievals._
+
 import scala.concurrent._
 
-
-@Singleton()
+@Singleton
 class RegistrationsController @Inject()(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
@@ -45,6 +47,7 @@ class RegistrationsController @Inject()(
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
+  taxEnrolmentConnector: TaxEnrolmentConnector,
   persistence: FutureVolatilePersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
@@ -56,10 +59,10 @@ class RegistrationsController @Inject()(
 
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
-      RosmRegisterWithoutIDRequest(
+        RosmRegisterWithoutIDRequest(
         isAnAgent = false,
         isAGroup = false,
-        data.company,
+        data.companyReg.company,
         data.contact
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
@@ -71,23 +74,29 @@ class RegistrationsController @Inject()(
         throw new java.security.AccessControlException("No internalId available")
       )
       withJsonBody[Registration](data => {
-        ((data.utr, data.useSafeId) match {
-          case (_, true) =>
+        ((data.companyReg.utr, data.companyReg.safeId, data.companyReg.useSafeId) match {
+          case (_, _, true) =>
             for {
               safeId <- getSafeId(data)
               reg <- registrationConnector.send("safe", safeId, data)
-            } yield reg
-          case (Some(utr),false) =>
+            } yield (reg, safeId)
+          case (Some(utr), Some(safeId),false) =>
             for {
               reg <- registrationConnector.send("utr", utr.some, data)
-            } yield reg
+            } yield (reg, data.companyReg.safeId)
           case _ =>
             for {
               reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments), data)
-            } yield reg
+            } yield (reg, data.companyReg.safeId)
         }).flatMap {
-          case Some(r) =>
-            (persistence.registrations(userId) = data) >> Future.successful(Ok(Json.toJson(r)))
+          case (Some(r), Some(safeId: SafeId)) => {
+            (persistence.registrations(userId) = data) >>
+              taxEnrolmentConnector.subscribe(
+                safeId,
+                r.formBundleNumber
+              ) >>
+              Future.successful(Ok(Json.toJson(r)))
+          }
           case _ => Future.successful(NotFound)
         }
       })

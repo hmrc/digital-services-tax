@@ -58,7 +58,7 @@ class RosmController @Inject()(
         ).map {
           case Some(r) =>
             import data.BackendAndFrontendJson._
-            JsonSchemaChecker[data.Company](r, "rosm-response")
+            JsonSchemaChecker[data.Company](r.company, "rosm-response")
             Ok(Json.toJson(r))
           case _ =>
             log.warn(s"No record found for UTR $utr")
@@ -74,13 +74,13 @@ class RosmController @Inject()(
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
-        case Some(r) if r.address.postalCode == postcode =>
+        case Some(r) if r.company.address.postalCode == postcode =>
 
           import data.BackendAndFrontendJson._
-          JsonSchemaChecker[data.Company](r, "rosm-response")
+          JsonSchemaChecker[data.Company](r.company, "rosm-response")
           Ok(Json.toJson(r))
         case Some(r) =>
-          log.warn(s"Record found for UTR $utr, but postcode is '${r.address.postalCode}' " +
+          log.warn(s"Record found for UTR $utr, but postcode is '${r.company.address.postalCode}' " +
             s", not user supplied '${postcode}'.")
           NotFound
         case _ =>

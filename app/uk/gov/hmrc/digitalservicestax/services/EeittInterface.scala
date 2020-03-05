@@ -68,7 +68,7 @@ object EeittInterface {
      def writes(o: Registration): JsValue = {
        import o._
 
-       val contactAddress = alternativeContact getOrElse company.address
+       val contactAddress = alternativeContact getOrElse companyReg.company.address
 
        val data = Json.obj(
          "registrationDetails" -> Json.obj(
@@ -104,18 +104,18 @@ object EeittInterface {
              "A_DST_PRIM_NAME" -> {contact.forename + " " + contact.surname},
              "A_DST_PRIM_TELEPHONE" -> contact.phoneNumber,
              "A_DST_PRIM_EMAIL" -> contact.email,
-             "A_DST_GLOBAL_NAME" -> company.name,
+             "A_DST_GLOBAL_NAME" -> companyReg.company.name,
              "A_DATA_ORIGIN" -> "1",
              "A_DST_PERIOD_END_DATE" -> strDate(accountingPeriodEnd),
              "A_TAX_START_DATE" -> strDate(dateLiable),
              "A_BUS_ADR_LINE_5" -> contactAddress.line5,
-             "A_CORR_ADR_LINE_1" -> company.address.line1,                                                
-             "A_CORR_ADR_LINE_2" -> company.address.line2,                                    
-             "A_CORR_ADR_LINE_3" -> company.address.line3,                        
-             "A_CORR_ADR_LINE_4" -> company.address.line4,            
-             "A_CORR_ADR_LINE_5" -> company.address.line5,
-             "A_CORR_ADR_POST_CODE" -> company.address.postalCode,
-             "A_CORR_ADR_COUNTRY_CODE" -> company.address.countryCode
+             "A_CORR_ADR_LINE_1" -> companyReg.company.address.line1,
+             "A_CORR_ADR_LINE_2" -> companyReg.company.address.line2,
+             "A_CORR_ADR_LINE_3" -> companyReg.company.address.line3,
+             "A_CORR_ADR_LINE_4" -> companyReg.company.address.line4,
+             "A_CORR_ADR_LINE_5" -> companyReg.company.address.line5,
+             "A_CORR_ADR_POST_CODE" -> companyReg.company.address.postalCode,
+             "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
 //             "A_DST_GLOBAL_ID" -> ultimateOwner.reference
            )
          )

@@ -48,15 +48,15 @@ class RosmConnector @Inject()(val http: HttpClient,
   }
 
   def retrieveROSMDetails(utr: String)
-    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Company]] = {
+    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[CompanyRegWrapper]] = {
     val request: JsValue = Json.obj(
       "regime" -> "DST",
       "requiresNameMatch" -> false,
       "isAnAgent" -> false
     )
-    implicit val readCo: Reads[Company] = backend.RosmJsonReader
+    implicit val readCo: Reads[CompanyRegWrapper] = backend.RosmJsonReader
 
-    desPost[JsValue, Option[Company]](s"$desURL/$serviceURLWithId/utr/$utr", request).
+    desPost[JsValue, Option[CompanyRegWrapper]](s"$desURL/$serviceURLWithId/utr/$utr", request).
       recover {
         case backend.RosmJsonReader.NotAnOrganisationException => None
       }

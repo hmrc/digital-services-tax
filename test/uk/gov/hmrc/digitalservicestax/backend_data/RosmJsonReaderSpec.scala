@@ -55,9 +55,23 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
        |""".stripMargin)
 
   "a rosm response" should "be readable" in {
-    RosmJsonReader.reads(json) should be (JsSuccess(Company(NonEmptyString("Trotters Trading (Stepney) Ltd."),
-      UkAddress(NonEmptyString("100 SuttonStreet"), "Wokingham", "Surrey", "London", Postcode("DH14 1EJ"))
-    )))
+    RosmJsonReader.reads(json) should be (JsSuccess(
+      CompanyRegWrapper(
+        Company(
+          NonEmptyString("Trotters Trading (Stepney) Ltd."),
+          UkAddress(
+            NonEmptyString("100 SuttonStreet"),
+            "Wokingham",
+            "Surrey",
+            "London",
+            Postcode("DH14 1EJ")
+          )
+        ),
+        None,
+        Some(SafeId("XE0001234567890")),
+        false
+      )
+    ))
 
   }
 }

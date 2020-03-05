@@ -34,6 +34,10 @@ abstract class DesHelpers(servicesConfig: ServicesConfig) {
   def desPost[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.POST[I, O](url, body)(wts, rds, addHeaders, ec)
 
+  def desPut[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
+    http.PUT[I, O](url, body)(wts, rds, addHeaders, ec)
+
+
   def addHeaders(implicit hc: HeaderCarrier): HeaderCarrier = {
     hc.withExtraHeaders(
       "Environment" -> servicesConfig.getConfString("des.environment", "")
