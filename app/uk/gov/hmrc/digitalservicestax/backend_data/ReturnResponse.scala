@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax
-package data
+package uk.gov.hmrc.digitalservicestax.backend_data
 
-import java.time.LocalDate
+import play.api.libs.json.Json
 
-
-case class Registration (
-  companyReg: CompanyRegWrapper,
-  alternativeContact: Option[Address],
-  ultimateParent: Option[Company],
-  contact: ContactDetails,
-  dateLiable: LocalDate,
-  accountingPeriodEnd: LocalDate,
-  registrationNumber: Option[DSTRegNumber] = None
+case class ReturnResponse(
+  processingDate: String,
+  formBundleNumber: String
 )
+
+case object ReturnResponse {
+  implicit val format = Json.format[ReturnResponse]
+}

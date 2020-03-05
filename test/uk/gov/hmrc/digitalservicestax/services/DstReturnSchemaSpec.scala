@@ -60,7 +60,7 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
 
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
-    UTR.gen
+    Gen.option(UTR.gen)
   ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
@@ -107,7 +107,9 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
 
   implicit def periodArb: Arbitrary[Period] = Arbitrary((
     arbitrary[LocalDate],
-    arbitrary[LocalDate]
+    arbitrary[LocalDate],
+    arbitrary[LocalDate],
+    arbitrary[NonEmptyString].map{_.take(4)}.map{Period.Key(_)}
   ).mapN(Period.apply))
 
   "A return API call" should "conform to the schema" in {
@@ -186,7 +188,7 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
         arbitrary[Option[Address]],
         arbitrary[Option[Company]],
         arbitrary[ContactDetails],
-        date(Period.firstPeriodStart, LocalDate.of(2040,1,1)),
+        date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
         arbitrary[Option[UTR]],
         arbitrary[Boolean],

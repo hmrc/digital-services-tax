@@ -34,6 +34,8 @@ import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
 import scala.concurrent._
 import java.time.LocalDate
 
+import cats.implicits._
+
 @Singleton()
 class ReturnsController @Inject()(
   val authConnector: AuthConnector,
@@ -41,7 +43,8 @@ class ReturnsController @Inject()(
   val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
-  persistence: FutureVolatilePersistence
+  persistence: FutureVolatilePersistence,
+  connector: connectors.ReturnConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -50,19 +53,29 @@ class ReturnsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def submitReturn(year: Int): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def submitReturn(periodKeyString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val periodKey = Period.Key(periodKeyString)
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
       val userId = uid.getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
-      persistence.registrations(userId).flatMap { reg =>
-        val period: Period = reg.period(year).getOrElse(
-          throw new IllegalArgumentException(s"No period found for $year")
-        )
-        withJsonBody[Return](data => {
-          (persistence.returns(reg, period) = data) map { _ => Ok(JsNull) }
-        })
-      }
+
+      withJsonBody[Return](data => {
+        for {
+          reg <- persistence.registrations(userId)
+          regNo = reg.registrationNumber.getOrElse {
+            throw new IllegalStateException(s"Registration is still pending")
+          }
+          allPeriods <- connector.getPeriods(regNo)
+          (period, previous) = allPeriods.find{_._1.key == periodKey}.getOrElse {
+            throw new NoSuchElementException(s"no period found for $periodKey")
+          }
+          _ <- connector.send(regNo, period, data, previous.isDefined)
+          _ <- persistence.returns(reg, period) = data
+        } yield {
+          Ok(JsNull)
+        }
+      })
     }
   }
 
@@ -71,17 +84,18 @@ class ReturnsController @Inject()(
       val userId = uid.getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
-      persistence.registrations(userId).flatMap { reg =>
-        persistence.returns.get(reg) map { submittedReturns =>
 
-          val allYears: List[Period] = {reg.dateLiable.getYear to LocalDate.now.getYear}.toList flatMap (
-            reg.period(_).toList
-          )
-
-          val applicableYears: List[Period] = allYears diff submittedReturns.keys.toSeq
-          Ok(JsArray(applicableYears.map(Json.toJson(_))))
+      for {
+        reg <- persistence.registrations(userId)
+        regNo = reg.registrationNumber.getOrElse {
+          throw new IllegalStateException(s"Registration is still pending")
         }
-      }
+        periodsAndDates <- connector.getPeriods(regNo)
+      } yield Ok(JsArray(
+        periodsAndDates.collect { case (p, None) => Json.toJson(p) }
+      ))
+
     }
   }
+
 }

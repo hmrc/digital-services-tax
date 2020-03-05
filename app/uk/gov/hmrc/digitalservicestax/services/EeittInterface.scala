@@ -181,9 +181,10 @@ object EeittInterface {
       val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
         Seq(
           "DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
-          "DST_GROUP_MEM_ID" -> company.utr, // Company registration reference number (UTR) CHAR40
           "DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
-        )
+        ) ++ company.utr.map { u => 
+          ("DST_GROUP_MEM_ID" -> u)
+        }.toList
       }
 
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
