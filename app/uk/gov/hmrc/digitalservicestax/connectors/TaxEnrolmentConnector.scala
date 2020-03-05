@@ -19,17 +19,19 @@ package uk.gov.hmrc.digitalservicestax.connectors
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig)
-  extends DesHelpers(servicesConfig) {
+  servicesConfig: ServicesConfig,
+  appConfig: AppConfig
+) extends DesHelpers(servicesConfig) {
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
@@ -39,7 +41,12 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        Result => Result
+        Result => {
+          if (appConfig.logRegResponse) Logger.debug(
+            s"Tax Enrolments response is $Result"
+          )
+          Result
+        }
       } recover {
         case e: UnauthorizedException => handleError(e, formBundleNumber)
         case e: BadRequestException => handleError(e, formBundleNumber)
