@@ -172,6 +172,15 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
     ).mapN(Company.apply)
   )
 
+  implicit def arbCoRegWrap: Arbitrary[CompanyRegWrapper] = Arbitrary(
+    (
+      arbitrary[Company],
+      Gen.const(none[UTR]),
+      Gen.const(none[SafeId]),
+      Gen.const(false)
+    ).mapN(CompanyRegWrapper.apply)
+  )
+
   implicit def arbContact: Arbitrary[ContactDetails] = Arbitrary {
     (
       neString(40),
@@ -184,14 +193,12 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
   implicit def subGen: Arbitrary[Registration] = Arbitrary (
     {
       (
-        arbitrary[Company],
+        arbitrary[CompanyRegWrapper],
         arbitrary[Option[Address]],
         arbitrary[Option[Company]],
         arbitrary[ContactDetails],
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
-        arbitrary[Option[UTR]],
-        arbitrary[Boolean],
         Gen.const(none[DSTRegNumber])
       ).mapN(Registration.apply)
     }
