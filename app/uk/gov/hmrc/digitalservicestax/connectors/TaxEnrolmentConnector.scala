@@ -17,8 +17,8 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
+import play.api.{Logger, Mode}
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -33,16 +33,18 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
+  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", false)
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    println("################################ sending to tax enrolments")
-    http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-      Result => Result
-    } recover {
-      case e: UnauthorizedException => handleError(e, formBundleNumber)
-      case e: BadRequestException => handleError(e, formBundleNumber)
-    }
+    if (enabled) {
+      http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
+        Result => Result
+      } recover {
+        case e: UnauthorizedException => handleError(e, formBundleNumber)
+        case e: BadRequestException => handleError(e, formBundleNumber)
+      }
+    } else Future.successful[HttpResponse](HttpResponse.apply(418))
   }
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {

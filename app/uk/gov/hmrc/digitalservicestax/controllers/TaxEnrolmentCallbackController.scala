@@ -22,7 +22,7 @@ import play.api.libs.json.{Format, JsValue, Json, OWrites}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
+import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
@@ -51,11 +51,12 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
       if (body.state == "SUCCEEDED") {
         for {
           teSub <- taxEnrolments.getSubscription(formBundleNumber)
-          // TODO
+          // TODO here is where we talk to persistence with the formBundleNumber and the dstNumber from .getDSTNumber(teSub)
+
 //          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getSdilNumber(teSub), formBundleNumber)
 //          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
         } yield {
-          Logger.info("Tax-enrolments callback successful")
+          Logger.info("Tax-enrolments callback and subsequent lookup successful")
           NoContent
         }
       } else {
@@ -65,12 +66,20 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
 //          buildAuditEvent(body, request.uri, formBundleNumber)) map {
 //          _ => NoContent
 //        }
-        Future.successful(Ok("w00t"))
+        Future.successful(NoContent)
       }
     }
   }
 
-//  private def sendNotificationEmail(orgName: Option[String], email: Option[String], sdilNumber: Option[String], formBundleNumber: String)
+
+  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[String] = {
+    taxEnrolmentsSubscription.identifiers.getOrElse(Nil).collectFirst {
+      case Identifier(_, value) if value.slice(2, 5) == "DST" => value
+    }
+  }
+
+
+  //  private def sendNotificationEmail(orgName: Option[String], email: Option[String], sdilNumber: Option[String], formBundleNumber: String)
 //    (implicit hc: HeaderCarrier): Future[Unit] = {
 //    (orgName, email) match {
 //      case (Some(o), Some(e)) => sdilNumber match {
@@ -81,11 +90,6 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
 //    }
 //  }
 //
-//  private def getSdilNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[String] = {
-//    taxEnrolmentsSubscription.identifiers.getOrElse(Nil).collectFirst {
-//      case Identifier(_, value) if value.slice(2, 4) == "SD" => value
-//    }
-//  }
 //
 //  private def buildAuditEvent(callback: CallbackNotification, path: String, subscriptionId: String)(implicit hc: HeaderCarrier) = {
 //    implicit val callbackFormat: OWrites[CallbackNotification] = Json.writes[CallbackNotification]
