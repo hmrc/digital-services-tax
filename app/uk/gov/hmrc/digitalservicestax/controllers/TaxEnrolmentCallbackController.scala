@@ -18,13 +18,12 @@ package uk.gov.hmrc.digitalservicestax.controllers
 
 import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
-import play.api.libs.json.{Format, JsValue, Json, OWrites}
+import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 

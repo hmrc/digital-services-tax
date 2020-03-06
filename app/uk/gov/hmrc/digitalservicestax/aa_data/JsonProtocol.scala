@@ -72,7 +72,7 @@ trait SimpleJson {
       }
     }
 
-    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o))
+    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(s"$o"))
   }
 }
 
@@ -97,7 +97,7 @@ object BackendAndFrontendJson extends SimpleJson {
 
     override def writes(o: Map[Activity, Percent]): JsValue = {
       JsObject(o.toSeq.map { case (k, v) =>
-        k.entryName -> JsNumber(BigDecimal(v))
+        k.entryName -> JsNumber(BigDecimal(s"$v"))
       })
     }
   }

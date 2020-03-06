@@ -17,24 +17,20 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
+import config.AppConfig
 import data.{percentFormat => _, _}, BackendAndFrontendJson._
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import scala.concurrent._
 import services.FutureVolatilePersistence
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
-import scala.concurrent._
-import java.time.LocalDate
-
-import cats.implicits._
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 @Singleton()
 class ReturnsController @Inject()(

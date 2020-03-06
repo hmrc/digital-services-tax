@@ -17,10 +17,9 @@
 package uk.gov.hmrc.digitalservicestax
 
 import shapeless.{:: => _, _}
-import tag._
+import tag.{@@}
 import cats.implicits._
 import cats.kernel.Monoid
-import play.api.i18n.Messages
 import java.time.LocalDate
 
 package object data extends SimpleJson {
