@@ -89,11 +89,11 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
         }).flatMap {
           case (Some(r), Some(safeId: SafeId)) => {
-            (persistence.registrations(userId) = data.copy(formBundleNumber = FormBundleNumber(r.formBundleNumber).some)) >>
-              taxEnrolmentConnector.subscribe(
-                safeId,
-                r.formBundleNumber
-              ) >> // TODO @Adam.Dye here for reg received email notification
+            {persistence.pendingCallbacks(r.formBundleNumber) = userId} >> 
+            taxEnrolmentConnector.subscribe(
+              safeId,
+              r.formBundleNumber
+            ) >> // TODO @Adam.Dye here for reg received email notification
               Future.successful(Ok(Json.toJson(r)))
           }
           case _ => Future.successful(NotFound)

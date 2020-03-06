@@ -199,7 +199,6 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
         arbitrary[ContactDetails],
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
-        Gen.const(none[FormBundleNumber]),
         Gen.const(none[DSTRegNumber])
       ).mapN(Registration.apply)
     }
