@@ -50,14 +50,15 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
 
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
 
-  def callback(formBundleNumber: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+
+    val formBundleNumber = FormBundleNumber(formBundleNumberString)
     withJsonBody[CallbackNotification] { body =>
       if (body.state == "SUCCEEDED") {
-        (for {
-          teSub <- OptionT.liftF[Future, TaxEnrolmentsSubscription](taxEnrolments.getSubscription(formBundleNumber))
-          reg <- OptionT(persistence.registrations.getByFormBundleNumber(FormBundleNumber(formBundleNumber)))
-          dstRef <- OptionT.fromOption[Future](getDSTNumber(teSub))
-          _ <- OptionT.liftF[Future,Unit](persistence.registrations(formBundleNumber) = reg.copy(registrationNumber = DSTRegNumber(dstRef).some))
+        for {
+          teSub <- taxEnrolments.getSubscription(formBundleNumber)
+          dstRef = getDSTNumber(teSub).getOrElse(throw CallbackProcessingException)
+          _  <- persistence.pendingCallbacks.process(formBundleNumber, dstRef)
           // TODO @Adam.Dye here for reg number email
 
 //          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getSdilNumber(teSub), formBundleNumber)
@@ -65,7 +66,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
         } yield {
           Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
-        }).getOrElse(throw CallbackProcessingException)
+        }
       } else {
         Logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
         // TODO
@@ -79,9 +80,9 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   }
 
 
-  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[String] = {
+  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[DSTRegNumber] = {
     taxEnrolmentsSubscription.identifiers.getOrElse(Nil).collectFirst {
-      case Identifier(_, value) if value.slice(2, 5) == "DST" => value
+      case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
   }
 
