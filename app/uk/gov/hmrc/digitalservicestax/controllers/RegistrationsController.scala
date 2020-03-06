@@ -89,6 +89,7 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
         }).flatMap {
           case (Some(r), Some(safeId: SafeId)) => {
+            {persistence.registrations(userId) = data} >>             
             {persistence.pendingCallbacks(r.formBundleNumber) = userId} >> 
             taxEnrolmentConnector.subscribe(
               safeId,
