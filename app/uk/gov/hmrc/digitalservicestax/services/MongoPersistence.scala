@@ -34,7 +34,7 @@ object MongoPersistence {
 
   private[services] case class CallbackWrapper(
     internalId: String, 
-    formBundle: String,
+    formBundle: FormBundleNumber,
     timestamp: LocalDateTime = LocalDateTime.now
   )
 
@@ -74,22 +74,22 @@ class MongoPersistence @Inject()(
       }
     }
 
-    def get(formBundle: String) =  {
-      val selector = Json.obj("formBundle" -> formBundle)
+    def get(formBundle: FormBundleNumber) =  {
+      val selector = Json.obj("formBundle" -> formBundle.toString)
       collection.flatMap(
         _.find(selector)
           .one[CallbackWrapper]
       ).map{_.map{_.internalId}}
     }
 
-    def delete(formBundle: String) =  {
-      val selector = Json.obj("formBundle" -> formBundle)
+    def delete(formBundle: FormBundleNumber) =  {
+      val selector = Json.obj("formBundle" -> formBundle.toString)
       collection.flatMap(_.remove(selector)).map{_ => ()}
     }
 
-    def update(formBundle: String, internalId: String) = {
+    def update(formBundle: FormBundleNumber, internalId: String) = {
       val wrapper = CallbackWrapper(internalId, formBundle)
-      val selector = Json.obj("formBundle" -> formBundle)      
+      val selector = Json.obj("formBundle" -> formBundle.toString)      
       collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
           case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
           case e => throw new Exception(s"$e")
@@ -127,13 +127,6 @@ class MongoPersistence @Inject()(
       val selector = Json.obj("session" -> user)
       collection.flatMap(_.find(selector).one[RegWrapper]).map{_.map{_.data}}
     }
-
-    def getByFormBundleNumber(formBundleNumber: FormBundleNumber): Future[Option[Registration]] = {
-//      val selector = Json.obj("session" -> user)
-//      collection.flatMap(_.find(selector).one[RegWrapper]).map{_.map{_.data}}
-      ???
-    }
-
 
   }
 

@@ -26,13 +26,13 @@ import java.time.LocalDateTime
 abstract class Persistence[F[_]: cats.Monad] {
 
   protected trait PendingCallbacks {
-    def apply(formBundle: String): F[String] = get(formBundle).map{
+    def apply(formBundle: FormBundleNumber): F[String] = get(formBundle).map{
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
     }
-    def get(formBundle: String): F[Option[String]]
-    def delete(formBundle: String): F[Unit]    
-    def update(formBundle: String, internalId: String): F[Unit]
-    def process(formBundle: String, regId: DSTRegNumber): F[Unit] =
+    def get(formBundle: FormBundleNumber): F[Option[String]]
+    def delete(formBundle: FormBundleNumber): F[Unit]    
+    def update(formBundle: FormBundleNumber, internalId: String): F[Unit]
+    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Unit] = 
       {apply(formBundle) >>= (registrations.confirm(_, regId))} >> delete(formBundle)
   }
 

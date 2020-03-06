@@ -27,9 +27,9 @@ trait VolatilePersistence extends Persistence[Id] {
   val pendingCallbacks = new PendingCallbacks {
 
     @volatile private var _data: Map[String, String] = Map.empty
-    def get(formBundle: String): Option[String] = _data.get(formBundle)
-    def delete(formBundle: String) = _data = _data - formBundle
-    def update(formBundle: String, internalId: String) =
+    def get(formBundle: FormBundleNumber): Option[String] = _data.get(formBundle)
+    def delete(formBundle: FormBundleNumber) = _data = _data - formBundle
+    def update(formBundle: FormBundleNumber, internalId: String) =
       _data = _data + (formBundle -> internalId)
   }
 

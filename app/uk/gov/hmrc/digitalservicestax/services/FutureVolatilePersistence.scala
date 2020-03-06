@@ -34,9 +34,9 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
 
   val pendingCallbacks = new PendingCallbacks {
     private def V = inner.pendingCallbacks    
-    def get(formBundle: String) = f(V.get(formBundle))
-    def delete(formBundle: String) = f(V.delete(formBundle))
-    def update(formBundle: String, internalId: String) = f(V.update(formBundle, internalId))
+    def get(formBundle: FormBundleNumber) = f(V.get(formBundle))
+    def delete(formBundle: FormBundleNumber) = f(V.delete(formBundle))
+    def update(formBundle: FormBundleNumber, internalId: String) = f(V.update(formBundle, internalId))
   }
 
   val registrations = new Registrations {
