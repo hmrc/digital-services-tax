@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.digitalservicestax.controllers
 
+import cats.data.OptionT
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Logger}
-import play.api.libs.json.{Format, JsValue, Json, OWrites}
+import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
+import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber, Registration}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import cats.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,26 +41,31 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
-  persistence: FutureVolatilePersistence
+  persistence: MongoPersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
+  object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
+
   def callback(formBundleNumber: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[CallbackNotification] { body =>
       if (body.state == "SUCCEEDED") {
-        for {
-          teSub <- taxEnrolments.getSubscription(formBundleNumber)
-          // TODO here is where we talk to persistence with the formBundleNumber and the dstNumber from .getDSTNumber(teSub)
+        (for {
+          teSub <- OptionT.liftF[Future, TaxEnrolmentsSubscription](taxEnrolments.getSubscription(formBundleNumber))
+          reg <- OptionT(persistence.registrations.getByFormBundleNumber(FormBundleNumber(formBundleNumber)))
+          dstRef <- OptionT.fromOption[Future](getDSTNumber(teSub))
+          _ <- OptionT.liftF[Future,Unit](persistence.registrations(formBundleNumber) = reg.copy(registrationNumber = DSTRegNumber(dstRef).some))
+          // TODO @Adam.Dye here for reg number email
 
 //          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getSdilNumber(teSub), formBundleNumber)
 //          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
         } yield {
-          Logger.info("Tax-enrolments callback and subsequent lookup successful")
+          Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
-        }
+        }).getOrElse(throw CallbackProcessingException)
       } else {
         Logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
         // TODO

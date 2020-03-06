@@ -18,9 +18,8 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
-import services.FutureVolatilePersistence
+import data.{percentFormat => _, _}, BackendAndFrontendJson._
+import services.MongoPersistence
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -48,7 +47,7 @@ class RegistrationsController @Inject()(
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
-  persistence: FutureVolatilePersistence
+  persistence: MongoPersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -90,11 +89,11 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
         }).flatMap {
           case (Some(r), Some(safeId: SafeId)) => {
-            (persistence.registrations(userId) = data) >>
+            (persistence.registrations(userId) = data.copy(formBundleNumber = FormBundleNumber(r.formBundleNumber).some)) >>
               taxEnrolmentConnector.subscribe(
                 safeId,
                 r.formBundleNumber
-              ) >>
+              ) >> // TODO @Adam.Dye here for reg received email notification
               Future.successful(Ok(Json.toJson(r)))
           }
           case _ => Future.successful(NotFound)

@@ -48,6 +48,7 @@ trait SimpleJson {
   implicit val phoneNumberFormat    = validatedStringFormat(PhoneNumber, "phone number")
   implicit val utrFormat            = validatedStringFormat(UTR, "UTR")
   implicit val safeIfFormat         = validatedStringFormat(SafeId, "SafeId")
+  implicit val formBundleNoFormat   = validatedStringFormat(FormBundleNumber, "FormBundleNumber")
   implicit val emailFormat          = validatedStringFormat(Email, "email")
   implicit val countryCodeFormat    = validatedStringFormat(CountryCode, "country code")
   implicit val sortCodeFormat       = validatedStringFormat(SortCode, "sort code")

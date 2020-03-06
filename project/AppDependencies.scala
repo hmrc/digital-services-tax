@@ -9,6 +9,7 @@ object AppDependencies {
     "com.github.fge"         %  "json-schema-validator"    % "2.2.6",
     "org.typelevel"          %% "cats-core"                % "2.0.0",
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
+    "org.reactivemongo"      %% "play2-reactivemongo"      % "0.18.6-play26",    
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.1.0",
     "com.beachape"           %% "enumeratum"               % "1.5.13",
     "com.beachape"           %% "enumeratum-play-json"     % "1.5.13",

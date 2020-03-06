@@ -27,5 +27,6 @@ case class Registration (
   contact: ContactDetails,
   dateLiable: LocalDate,
   accountingPeriodEnd: LocalDate,
+  formBundleNumber: Option[FormBundleNumber] = None,
   registrationNumber: Option[DSTRegNumber] = None
 )

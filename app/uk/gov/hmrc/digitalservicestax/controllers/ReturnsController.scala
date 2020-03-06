@@ -28,7 +28,7 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import services.FutureVolatilePersistence
+import services.MongoPersistence
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
 import scala.concurrent._
@@ -43,7 +43,7 @@ class ReturnsController @Inject()(
   val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
-  persistence: FutureVolatilePersistence,
+  persistence: MongoPersistence,
   connector: connectors.ReturnConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
@@ -71,7 +71,7 @@ class ReturnsController @Inject()(
             throw new NoSuchElementException(s"no period found for $periodKey")
           }
           _ <- connector.send(regNo, period, data, previous.isDefined)
-          _ <- persistence.returns(reg, period) = data
+          _ <- persistence.returns(reg, period.key) = data
         } yield {
           Ok(JsNull)
         }
