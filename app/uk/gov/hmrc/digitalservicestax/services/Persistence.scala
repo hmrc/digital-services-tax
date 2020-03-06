@@ -26,12 +26,12 @@ import java.time.LocalDateTime
 abstract class Persistence[F[_]: cats.Monad] {
 
   protected trait PendingCallbacks {
-    def apply(formBundle: FormBundleNumber): F[String] = get(formBundle).map{
+    def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map{
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
     }
-    def get(formBundle: FormBundleNumber): F[Option[String]]
+    def get(formBundle: FormBundleNumber): F[Option[InternalId]]
     def delete(formBundle: FormBundleNumber): F[Unit]    
-    def update(formBundle: FormBundleNumber, internalId: String): F[Unit]
+    def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
     def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Unit] = 
       {apply(formBundle) >>= (registrations.confirm(_, regId))} >> delete(formBundle)
   }
@@ -39,12 +39,12 @@ abstract class Persistence[F[_]: cats.Monad] {
   def pendingCallbacks: PendingCallbacks
 
   protected trait Registrations {
-    def apply(user: String): F[Registration] = get(user).map{
+    def apply(user: InternalId): F[Registration] = get(user).map{
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
-    def get(user: String): F[Option[Registration]]
-    def update(user: String, reg: Registration): F[Unit]
-    def confirm(user: String, registrationNumber: DSTRegNumber): F[Unit] =
+    def get(user: InternalId): F[Option[Registration]]
+    def update(user: InternalId, reg: Registration): F[Unit]
+    def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Unit] =
       apply(user) >>= (x => update(user, x.copy(registrationNumber = Some(registrationNumber))))
   }
 

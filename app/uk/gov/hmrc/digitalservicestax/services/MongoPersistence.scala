@@ -33,13 +33,13 @@ import javax.inject._
 object MongoPersistence {
 
   private[services] case class CallbackWrapper(
-    internalId: String, 
+    internalId: InternalId, 
     formBundle: FormBundleNumber,
     timestamp: LocalDateTime = LocalDateTime.now
   )
 
   private[services] case class RegWrapper(
-    session: String, 
+    session: InternalId, 
     data: Registration,
     timestamp: LocalDateTime = LocalDateTime.now
   )
@@ -87,7 +87,7 @@ class MongoPersistence @Inject()(
       collection.flatMap(_.remove(selector)).map{_ => ()}
     }
 
-    def update(formBundle: FormBundleNumber, internalId: String) = {
+    def update(formBundle: FormBundleNumber, internalId: InternalId) = {
       val wrapper = CallbackWrapper(internalId, formBundle)
       val selector = Json.obj("formBundle" -> formBundle.toString)      
       collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
@@ -114,17 +114,17 @@ class MongoPersistence @Inject()(
 
     implicit val formatWrapper = Json.format[RegWrapper]
 
-    override def update(user: String, value: Registration): Future[Unit] = {
+    override def update(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)
-      val selector = Json.obj("session" -> user)      
+      val selector = Json.obj("session" -> user.toString)
       collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
           case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
           case e => throw new Exception(s"$e")
         }
     }
 
-    override def get(user: String): Future[Option[Registration]] = {
-      val selector = Json.obj("session" -> user)
+    override def get(user: InternalId): Future[Option[Registration]] = {
+      val selector = Json.obj("session" -> user.toString)
       collection.flatMap(_.find(selector).one[RegWrapper]).map{_.map{_.data}}
     }
 

@@ -56,7 +56,8 @@ class ReturnsController @Inject()(
   def submitReturn(periodKeyString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val periodKey = Period.Key(periodKeyString)
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
-      val userId = uid.getOrElse(
+
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
 
@@ -81,7 +82,7 @@ class ReturnsController @Inject()(
 
   def lookupOutstandingReturns(): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
-      val userId = uid.getOrElse(
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
 

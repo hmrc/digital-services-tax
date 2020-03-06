@@ -69,7 +69,7 @@ class RegistrationsController @Inject()(
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
 
-      val userId = uid.getOrElse(
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
       withJsonBody[Registration](data => {
@@ -105,7 +105,8 @@ class RegistrationsController @Inject()(
 
   def lookupRegistration(): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { case uid =>
-      val userId = uid.getOrElse(
+
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
 
