@@ -29,7 +29,7 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.connectors.{EmailConnector, RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -48,6 +48,7 @@ class RegistrationsController @Inject()(
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
+  emailConnector: EmailConnector,
   persistence: FutureVolatilePersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
@@ -69,7 +70,6 @@ class RegistrationsController @Inject()(
 
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
-
       val userId = uid.getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
@@ -94,6 +94,11 @@ class RegistrationsController @Inject()(
               taxEnrolmentConnector.subscribe(
                 safeId,
                 r.formBundleNumber
+              ) >>
+            emailConnector.sendSubmissionReceivedEmail(
+                data.companyReg.company.name,
+                data.contact.email,
+                data.ultimateParent
               ) >>
               Future.successful(Ok(Json.toJson(r)))
           }

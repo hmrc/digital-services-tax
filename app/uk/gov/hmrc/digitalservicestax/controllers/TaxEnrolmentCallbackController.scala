@@ -39,6 +39,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
+  emailConnector: EmailConnector,
   persistence: FutureVolatilePersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
@@ -53,7 +54,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           teSub <- taxEnrolments.getSubscription(formBundleNumber)
           // TODO here is where we talk to persistence with the formBundleNumber and the dstNumber from .getDSTNumber(teSub)
 
-//          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getSdilNumber(teSub), formBundleNumber)
+          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getDSTNumber(teSub), formBundleNumber)
 //          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
         } yield {
           Logger.info("Tax-enrolments callback and subsequent lookup successful")
@@ -77,18 +78,21 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
       case Identifier(_, value) if value.slice(2, 5) == "DST" => value
     }
   }
-
-
-  //  private def sendNotificationEmail(orgName: Option[String], email: Option[String], sdilNumber: Option[String], formBundleNumber: String)
-//    (implicit hc: HeaderCarrier): Future[Unit] = {
-//    (orgName, email) match {
-//      case (Some(o), Some(e)) => sdilNumber match {
-//        case Some(s) => emailConnector.sendConfirmationEmail(o, e, s)
-//        case None => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number"))
-//      }
-//      case _ => Future.successful(Logger.error(s"Received callback for form bundle number $formBundleNumber, but no pending record exists"))
-//    }
-//  }
+  private def sendNotificationEmail(
+    orgName: Option[String],
+    email: Option[String],
+    dstNumber: Option[String],
+    formBundleNumber: String
+  )
+    (implicit hc: HeaderCarrier): Future[Unit] = {
+    (orgName, email) match {
+      case (Some(o), Some(e)) => dstNumber match {
+        case Some(s) => emailConnector.sendConfirmationEmail(o, e, s)
+        case None => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number"))
+      }
+      case _ => Future.successful(Logger.error(s"Received callback for form bundle number $formBundleNumber, but no pending record exists"))
+    }
+  }
 //
 //
 //  private def buildAuditEvent(callback: CallbackNotification, path: String, subscriptionId: String)(implicit hc: HeaderCarrier) = {
