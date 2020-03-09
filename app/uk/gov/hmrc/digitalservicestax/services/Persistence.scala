@@ -19,35 +19,49 @@ package services
 
 import scala.language.higherKinds
 
-import cats.syntax.functor._
+import cats.implicits._
 import data._
 import java.time.LocalDateTime
 
-abstract class Persistence[F[_]: cats.Functor] {
+abstract class Persistence[F[_]: cats.Monad] {
+
+  protected trait PendingCallbacks {
+    def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map{
+      _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
+    }
+    def get(formBundle: FormBundleNumber): F[Option[InternalId]]
+    def delete(formBundle: FormBundleNumber): F[Unit]    
+    def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
+    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Unit] = 
+      {apply(formBundle) >>= (registrations.confirm(_, regId))} >> delete(formBundle)
+  }
+
+  def pendingCallbacks: PendingCallbacks
 
   protected trait Registrations {
-    def apply(user: String): F[Registration] = get(user).map{
+    def apply(user: InternalId): F[Registration] = get(user).map{
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
-    def get(user: String): F[Option[Registration]]
-    def update(user: String, reg: Registration): F[Unit]
-    def confirm(user: String, registrationNumber: DSTRegNumber): F[Unit]
+    def get(user: InternalId): F[Option[Registration]]
+    def update(user: InternalId, reg: Registration): F[Unit]
+    def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Unit] =
+      apply(user) >>= (x => update(user, x.copy(registrationNumber = Some(registrationNumber))))
   }
 
   def registrations: Registrations
 
   protected trait Returns {
-    def apply(reg: Registration): F[Map[Period, Return]] = get(reg)
-    def apply(reg: Registration, period: Period): F[Return] = get(reg, period).map{
-      _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$period"))
+    def apply(reg: Registration): F[Map[Period.Key, Return]] = get(reg)
+    def apply(reg: Registration, periodKey: Period.Key): F[Return] = get(reg, periodKey).map{
+      _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$periodKey"))
     }
 
-    def get(reg: Registration): F[Map[Period, Return]]
-    def get(reg: Registration, period: Period): F[Option[Return]] =
+    def get(reg: Registration): F[Map[Period.Key, Return]]
+    def get(reg: Registration, period: Period.Key): F[Option[Return]] =
       get(reg).map{_.get(period)}
 
-    def update(reg: Registration, period: Period, ret: Return): F[Unit]
-    def update(reg: Registration, all: Map[Period,Return]): F[Unit]
+    def update(reg: Registration, period: Period.Key, ret: Return): F[Unit]
+//    def update(reg: Registration, all: Map[Period.Key, Return]): F[Unit]
   }
 
   def returns: Returns

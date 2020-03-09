@@ -32,27 +32,34 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
 
   private def f[A](in: A): Future[A] = Future.successful(in)
 
+  val pendingCallbacks = new PendingCallbacks {
+    private def V = inner.pendingCallbacks    
+    def get(formBundle: FormBundleNumber) = f(V.get(formBundle))
+    def delete(formBundle: FormBundleNumber) = f(V.delete(formBundle))
+    def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
+  }
+
   val registrations = new Registrations {
     private def V = inner.registrations
 
-    def get(user: String) = f(V.get(user))
+    def get(user: InternalId) = f(V.get(user))
 
-    def update(user: String, reg: Registration) =
+    def update(user: InternalId, reg: Registration) =
       f(V.update(user, reg))      
 
-    def confirm(user: String, newRegNo: DSTRegNumber) =
+    override def confirm(user: InternalId, newRegNo: DSTRegNumber) =
       f(V.confirm(user, newRegNo))
+
   }
 
   val returns = new Returns {
     private def V = inner.returns
-    def get(reg: Registration) =
-      f(V.get(reg))
+    def get(reg: Registration) = f(V.get(reg))
 
-    def update(reg: Registration, all: Map[Period,Return]) =
+    def update(reg: Registration, all: Map[Period.Key,Return]) =
       f(V.update(reg, all))
 
-    def update(reg: Registration, period: Period, ret: Return) =
+    def update(reg: Registration, period: Period.Key, ret: Return) =
       f(V.update(reg, period, ret))
     
   }
