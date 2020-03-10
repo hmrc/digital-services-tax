@@ -17,10 +17,11 @@
 package uk.gov.hmrc.digitalservicestax.backend_data
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.digitalservicestax.data.FormBundleNumber
 
 case class RegistrationResponse(
   processingDate: String,
-  formBundleNumber: String
+  formBundleNumber: FormBundleNumber
 )
 
 case object RegistrationResponse {

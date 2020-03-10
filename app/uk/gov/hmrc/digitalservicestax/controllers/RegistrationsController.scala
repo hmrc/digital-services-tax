@@ -18,9 +18,8 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
-import services.FutureVolatilePersistence
+import data.{percentFormat => _, _}, BackendAndFrontendJson._
+import services.MongoPersistence
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -49,7 +48,7 @@ class RegistrationsController @Inject()(
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
   emailConnector: EmailConnector,
-  persistence: FutureVolatilePersistence
+  persistence: MongoPersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -70,7 +69,8 @@ class RegistrationsController @Inject()(
 
   def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
-      val userId = uid.getOrElse(
+
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
       withJsonBody[Registration](data => {
@@ -90,12 +90,13 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
         }).flatMap {
           case (Some(r), Some(safeId: SafeId)) => {
-            (persistence.registrations(userId) = data) >>
-              taxEnrolmentConnector.subscribe(
-                safeId,
-                r.formBundleNumber
-              ) >>
-            emailConnector.sendSubmissionReceivedEmail(
+            {persistence.registrations(userId) = data} >>             
+            {persistence.pendingCallbacks(r.formBundleNumber) = userId} >> 
+            taxEnrolmentConnector.subscribe(
+              safeId,
+              r.formBundleNumber
+            ) >>
+              emailConnector.sendSubmissionReceivedEmail(
                 data.companyReg.company.name,
                 data.contact.email,
                 data.ultimateParent
@@ -110,7 +111,8 @@ class RegistrationsController @Inject()(
 
   def lookupRegistration(): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { case uid =>
-      val userId = uid.getOrElse(
+
+      val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
       )
 

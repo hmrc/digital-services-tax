@@ -35,6 +35,16 @@ package object data extends SimpleJson {
     "^[A-Z0-9]{1,15}$"
   )
 
+  type FormBundleNumber = String @@ FormBundleNumber.Tag
+  object FormBundleNumber extends RegexValidatedString(
+    regex = "^[0-9]{12}$"
+  )
+
+  type InternalId = String @@ InternalId.Tag
+  object InternalId extends RegexValidatedString(
+    regex = "^Int-[a-f0-9-]*$"
+  )
+
   type Postcode = String @@ Postcode.Tag
   object Postcode extends RegexValidatedString(
     """^(GIR 0A{2})|((([A-Z][0-9]{1,2})|(([A-Z][A-HJ-Y][0-9]{1,2})|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z]))))[ ]?[0-9][A-Z]{2})$""",
