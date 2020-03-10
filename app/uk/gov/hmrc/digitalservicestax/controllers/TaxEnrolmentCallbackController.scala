@@ -24,7 +24,7 @@ import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.data.{Company, DSTRegNumber, FormBundleNumber, InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -45,6 +45,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
   emailConnector: EmailConnector,
+  returnConnector: ReturnConnector,
   persistence: MongoPersistence
 ) extends BackendController(cc) with AuthorisedFunctions {
 
@@ -69,13 +70,8 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
             dstRef = getDSTNumber(teSub).getOrElse(throw CallbackProcessingException)
             _  <- persistence.pendingCallbacks.process(formBundleNumber, dstRef)
             pendingSub <- persistence.registrations.get(userId)
-
-            _ <- sendNotificationEmail(
-                  pendingSub.map(_.subscription.orgName),
-                  pendingSub.map(_.subscription.contact.email),
-                  getDSTNumber(teSub),
-                  formBundleNumber
-                )
+            period <- returnConnector.getPeriods(dstRef).map{_.collectFirst { case (x, None) => x } }
+            _ <- sendNotificationEmail(pendingSub, getDSTNumber(teSub), formBundleNumber, period)
   //          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
           } yield {
             Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
@@ -101,16 +97,26 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
     }
   }
   private def sendNotificationEmail(
-    orgName: Option[String],
-    email: Option[String],
-    dstNumber: Option[String],
-    formBundleNumber: String
+    reg: Option[Registration],
+    dstNumber: Option[DSTRegNumber],
+    formBundleNumber: String,
+    period: Option[Period]
   )
     (implicit hc: HeaderCarrier): Future[Unit] = {
-    (orgName, email) match {
-      case (Some(o), Some(e)) => dstNumber match {
-        case Some(s) => emailConnector.sendConfirmationEmail(o, e, Option(Company()),s)
-        case None => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number"))
+    reg match {
+      case (Some(r)) =>
+        (dstNumber, period) match {
+          case (Some(d), Some(p))=>
+            emailConnector.sendConfirmationEmail(
+              r.companyReg.company.name,
+              r.contact.email,
+              r.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
+              d,
+              p
+            )
+          case (None, _) => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number"))
+          case (_, None) => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as obligation for payment period is missing"))
+          case _ => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number and obligation for payment period is missing"))
       }
       case _ => Future.successful(Logger.error(s"Received callback for form bundle number $formBundleNumber, but no pending record exists"))
     }

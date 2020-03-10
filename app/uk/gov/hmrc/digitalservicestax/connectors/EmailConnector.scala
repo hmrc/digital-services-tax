@@ -21,7 +21,7 @@ import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.digitalservicestax.data.{Company, Email, NonEmptyString}
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -34,24 +34,21 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
   val emailUrl: String = servicesConfig.baseUrl("email")
 
   def sendConfirmationEmail(
-    companyName: String,
-    email: String,
-    parentCompany: Option[Company],
-    dstNumber: String,
-    paymentDeadline: LocalDate,
-    submitReturnDeadline: LocalDate
+    companyName: NonEmptyString,
+    email: Email,
+    parentCompanyName: NonEmptyString,
+    dstNumber: DSTRegNumber,
+    paymentDeadline: Period
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val params = Json.obj(
-      "to"         -> Seq(email),
+      "to"         -> Seq(email.toString),
       "templateId" -> "dst_registration_accepted",
       "parameters" -> Json.obj(
-        "dstNumber"  -> dstNumber,
-        "companyName" -> companyName,
-        "groupCompanyName" -> parentCompany.fold("unknown") {
-          _.name.toString
-        },
-        "paymentDeadline" -> paymentDeadline.toString.replace("-", ""),
-        "submitReturnDeadline" -> submitReturnDeadline.toString.replace("-", "")
+        "dstNumber"  -> dstNumber.toString,
+        "companyName" -> companyName.toString,
+        "groupCompanyName" -> parentCompanyName.toString,
+        "paymentDeadline" -> paymentDeadline.paymentDue.toString.replace("-", ""),
+        "submitReturnDeadline" -> paymentDeadline.returnDue.toString.replace("-", "")
       ),
       "force" -> false
     )

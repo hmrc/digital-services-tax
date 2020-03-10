@@ -28,7 +28,7 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{EmailConnector, RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
