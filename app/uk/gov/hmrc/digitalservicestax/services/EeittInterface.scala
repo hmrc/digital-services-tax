@@ -80,7 +80,7 @@ object EeittInterface {
              ),
              "customerIdentificationNumber" -> Json.obj(
                //	      "custIDNumber" -> "???", // what should this be?
- 	      "noIdentifier" -> false,  // Customer Identifier Indicator where 1: True, 0: False. Expected to always be False for MDTP submissions
+ 	      "noIdentifier" -> o.companyReg.useSafeId,  // Expected to always be False for MDTP submissions, except for Rosm without ID route
 //               "title" -> customer.title,
                "custFirstName" -> contact.forename,
                "custLastName" -> contact.surname
