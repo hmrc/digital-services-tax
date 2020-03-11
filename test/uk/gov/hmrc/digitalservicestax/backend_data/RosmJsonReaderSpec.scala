@@ -23,6 +23,10 @@ import data._
 import org.scalatest.{FlatSpec, Matchers}
 
 class RosmJsonReaderSpec extends FlatSpec with Matchers {
+
+
+
+
   val json: JsValue = Json.parse(
     """|{
        |  "safeId": "XE0001234567890",
