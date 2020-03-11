@@ -40,6 +40,17 @@ class ReturnConnector @Inject()(val http: HttpClient,
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
+  def getNextPendingPeriod(
+    dstRegNo: DSTRegNumber    
+  )(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Period] =
+    getPeriods(dstRegNo).map{
+      _.collectFirst { case (x, None) => x }
+        .getOrElse(throw new NoSuchElementException)
+    }
+
   def getPeriods(
     dstRegNo: DSTRegNumber    
   )(
