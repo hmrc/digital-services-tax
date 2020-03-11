@@ -18,6 +18,7 @@ package uk.gov.hmrc.digitalservicestax.controllers
 
 import cats.data.OptionT
 import javax.inject.{Inject, Singleton}
+import java.time.LocalDate
 import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.{Configuration, Logger}
@@ -56,36 +57,48 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
 
   def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { case uid =>
+    val formBundleNumber = FormBundleNumber(formBundleNumberString)
+    withJsonBody[CallbackNotification] { body =>
+      if (body.state == "SUCCEEDED") {
+        (for {
+        teSub        <- OptionT.liftF[Future, TaxEnrolmentsSubscription](
+                         taxEnrolments.getSubscription(formBundleNumber)
+                       )
+          dstRef     <- OptionT.fromOption[Future](getDSTNumber(teSub))
+          uid        <- OptionT.liftF[Future, Option[InternalId]](
+                          persistence.pendingCallbacks.get(formBundleNumber)
+                        )
+          _          <- OptionT.liftF[Future, Unit](
+                          persistence.pendingCallbacks.process(formBundleNumber, dstRef)
+                        )
 
-      val userId = uid.flatMap{InternalId.of}getOrElse(
-        throw new java.security.AccessControlException("No internalId available")
-      )
-
-      val formBundleNumber = FormBundleNumber(formBundleNumberString)
-      withJsonBody[CallbackNotification] { body =>
-        if (body.state == "SUCCEEDED") {
-          for {
-            teSub <- taxEnrolments.getSubscription(formBundleNumber)
-            dstRef = getDSTNumber(teSub).getOrElse(throw CallbackProcessingException)
-            _  <- persistence.pendingCallbacks.process(formBundleNumber, dstRef)
-            pendingSub <- persistence.registrations.get(userId)
-            period <- returnConnector.getPeriods(dstRef).map{_.collectFirst { case (x, None) => x } }
-            _ <- sendNotificationEmail(pendingSub, getDSTNumber(teSub), formBundleNumber, period)
-  //          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
-          } yield {
-            Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
-            NoContent
-          }
-        } else {
-          Logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
-          // TODO
-  //        auditing.sendExtendedEvent(
-  //          buildAuditEvent(body, request.uri, formBundleNumber)) map {
-  //          _ => NoContent
-  //        }
-          Future.successful(NoContent)
-        }
+          pendingSub <- OptionT.liftF[Future, Option[Registration]](
+                          persistence.registrations.get(uid.get)
+                        )
+          period     <- OptionT.liftF[Future, List[(Period, Option[LocalDate])]](
+                          returnConnector.getPeriods(dstRef)
+                        )
+          _          <- OptionT.liftF[Future, Unit](
+                         sendNotificationEmail(
+                           pendingSub,
+                           getDSTNumber(teSub),
+                           formBundleNumber,
+                           period.collectFirst { case (x, None) => x }
+                         )
+                        )
+//          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
+        } yield {
+          Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
+          NoContent
+        }).getOrElse(throw CallbackProcessingException)
+      } else {
+        Logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
+        // TODO
+//        auditing.sendExtendedEvent(
+//          buildAuditEvent(body, request.uri, formBundleNumber)) map {
+//          _ => NoContent
+//        }
+        Future.successful(NoContent)
       }
     }
   }
