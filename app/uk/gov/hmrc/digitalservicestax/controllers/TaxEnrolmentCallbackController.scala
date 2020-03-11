@@ -61,7 +61,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
     val formBundleNumber = FormBundleNumber(formBundleNumberString)
     withJsonBody[CallbackNotification] { body =>
       if (body.state == "SUCCEEDED") {
-        (for {
+        for {
           dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
                             getDSTNumber(_).getOrElse(throw CallbackProcessingException)}
           reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
@@ -85,7 +85,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           )
           Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
-        })
+        }
       } else {
         auditing.sendExtendedEvent(
           AuditingHelper.buildCallbackAudit(
