@@ -26,10 +26,13 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.digitalservicestax.data._, BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,6 +52,7 @@ class RegistrationsController @Inject()(
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
+  emailConnector: EmailConnector,
   persistence: MongoPersistence,
   auditing: AuditConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
@@ -99,12 +103,17 @@ class RegistrationsController @Inject()(
             taxEnrolmentConnector.subscribe(
               safeId,
               r.formBundleNumber
-            ) >> // TODO @Adam.Dye here for reg received email notification
-            auditing.sendExtendedEvent(
-              AuditingHelper.buildRegistrationAudit(
-                data, providerId, r.formBundleNumber.some, "SUCCESS"
-              )
             ) >>
+              emailConnector.sendSubmissionReceivedEmail(
+                data.companyReg.company.name,
+                data.contact.email,
+                data.ultimateParent
+              ) >>
+              auditing.sendExtendedEvent(
+                AuditingHelper.buildRegistrationAudit(
+                  data, providerId, r.formBundleNumber.some, "SUCCESS"
+                )
+              ) >>
               Future.successful(Ok(Json.toJson(r)))
           } recoverWith {
             case e =>

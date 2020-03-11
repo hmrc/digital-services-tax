@@ -21,11 +21,13 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.{Configuration, Logger}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.internalId
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber}
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -41,6 +43,8 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
+  emailConnector: EmailConnector,
+  returnConnector: ReturnConnector,
   persistence: MongoPersistence,
   auditing: AuditConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
@@ -52,14 +56,21 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
 
   def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-
     val formBundleNumber = FormBundleNumber(formBundleNumberString)
     withJsonBody[CallbackNotification] { body =>
       if (body.state == "SUCCEEDED") {
         for {
-          teSub <- taxEnrolments.getSubscription(formBundleNumber)
-          dstRef = getDSTNumber(teSub).getOrElse(throw CallbackProcessingException)
-          _  <- persistence.pendingCallbacks.process(formBundleNumber, dstRef)
+          dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
+                            getDSTNumber(_).getOrElse(throw CallbackProcessingException)}
+          reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
+          period       <- returnConnector.getNextPendingPeriod(dstNumber)
+          _            <- emailConnector.sendConfirmationEmail(
+                            reg.companyReg.company.name,
+                            reg.contact.email,
+                            reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
+                            dstNumber,
+                            period
+                          )
         } yield {
           auditing.sendExtendedEvent(
             AuditingHelper.buildCallbackAudit(
@@ -67,7 +78,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
               request.uri,
               formBundleNumber,
               "SUCCESS",
-              dstRef.some
+              dstNumber.some
             )
           )
           Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
@@ -92,7 +103,6 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
   }
-
 }
 
 case class CallbackNotification(state: String, errorResponse: Option[String])

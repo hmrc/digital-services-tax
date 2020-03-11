@@ -22,9 +22,11 @@ import shapeless.tag.@@
 case class Period(
   start: LocalDate,
   end: LocalDate,
-  due: LocalDate,
-  key: Period.Key
-)
+  returnDue: LocalDate,
+  key: Period.Key) {
+    def paymentDue: LocalDate = end.minusMonths(3)
+  }
+
 
 object Period {
 
