@@ -40,6 +40,10 @@ object TestInstances {
   )
 
 
+  implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
+    Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
+  }
+
   def nonEmptyString: Gen[NonEmptyString] =
     arbitrary[String].filter(_.nonEmpty).map{NonEmptyString.apply}
 
