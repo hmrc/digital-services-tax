@@ -34,18 +34,17 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
   val emailUrl: String = servicesConfig.baseUrl("email")
 
   def sendConfirmationEmail(
-    companyName: NonEmptyString,
-    email: Email,
+    contact: ContactDetails,
     parentCompanyName: NonEmptyString,
     dstNumber: DSTRegNumber,
     paymentDeadline: Period
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val params = Json.obj(
-      "to"         -> Seq(email.toString),
+      "to"         -> Seq(contact.email.toString),
       "templateId" -> "dst_registration_accepted",
       "parameters" -> Json.obj(
         "dstNumber"  -> dstNumber.toString,
-        "companyName" -> companyName.toString,
+        "name" -> s"${contact.forename} ${contact.surname}",
         "groupCompanyName" -> parentCompanyName.toString,
         "paymentDeadline" -> paymentDeadline.paymentDue.toString.replace("-", ""),
         "submitReturnDeadline" -> paymentDeadline.returnDue.toString.replace("-", "")
@@ -58,14 +57,14 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
     }
   }
 
-  def sendSubmissionReceivedEmail(companyName: NonEmptyString, email: Email, parentCompany: Option[Company])(
+  def sendSubmissionReceivedEmail(contact: ContactDetails, parentCompany: Option[Company])(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] = {
     val params = Json.obj(
-      "to"         -> Seq(email.toString),
+      "to"         -> Seq(contact.email.toString),
       "templateId" -> "dst_registration_received",
       "parameters" -> Json.obj(
-        "companyName" -> companyName.toString,
+        "name" -> s"${contact.forename} ${contact.surname}",
         "parentCompanyName" -> parentCompany.fold("unknown") {
           _.name.toString
         }
