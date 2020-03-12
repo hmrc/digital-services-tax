@@ -49,6 +49,40 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     }
   }
 
+  it should "serialize and de-serialise a Postcode instance" in {
+    testJsonRoundtrip[Postcode]
+  }
+
+  it should "serialize and de-serialise a PhoneNumber instance" in {
+    testJsonRoundtrip[PhoneNumber]
+  }
+
+  it should "serialize and de-serialise a NonEmptyString instance" in {
+    testJsonRoundtrip[NonEmptyString]
+  }
+
+  it should "fail to validate a NonEmptyString from an invalid source" in {
+    forAll(Gen.chooseNum(Int.MinValue, Int.MaxValue)) { sample =>
+      val parsed = Json.parse(sample.toString).validate[NonEmptyString]
+
+      parsed shouldEqual JsError(
+        (JsPath \ "value") -> JsonValidationError(Seq(s"Expected non empty string, got $sample"))
+      )
+    }
+  }
+
+  it should "serialize and de-serialise an Email instance" in {
+    testJsonRoundtrip[Email]
+  }
+
+  it should "serialize and de-serialise a CountryCode instance" in {
+    testJsonRoundtrip[CountryCode]
+  }
+
+  it should "serialize and de-serialise a UTR instance" in {
+    testJsonRoundtrip[UTR]
+  }
+
   it should "serialize and de-serialise a percent instance" in {
     testJsonRoundtrip[Percent]
   }
