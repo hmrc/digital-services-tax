@@ -120,7 +120,7 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[Activity]
   }
 
-  ignore should "serialize and de-serialise a Map[GroupCompany, Money]" in {
+  it should "serialize and de-serialise a Map[GroupCompany, Money]" in {
     testJsonRoundtrip[Map[GroupCompany, Money]](gencomap)
   }
 

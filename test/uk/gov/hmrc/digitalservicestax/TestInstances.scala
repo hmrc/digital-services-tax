@@ -61,13 +61,13 @@ object TestInstances {
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
     Gen.option(UTR.gen)
-    ).mapN(GroupCompany.apply)
+  ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
       arbitrary[Money]
-      ).tupled
+    ).tupled
   )
 
   def genBankAccount: Gen[BankAccount] = {

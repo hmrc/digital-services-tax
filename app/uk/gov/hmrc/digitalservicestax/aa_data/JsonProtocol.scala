@@ -108,13 +108,12 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val groupCompanyMapFormat: OFormat[Map[GroupCompany, Money]] = new OFormat[Map[GroupCompany, Money]] {
     override def reads(json: JsValue): JsResult[Map[GroupCompany, Money]] = {
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
-
-        val Array(name, utrS) = k.split(":")
-        val utr = utrS match {
-          case "" => None
-          case x => Some(UTR(x))
+        k.split(":") match {
+          case Array(name, utrS) =>
+            GroupCompany(NonEmptyString(name), Some(UTR(utrS))) -> v.value
+          case Array(name) =>
+            GroupCompany(NonEmptyString(name), None) -> v.value
         }
-        GroupCompany(NonEmptyString(name), utr) -> v.value
       })
     }
 
