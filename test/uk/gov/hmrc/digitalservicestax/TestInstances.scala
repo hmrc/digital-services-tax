@@ -51,7 +51,7 @@ object TestInstances {
     def gen = RegexpGen.from(in.regex).map{in.apply}
   }
 
-  def genMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
+  def genActivityPercentMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
     (
       arbitrary[Activity],
       Gen.choose(0,100).map{x => Percent.apply(x.asInstanceOf[Byte])}
@@ -93,7 +93,7 @@ object TestInstances {
     Gen.choose(start.toEpochDay, end.toEpochDay).map(LocalDate.ofEpochDay)
 
   implicit def returnGen: Arbitrary[Return] = Arbitrary((
-    genMap,
+    genActivityPercentMap,
     arbitrary[Money],
     gencomap,
     arbitrary[Money],

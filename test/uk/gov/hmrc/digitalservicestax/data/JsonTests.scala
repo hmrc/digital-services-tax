@@ -22,8 +22,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.{Format, JsError, JsPath, JsResult, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.TestInstances._
 import BackendAndFrontendJson._
-import com.outworkers.util.domain.ShortString
-import com.outworkers.util.samplers.Sample
+import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 
 class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
@@ -53,9 +52,25 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[Postcode]
   }
 
+  it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
+    val generated = gen[ShortString].value
+    val parsed = Json.parse(s""" "$generated" """).validate[Postcode]
+    parsed.isSuccess shouldEqual false
+    parsed shouldEqual JsError(s"Expected a valid postcode, got $generated instead")
+  }
+
+
+  it should "fail to validate a postcode from JSON if the source input is in incorrect format" in {
+    val generated = gen[Int]
+    val parsed = Json.parse(s"""$generated""").validate[Postcode]
+    parsed.isSuccess shouldEqual false
+    parsed shouldEqual JsError(JsPath -> JsonValidationError(Seq(s"""Expected a valid postcode, got $generated instead""")))
+  }
+
   it should "serialize and de-serialise a PhoneNumber instance" in {
     testJsonRoundtrip[PhoneNumber]
   }
+
 
   it should "serialize and de-serialise a NonEmptyString instance" in {
     testJsonRoundtrip[NonEmptyString]
@@ -125,6 +140,10 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
   }
 
   it should "serialize and de-serialise a Map[Activity, Percent]" in {
-    testJsonRoundtrip[Map[Activity, Percent]](genMap)
+    testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
   }
+//
+//  it should "serialize and de-serialise a DomesticBankAccount instance" in {
+//    testJsonRoundtrip[DomesticBankAccount]
+//  }
 }
