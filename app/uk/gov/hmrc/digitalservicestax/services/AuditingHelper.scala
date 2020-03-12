@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.services
 import cats.implicits.{none, _}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
-import uk.gov.hmrc.digitalservicestax.data.{BackendAndFrontendJson, DSTRegNumber, FormBundleNumber, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{BackendAndFrontendJson, DSTRegNumber, FormBundleNumber, Registration, Return}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
@@ -74,5 +74,32 @@ object AuditingHelper {
 
     baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail = details)
   }
+
+  def buildReturnResponseAudit(
+    outcome: String,
+    errMsg: Option[String] = None
+  ): ExtendedDataEvent = {
+    baseEvent("returnSubmissionResponse").copy(detail = Json.obj(
+      "responseStatus" -> outcome,
+      "errorReason" -> errMsg
+    ))
+  }
+
+  def buildReturnSubmissionAudit(
+    regNo: DSTRegNumber,
+    providerId: String,
+    data: Return
+  )(implicit hc: HeaderCarrier): ExtendedDataEvent = {
+
+    val details = Json.obj(
+      "dstRegistrationNumber" -> regNo.toString,
+      "authProviderType" -> "GovernmentGateway",
+      "authProviderId" -> providerId,
+      "deviceId" -> hc.deviceID
+    ).++(Json.toJson(data)(BackendAndFrontendJson.returnFormat).as[JsObject])
+
+    baseEvent("returnSubmitted").copy(detail = details)
+  }
+
 
 }

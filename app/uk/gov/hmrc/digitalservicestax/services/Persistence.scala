@@ -32,8 +32,8 @@ abstract class Persistence[F[_]: cats.Monad] {
     def get(formBundle: FormBundleNumber): F[Option[InternalId]]
     def delete(formBundle: FormBundleNumber): F[Unit]    
     def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
-    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Unit] = 
-      {apply(formBundle) >>= (registrations.confirm(_, regId))} >> delete(formBundle)
+    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] = 
+      {apply(formBundle) >>= (registrations.confirm(_, regId))} <* delete(formBundle)
   }
 
   def pendingCallbacks: PendingCallbacks
@@ -44,8 +44,12 @@ abstract class Persistence[F[_]: cats.Monad] {
     }
     def get(user: InternalId): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
-    def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Unit] =
-      apply(user) >>= (x => update(user, x.copy(registrationNumber = Some(registrationNumber))))
+    private[services] def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
+      for {
+        existing <- apply(user)
+        updated  = existing.copy(registrationNumber = Some(registrationNumber))
+        _        <- update(user, updated)
+      } yield (updated)
   }
 
   def registrations: Registrations

@@ -17,24 +17,26 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import data.{percentFormat => _, _}, BackendAndFrontendJson._
-
+import data.{percentFormat => _, _}
+import BackendAndFrontendJson._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+import services.{AuditingHelper, JsonSchemaChecker, MongoPersistence}
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import services.MongoPersistence
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.retrieve._, v2.Retrievals._
+import uk.gov.hmrc.auth.core.retrieve._
+import v2.Retrievals._
+
 import scala.concurrent._
 import java.time.LocalDate
 
 import cats.implicits._
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 @Singleton()
 class ReturnsController @Inject()(
@@ -44,7 +46,8 @@ class ReturnsController @Inject()(
   appConfig: AppConfig,
   cc: ControllerComponents,
   persistence: MongoPersistence,
-  connector: connectors.ReturnConnector
+  connector: connectors.ReturnConnector,
+  auditing: AuditConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -55,7 +58,7 @@ class ReturnsController @Inject()(
 
   def submitReturn(periodKeyString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val periodKey = Period.Key(periodKeyString)
-    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId and credentials) { case uid ~ creds =>
 
       val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")
@@ -72,11 +75,24 @@ class ReturnsController @Inject()(
             throw new NoSuchElementException(s"no period found for $periodKey")
           }
           _ <- connector.send(regNo, period, data, previous.isDefined)
+          providerId = creds.fold(
+            throw new java.security.AccessControlException("No providerId available")
+          )(_.providerId)
+          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, providerId, data))
           _ <- persistence.returns(reg, period.key) = data
+          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
         } yield {
           Ok(JsNull)
         }
-      })
+      }).recoverWith {
+        case e =>
+          auditing.sendExtendedEvent(
+            AuditingHelper.buildReturnResponseAudit("ERROR", e.getMessage.some)
+          ) map {
+            Logger.warn(s"Error with DST Return ${e.getMessage}")
+            throw e
+          }
+      }
     }
   }
 
