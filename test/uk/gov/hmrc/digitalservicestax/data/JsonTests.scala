@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.data
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, JsError, JsResult, Json}
 import uk.gov.hmrc.digitalservicestax.TestInstances._
 import BackendAndFrontendJson._
 import enumeratum.scalacheck._
@@ -49,6 +49,16 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
 
   it should "serialize and de-serialise a percent instance" in {
     testJsonRoundtrip[Percent]
+  }
+
+  it should "fail to parse a percent from a non 0 - 100 int value" in {
+
+    val invalidPercentages = Gen.chooseNum(-100, -1)
+
+    forAll(invalidPercentages) { sample =>
+      val parsed = Json.parse(sample.toString).validate[Percent]
+      parsed shouldEqual JsError(s"Expected a valid percentage, got $sample instead.")
+    }
   }
 
   it should "serialize and de-serialise a GroupCompany instance" in {
