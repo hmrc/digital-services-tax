@@ -105,8 +105,7 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
           )
         ),
         None,
-        Some(SafeId("XE0001234567890")),
-        false
+        Some(SafeId("XE0001234567890"))
       )
     )
   }
@@ -156,8 +155,7 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
           )
         ),
         None,
-        Some(SafeId("XE0001234567890")),
-        false
+        Some(SafeId("XE0001234567890"))
       )
     ))
   }
