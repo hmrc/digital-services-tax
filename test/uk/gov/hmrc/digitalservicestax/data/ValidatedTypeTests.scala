@@ -22,7 +22,6 @@ import org.scalacheck.Gen
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import cats.implicits._
-import cats.syntax.monoid._
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
@@ -54,6 +53,10 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
     }
   }
 
+  it should "correctly define the class name of a validated type" in {
+    AccountNumber.className shouldEqual "AccountNumber$"
+  }
+
   it should "store percentages as bytes and initialise percent monoids with byte monoids" in {
     Monoid[Percent].empty shouldEqual Monoid[Byte].empty
   }
@@ -66,7 +69,7 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
     } yield p1.toByte -> p2.toByte
 
     forAll(generator) { case (p1, p2) =>
-      whenever(p1 >=0 && p2 >= 0) {
+      whenever(p1 >= 0 && p2 >= 0) {
         val addedPercent = Monoid.combineAll(Seq(Percent(p1), Percent(p2)))
         val addedBytes = Monoid.combineAll(Seq(p1, p2))
         addedPercent shouldEqual Percent(addedBytes)

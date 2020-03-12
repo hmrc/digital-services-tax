@@ -24,6 +24,10 @@ import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader.NotAnOrganisationEx
 
 class RosmJsonReaderSpec extends FlatSpec with Matchers {
 
+  it should "fail to parse a non JSObject" in {
+    val json = Json.parse("null");
+    RosmJsonReader.reads(json) shouldBe a [JsError]
+  }
 
   it should "fail to parse an empty organisation" in {
     val json: JsValue = Json.parse(
