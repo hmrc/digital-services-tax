@@ -22,6 +22,8 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.{Format, JsError, JsPath, JsResult, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.TestInstances._
 import BackendAndFrontendJson._
+import com.outworkers.util.domain.ShortString
+import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
 
 class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
@@ -62,14 +64,12 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
   }
 
   it should "fail to validate a percentage from a non numeric value" in {
+    forAll(Sample.generator[ShortString]) { sample =>
 
-    val invalidFormatString = Gen.alphaNumStr
+      val parsed = Json.parse(s""" "${sample.value}" """).validate[Percent]
 
-    forAll(invalidFormatString) { sample =>
-      val parsed = Json.parse(sample.toString).validate[Percent]
-      
       parsed shouldEqual JsError(
-        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got $sample instead"""))
+        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "${sample.value}" instead"""))
       )
     }
   }
