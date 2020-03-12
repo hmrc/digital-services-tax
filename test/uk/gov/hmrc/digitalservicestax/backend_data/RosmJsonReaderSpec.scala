@@ -19,8 +19,8 @@ package backend
 
 import play.api.libs.json._
 import data._
-
 import org.scalatest.{FlatSpec, Matchers}
+import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader.NotAnOrganisationException
 
 class RosmJsonReaderSpec extends FlatSpec with Matchers {
 
@@ -35,7 +35,6 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
          |  "isAnAgent": false,
          |  "isAnASAgent":false,
          |  "isAnIndividual": true,
-         |  "organisation": null,
          |  "address": {
          |    "addressLine1": "100 SuttonStreet",
          |    "addressLine2": "Wokingham",
@@ -53,7 +52,7 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
          |}
          |""".stripMargin)
 
-    intercept[JsResultException] {
+    intercept[NotAnOrganisationException.type] {
       RosmJsonReader.reads(json).isSuccess shouldEqual false
     }
   }
