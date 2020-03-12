@@ -25,7 +25,38 @@ import org.scalatest.{FlatSpec, Matchers}
 class RosmJsonReaderSpec extends FlatSpec with Matchers {
 
 
+  it should "fail to parse an empty organisation" in {
+    val json: JsValue = Json.parse(
+      """|{
+         |  "safeId": "XE0001234567890",
+         |  "sapNumber": "1234567890",
+         |  "agentReferenceNumber": "AARN1234567",
+         |  "isEditable": true,
+         |  "isAnAgent": false,
+         |  "isAnASAgent":false,
+         |  "isAnIndividual": true,
+         |  "organisation": null,
+         |  "address": {
+         |    "addressLine1": "100 SuttonStreet",
+         |    "addressLine2": "Wokingham",
+         |    "addressLine3": "Surrey",
+         |    "addressLine4": "London",
+         |    "postalCode": "DH14 1EJ",
+         |    "countryCode": "GB"
+         |  },
+         |  "contactDetails": {
+         |    "primaryPhoneNumber": "01332752856",
+         |    "secondaryPhoneNumber": "07782565326",
+         |    "faxNumber": "01332754256",
+         |    "emailAddress": "stephen@manncorpone.co.uk"
+         |  }
+         |}
+         |""".stripMargin)
 
+    intercept[JsResultException] {
+      RosmJsonReader.reads(json).isSuccess shouldEqual false
+    }
+  }
 
   val json: JsValue = Json.parse(
     """|{
@@ -76,6 +107,5 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
         false
       )
     ))
-
   }
 }
