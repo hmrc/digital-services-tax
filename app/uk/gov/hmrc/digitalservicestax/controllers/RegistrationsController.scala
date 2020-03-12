@@ -105,8 +105,7 @@ class RegistrationsController @Inject()(
               r.formBundleNumber
             ) >>
               emailConnector.sendSubmissionReceivedEmail(
-                data.companyReg.company.name,
-                data.contact.email,
+                data.contact,
                 data.ultimateParent
               ) >>
               auditing.sendExtendedEvent(

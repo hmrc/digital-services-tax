@@ -65,8 +65,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
           period       <- returnConnector.getNextPendingPeriod(dstNumber)
           _            <- emailConnector.sendConfirmationEmail(
-                            reg.companyReg.company.name,
-                            reg.contact.email,
+                            reg.contact,
                             reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
                             dstNumber,
                             period
