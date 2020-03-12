@@ -15,14 +15,38 @@
  */
 
 package uk.gov.hmrc.digitalservicestax
-package backend
+package backend_data
 
 import play.api.libs.json._
 import data._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader
 import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader.NotAnOrganisationException
 
-class RosmJsonReaderSpec extends FlatSpec with Matchers {
+class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
+
+  def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
+    forAll { sample: T =>
+      val js = Json.toJson(sample)
+
+      val parsed = js.validate[T]
+      parsed.isSuccess shouldEqual true
+      parsed.asOpt.value shouldEqual sample
+    }
+  }
+
+
+  def testJsonRoundtrip[T : Format](gen: Gen[T]): Assertion = {
+    forAll(gen) { sample: T =>
+      val js = Json.toJson(sample)
+
+      val parsed = js.validate[T]
+      parsed.isSuccess shouldEqual true
+      parsed.asOpt.value shouldEqual sample
+    }
+  }
 
   it should "fail to parse a non JSObject" in {
     val json = Json.parse("null");
@@ -161,5 +185,12 @@ class RosmJsonReaderSpec extends FlatSpec with Matchers {
         Some(SafeId("XE0001234567890"))
       )
     ))
+  }
+
+  it should "serialize and deserialize a Rosm object to and from JSON" in {
+    val parsed = RosmJsonReader.reads(json)
+    parsed.isSuccess shouldEqual true
+
+    RosmJsonWriter.writes()
   }
 }

@@ -16,14 +16,9 @@
 
 package uk.gov.hmrc.digitalservicestax.backend_data
 
-import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
+import java.time.Instant
 
-
-case class RosmRegisterWithoutIDRequest(
-  isAnAgent: Boolean = false,
-  isAGroup: Boolean = false,
-  organisation: Company,
-  contactDetails: ContactDetails
-) {
-
+object AcknowledgementReference {
+  def generate(postcode: String): String =
+    postcode.map(_.toInt).mkString + Instant.now.toEpochMilli.toString.slice(0,32)
 }
