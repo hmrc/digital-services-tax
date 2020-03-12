@@ -22,6 +22,7 @@ import org.scalacheck.Gen
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import cats.implicits._
+import uk.gov.hmrc.digitalservicestax.TestInstances._
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
@@ -50,6 +51,12 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
         ukAddress.postalCode,
         ukAddress.countryCode
       )
+    }
+  }
+
+  it should "correctly substract 3 months from a period" in {
+    forAll { period: Period =>
+      period.paymentDue shouldEqual period.end.minusMonths(3)
     }
   }
 
