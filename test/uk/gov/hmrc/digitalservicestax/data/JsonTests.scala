@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.data
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, JsError, JsResult, Json}
+import play.api.libs.json.{Format, JsError, JsPath, JsResult, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.TestInstances._
 import BackendAndFrontendJson._
 import enumeratum.scalacheck._
@@ -58,6 +58,19 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     forAll(invalidPercentages) { sample =>
       val parsed = Json.parse(sample.toString).validate[Percent]
       parsed shouldEqual JsError(s"Expected a valid percentage, got $sample instead.")
+    }
+  }
+
+  it should "fail to validate a percentage from a non numeric value" in {
+
+    val invalidFormatString = Gen.alphaNumStr
+
+    forAll(invalidFormatString) { sample =>
+      val parsed = Json.parse(sample.toString).validate[Percent]
+      
+      parsed shouldEqual JsError(
+        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got $sample instead"""))
+      )
     }
   }
 
