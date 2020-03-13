@@ -22,8 +22,7 @@ import data._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader
-import uk.gov.hmrc.digitalservicestax.backend.RosmJsonReader.NotAnOrganisationException
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
 
 class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
@@ -191,6 +190,5 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
     val parsed = RosmJsonReader.reads(json)
     parsed.isSuccess shouldEqual true
 
-    RosmJsonWriter.writes()
   }
 }

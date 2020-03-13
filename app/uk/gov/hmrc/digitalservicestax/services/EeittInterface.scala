@@ -38,7 +38,7 @@ object EeittInterface {
       JsObject(data)
   }
 
-  private implicit def regimeSpecificWrites = new Writes[Map[String, String]] {
+  implicit def regimeSpecificWrites: Writes[Map[String, String]] = new Writes[Map[String, String]] {
     def writes(value: Map[String, String]): JsValue =
       JsArray(
         value.toList.zipWithIndex flatMap {
