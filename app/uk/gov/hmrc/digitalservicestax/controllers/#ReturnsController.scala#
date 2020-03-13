@@ -51,6 +51,7 @@ class ReturnsController @Inject()(
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
+  log.error(s"startup ${this.getClass} logging")
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
@@ -58,6 +59,7 @@ class ReturnsController @Inject()(
   def submitReturn(periodKeyString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val periodKey = Period.Key(periodKeyString)
     authorised(AuthProviders(GovernmentGateway)).retrieve(internalId and credentials) { case uid ~ creds =>
+
 
       val userId = uid.flatMap{InternalId.of}getOrElse(
         throw new java.security.AccessControlException("No internalId available")

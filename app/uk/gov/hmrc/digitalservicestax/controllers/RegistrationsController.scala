@@ -58,7 +58,6 @@ class RegistrationsController @Inject()(
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
-  log.error(s"startup ${this.getClass} logging")
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
