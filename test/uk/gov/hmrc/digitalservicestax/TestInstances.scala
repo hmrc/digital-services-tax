@@ -23,6 +23,7 @@ import cats.implicits.{none, _}
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
 
@@ -196,4 +197,13 @@ object TestInstances {
         ).mapN(Registration.apply)
     }
   )
+
+  implicit def genRegistration: Arbitrary[RosmRegisterWithoutIDRequest] = Arbitrary {
+    (
+      arbitrary[Boolean],
+      arbitrary[Boolean],
+      arbitrary[Company],
+      arbitrary[ContactDetails]
+    ).mapN(RosmRegisterWithoutIDRequest.apply)
+  }
 }

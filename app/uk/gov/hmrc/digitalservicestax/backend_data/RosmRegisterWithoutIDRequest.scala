@@ -18,9 +18,6 @@ package uk.gov.hmrc.digitalservicestax.backend_data
 
 import play.api.libs.json.{JsValue, Json, Writes}
 import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
-import java.time.Instant
-
-import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.data._
 
 case class RosmRegisterWithoutIDRequest(

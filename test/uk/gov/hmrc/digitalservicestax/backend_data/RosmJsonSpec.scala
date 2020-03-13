@@ -17,12 +17,14 @@
 package uk.gov.hmrc.digitalservicestax
 package backend_data
 
+import com.outworkers.util.samplers._
 import play.api.libs.json._
 import data._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
+import TestInstances._
 
 class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
@@ -190,5 +192,8 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
     val parsed = RosmJsonReader.reads(json)
     parsed.isSuccess shouldEqual true
 
+    forAll { value: RosmRegisterWithoutIDRequest =>
+      Json.toJson(value)
+    }
   }
 }
