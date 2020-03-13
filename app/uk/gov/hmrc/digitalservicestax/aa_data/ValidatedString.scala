@@ -42,8 +42,8 @@ trait ValidatedType[BaseType] {
       x => tag[Tag][BaseType](x)
     }
 
-  def mapTC[TC[_]: cats.Functor](implicit monA: TC[BaseType]): TC[BaseType @@ Tag] =
-    monA.map(apply)
+//  def mapTC[TC[_]: cats.Functor](implicit monA: TC[BaseType]): TC[BaseType @@ Tag] =
+//    monA.map(apply)
 
   implicit def pathBinder(implicit baseBinder: PathBindable[BaseType]) =
     new PathBindable[BaseType @@ Tag] {

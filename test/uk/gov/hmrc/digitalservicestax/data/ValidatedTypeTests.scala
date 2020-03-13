@@ -26,6 +26,12 @@ import uk.gov.hmrc.digitalservicestax.TestInstances._
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
+  it should "fail to parse a validated tagged type using an of method" in {
+    intercept[IllegalArgumentException] {
+      Postcode("this is not a postcode")
+    }
+  }
+
   it should "concatenate lines in a UKAddress value" in {
 
     val generator = for {
