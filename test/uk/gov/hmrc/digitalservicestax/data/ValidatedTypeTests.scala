@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+
 import cats.kernel.Monoid
 import com.outworkers.util.samplers._
 import org.scalacheck.Gen
@@ -88,5 +90,12 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
         addedPercent shouldEqual Percent(addedBytes)
       }
     }
+  }
+
+  it should "allow comparing local dates with cats syntax" in {
+    import cats.syntax.order._
+
+    val comparison = LocalDate.now.plusDays(1) compare LocalDate.now()
+    comparison shouldEqual 1
   }
 }
