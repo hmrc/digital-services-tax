@@ -104,11 +104,11 @@ class RegistrationsController @Inject()(
               safeId,
               r.formBundleNumber
             ) >>
-              emailConnector.sendSubmissionReceivedEmail(
-                data.companyReg.company.name,
-                data.contact.email,
-                data.ultimateParent
-              ) >>
+//              emailConnector.sendSubmissionReceivedEmail(
+//                data.companyReg.company.name,
+//                data.contact.email,
+//                data.ultimateParent
+//              ) >>
               auditing.sendExtendedEvent(
                 AuditingHelper.buildRegistrationAudit(
                   data, providerId, r.formBundleNumber.some, "SUCCESS"
