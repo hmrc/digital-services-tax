@@ -19,11 +19,12 @@ package uk.gov.hmrc.digitalservicestax.data
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, JsError, JsPath, JsResult, Json, JsonValidationError}
+import play.api.libs.json.{Format, JsError, JsPath, JsResult, JsString, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.TestInstances._
 import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
+import uk.gov.hmrc.digitalservicestax.services.EeittInterface._
 
 class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
@@ -141,6 +142,11 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
 
   it should "serialize and de-serialise a Map[Activity, Percent]" in {
     testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
+  }
+
+  it should "serialize an enum entry as a string" in {
+    val jsValue = Json.toJson(Activity.SocialMedia)
+    jsValue shouldEqual JsString("SocialMedia")
   }
 //
 //  it should "serialize and de-serialise a DomesticBankAccount instance" in {
