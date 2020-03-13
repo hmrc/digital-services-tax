@@ -56,26 +56,26 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
 
   def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-//    val formBundleNumber = FormBundleNumber(formBundleNumberString)
+    val formBundleNumber = FormBundleNumber(formBundleNumberString)
     withJsonBody[CallbackNotification] { body =>
       if (body.state == "SUCCEEDED") {
         for {
-          dstNumber    <- taxEnrolments.getSubscription(FormBundleNumber(formBundleNumberString)).map{
+          dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
                             getDSTNumber(_).getOrElse(throw CallbackProcessingException)}
-          reg          <- persistence.pendingCallbacks.process(FormBundleNumber(formBundleNumberString), dstNumber)
+          reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
           period       <- returnConnector.getNextPendingPeriod(dstNumber)
-//          _            <- emailConnector.sendConfirmationEmail(
-//                            reg.contact,
-//                            reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
-//                            dstNumber,
-//                            period
-//                          )
+          _            <- emailConnector.sendConfirmationEmail(
+                            reg.contact,
+                            reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
+                            dstNumber,
+                            period
+                          )
         } yield {
           auditing.sendExtendedEvent(
             AuditingHelper.buildCallbackAudit(
               body,
               request.uri,
-              FormBundleNumber(formBundleNumberString),
+              formBundleNumber,
               "SUCCESS",
               dstNumber.some
             )
@@ -89,10 +89,10 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           AuditingHelper.buildCallbackAudit(
             body,
             request.uri,
-            FormBundleNumber(formBundleNumberString),
+            formBundleNumber,
             "ERROR")
         )
-        Logger.error(s"Got error from tax-enrolments callback for ${FormBundleNumber(formBundleNumberString)}: [${body.errorResponse.getOrElse("")}]")
+        Logger.error(s"Got error from tax-enrolments callback for ${formBundleNumber}: [${body.errorResponse.getOrElse("")}]")
         Future.successful(NoContent)
       }
     }
