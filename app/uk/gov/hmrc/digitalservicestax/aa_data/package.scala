@@ -88,7 +88,7 @@ package object data extends SimpleJson {
 
   type IBAN = String @@ IBAN.Tag
   object IBAN extends RegexValidatedString(
-    """^[0-9]{8}$""", // TODO
+    """^[0-9]"{4,50}""", // TODO
     _.filter(_.isDigit)
   )
 

@@ -35,8 +35,8 @@ class TestConnector @Inject()(
 
   private val stubUrl: String = servicesConfig.baseUrl("des")
 
-  def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    http.GET[HttpResponse](s"$stubUrl/$url/$param")
+  def trigger(url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
+    http.GET[HttpResponse](s"$stubUrl/$url")
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
     http.GET[DstRegNoWrapper](s"$stubUrl/get-subscription/$subscriptionId").map { x =>

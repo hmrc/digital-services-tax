@@ -37,8 +37,8 @@ class TestController @Inject()(
   environment: Environment
 ) extends BackendController(cc) with ExtraActions {
 
-  def triggerTaxEnrolmentCallback(seed: String): Action[AnyContent] = Action.async { implicit request =>
-    connector.trigger("trigger/callback/te", seed) >>
+  def triggerTaxEnrolmentCallback: Action[AnyContent] = Action.async { implicit request =>
+    connector.trigger("trigger/callback/te") >>
       Future.successful(Ok("tax enrolment callback triggered "))
   }
 

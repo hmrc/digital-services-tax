@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import cats.implicits._
 import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
@@ -129,6 +130,20 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val bankAccountFormat: OFormat[BankAccount] = Json.format[BankAccount]
   implicit val repaymentDetailsFormat: OFormat[RepaymentDetails] = Json.format[RepaymentDetails]
   implicit val returnFormat: OFormat[Return] = Json.format[Return]
+  implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-  implicit val periodFormat: OFormat[Period] = Json.format[Period]  
+  val readCompanyReg = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      println(Json.prettyPrint(json))
+      JsSuccess(CompanyRegWrapper (
+        Company(
+          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "address"}.as[Address]
+        ),
+        safeId = SafeId(
+          {json \ "safeId"}.as[String]
+        ).some
+      ))
+    }
+  }
 }
