@@ -28,7 +28,7 @@ object AppDependencies {
     "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % "test",
     "com.beachape"           %% "enumeratum-scalacheck"    % "1.5.16"                % "test",
     "wolfendale"             %% "scalacheck-gen-regexp"    % "0.1.2"                 % "test",
-    "com.outworkers"         %% "util-samplers"            % "0.56.0"                % Test
+    "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test
 
   )
 
