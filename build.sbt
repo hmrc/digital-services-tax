@@ -21,7 +21,12 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .settings(
     majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test ++ Seq(
+      "com.softwaremill.macwire"  %% "macros"                % "2.3.3" % "provided",
+      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.3" % "provided",
+      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.3",
+      "com.softwaremill.macwire"  %% "util"                  % "2.3.3"
+    )
   )
   .settings(scoverageSettings)
   .settings(publishingSettings: _*)
