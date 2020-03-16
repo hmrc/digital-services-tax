@@ -150,7 +150,6 @@ object TestInstances {
       arbitrary[String].map{_.take(40)},
       arbitrary[String].map{_.take(40)},
       arbitrary[String].map{_.take(40)},
-      arbitrary[String].map{_.take(40)},
       arbitrary[Postcode],
       arbitrary[CountryCode]
       ).mapN(ForeignAddress)
