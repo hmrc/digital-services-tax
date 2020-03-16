@@ -20,6 +20,8 @@ import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
 
+import cats.implicits._
+
 trait SimpleJson {
 
   def validatedStringFormat(A: ValidatedType[String], name: String) = new Format[String @@ A.Tag] {
@@ -130,5 +132,21 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val repaymentDetailsFormat: OFormat[RepaymentDetails] = Json.format[RepaymentDetails]
   implicit val returnFormat: OFormat[Return] = Json.format[Return]
 
-  implicit val periodFormat: OFormat[Period] = Json.format[Period]  
+  implicit val periodFormat: OFormat[Period] = Json.format[Period]
+
+  val readCompanyReg = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      println(Json.prettyPrint(json))
+      JsSuccess(CompanyRegWrapper (
+        Company(
+          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "address"}.as[Address]
+        ),
+        safeId = SafeId(
+          {json \ "safeId"}.as[String]
+        ).some
+      ))
+    }
+  }
+
 }
