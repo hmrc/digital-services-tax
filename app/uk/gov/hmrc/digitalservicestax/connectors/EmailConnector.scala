@@ -65,7 +65,7 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
       "templateId" -> "dst_registration_received",
       "parameters" -> Json.obj(
         "name" -> s"${contact.forename} ${contact.surname}",
-        "parentCompanyName" -> parentCompany.fold("unknown") {
+        "groupCompanyName" -> parentCompany.fold("unknown") {
           _.name.toString
         }
       ),

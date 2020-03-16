@@ -21,12 +21,13 @@ import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
+import BackendAndFrontendJson.{companyRegWrapperFormat => _, _}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -43,23 +44,26 @@ class RosmConnector @Inject()(val http: HttpClient,
   def retrieveROSMDetailsWithoutID(
     request: RosmRegisterWithoutIDRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
-    implicit val writes: Writes[RosmRegisterWithoutIDRequest] = backend_data.RosmJsonWriter
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
   }
 
-  def retrieveROSMDetails(utr: String)
-    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[CompanyRegWrapper]] = {
+  def retrieveROSMDetails(utr: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Option[CompanyRegWrapper]] = {
+    implicit val r = backend_data.RosmJsonReader
     val request: JsValue = Json.obj(
       "regime" -> "DST",
       "requiresNameMatch" -> false,
       "isAnAgent" -> false
     )
-    implicit val readCo: Reads[CompanyRegWrapper] = backend.RosmJsonReader
 
-    desPost[JsValue, Option[CompanyRegWrapper]](s"$desURL/$serviceURLWithId/utr/$utr", request).
-      recover {
-        case backend.RosmJsonReader.NotAnOrganisationException => None
-      }
+    desPost[JsValue, Option[CompanyRegWrapper]](
+      s"$desURL/$serviceURLWithId/utr/$utr",
+      request
+    ).recover {
+      case NotAnOrganisationException => None
+    }
   }
   
 }

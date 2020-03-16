@@ -59,9 +59,9 @@ class MongoPersistence @Inject()(
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
   import mongo.database  
   import MongoPersistence._
-  implicit val formatWrapper = Json.format[CallbackWrapper]
+  implicit val formatWrapper: OFormat[CallbackWrapper] = Json.format[CallbackWrapper]
 
-  val pendingCallbacks = new PendingCallbacks {
+  val pendingCallbacks: PendingCallbacks = new PendingCallbacks {
     lazy val collection: Future[JSONCollection] = {
       database.map(_.collection[JSONCollection]("pending-callbacks")).flatMap { c =>
 
@@ -70,11 +70,11 @@ class MongoPersistence @Inject()(
           unique = true
         )
         
-        c.indexesManager.ensure(sessionIndex).map { case _ => c }
+        c.indexesManager.ensure(sessionIndex).map(_ => c)
       }
     }
 
-    def get(formBundle: FormBundleNumber) =  {
+    def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =  {
       val selector = Json.obj("formBundle" -> formBundle.toString)
       collection.flatMap(
         _.find(selector)
@@ -82,12 +82,12 @@ class MongoPersistence @Inject()(
       ).map{_.map{_.internalId}}
     }
 
-    def delete(formBundle: FormBundleNumber) =  {
+    def delete(formBundle: FormBundleNumber): Future[Unit] =  {
       val selector = Json.obj("formBundle" -> formBundle.toString)
-      collection.flatMap(_.remove(selector)).map{_ => ()}
+      collection.flatMap(_.delete.one(selector)).map{_ => ()}
     }
 
-    def update(formBundle: FormBundleNumber, internalId: InternalId) = {
+    def update(formBundle: FormBundleNumber, internalId: InternalId): Future[Unit] = {
       val wrapper = CallbackWrapper(internalId, formBundle)
       val selector = Json.obj("formBundle" -> formBundle.toString)      
       collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
@@ -98,7 +98,7 @@ class MongoPersistence @Inject()(
     
   }
 
-  val registrations = new Registrations {
+  val registrations: Registrations = new Registrations {
 
     lazy val collection: Future[JSONCollection] = {
       database.map(_.collection[JSONCollection]("registrations")).flatMap { c =>
@@ -108,11 +108,11 @@ class MongoPersistence @Inject()(
           unique = true
         )
         
-        c.indexesManager.ensure(sessionIndex).map { case _ => c }
+        c.indexesManager.ensure(sessionIndex).map(_ => c)
       }
     }
 
-    implicit val formatWrapper = Json.format[RegWrapper]
+    implicit val formatWrapper: OFormat[RegWrapper] = Json.format[RegWrapper]
 
     override def update(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)

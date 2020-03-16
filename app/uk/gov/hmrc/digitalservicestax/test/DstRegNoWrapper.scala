@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend_data
+package uk.gov.hmrc.digitalservicestax.test
 
-import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
+import play.api.libs.json.{Format, Json}
 
-
-case class RosmRegisterWithoutIDRequest(
-  isAnAgent: Boolean = false,
-  isAGroup: Boolean = false,
-  organisation: Company,
-  contactDetails: ContactDetails
-) {
-
+case class DstRegNoWrapper(dstRegNo: String)
+case object DstRegNoWrapper {
+  implicit val format: Format[DstRegNoWrapper] = Json.format[DstRegNoWrapper]
 }
