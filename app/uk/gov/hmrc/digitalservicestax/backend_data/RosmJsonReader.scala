@@ -15,7 +15,7 @@
  */
 
 package uk.gov.hmrc.digitalservicestax
-package backend
+package backend_data
 
 import cats.implicits._
 import play.api.libs.json._
@@ -25,7 +25,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
   object NotAnOrganisationException extends NoSuchElementException("Not an organisation")
 
-  implicit val jaddress = new Reads[Address] {
+  implicit val jaddress: Reads[Address] = new Reads[Address] {
     def reads(json: JsValue): JsResult[Address] = JsSuccess{
       {(json \ "countryCode").as[String]} match {
         case "GB" => UkAddress(

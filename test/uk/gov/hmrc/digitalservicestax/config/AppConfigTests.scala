@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend_data
+package uk.gov.hmrc.digitalservicestax.config
 
-import play.api.libs.json.{Json, OFormat}
+import org.scalatest.{FlatSpec, Matchers}
 
-case class ReturnResponse(
-  processingDate: String,
-  formBundleNumber: String
-)
+class AppConfigTests extends FlatSpec with Matchers {
 
-object ReturnResponse {
-  implicit val format: OFormat[ReturnResponse] = Json.format[ReturnResponse]
+  it should "read a non empty authbase URL from app config" in {
+
+  }
 }
