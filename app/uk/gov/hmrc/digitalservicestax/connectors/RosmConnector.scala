@@ -27,7 +27,7 @@ import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import BackendAndFrontendJson._
+import BackendAndFrontendJson.{companyRegWrapperFormat => _, _}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -51,6 +51,7 @@ class RosmConnector @Inject()(val http: HttpClient,
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Option[CompanyRegWrapper]] = {
+    implicit val r = backend_data.RosmJsonReader
     val request: JsValue = Json.obj(
       "regime" -> "DST",
       "requiresNameMatch" -> false,
