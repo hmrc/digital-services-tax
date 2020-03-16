@@ -81,9 +81,9 @@ class LoggedInAction @Inject()(
     implicit val req: Request[A] = request
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
 
-    val retrieval =  allEnrolments and internalId and credentials
+    val retrieval = allEnrolments and internalId and credentials
 
-    authorised(AuthProviders(GovernmentGateway, Verify) and Organisation).retrieve(retrieval) {
+    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) {
       case enrolments ~ id ~ creds =>
 
         val providerId = creds.map(_.providerId)
