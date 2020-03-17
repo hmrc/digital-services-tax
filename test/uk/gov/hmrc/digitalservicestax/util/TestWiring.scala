@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{AuditingConfigProvider, RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpAuditing
+import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, HttpClient}
 
 trait TestWiring {
   val appName: String = configuration.get[String]("appName")
@@ -51,5 +51,5 @@ trait TestWiring {
   lazy val actorSystem: ActorSystem = Play.current.actorSystem
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
-  val testConnector: TestConnector = wire[TestConnector]
+
 }

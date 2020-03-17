@@ -28,7 +28,7 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
     appConfig,
     testConnector
   ) {
-    override val taxEnrolmentsUrl: String = mockServerUrl
+    override lazy val taxEnrolmentsUrl: String = mockServerUrl
   }
 
 }
