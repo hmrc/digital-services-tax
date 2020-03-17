@@ -201,6 +201,8 @@ object BackendAndFrontendJson extends SimpleJson {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
       val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
 
+      Console.println(Json.prettyPrint(JsArray(obligations)))
+
       val periods = obligations.toList.flatMap { j =>
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList
