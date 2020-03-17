@@ -18,8 +18,7 @@ package uk.gov.hmrc.digitalservicestax.util
 
 
 import akka.actor.ActorSystem
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
 import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -30,7 +29,8 @@ import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 
 trait FakeApplicationSpec extends PlaySpec
-  with GuiceOneServerPerSuite
+  with BaseOneAppPerSuite
+  with FakeApplicationFactory
   with TestWiring {
   protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context(
     environment,
@@ -40,7 +40,7 @@ trait FakeApplicationSpec extends PlaySpec
     new DefaultApplicationLifecycle
   )
 
-  implicit lazy val actorSystem: ActorSystem = fakeApplication().actorSystem
+  implicit lazy val actorSystem: ActorSystem = app.actorSystem
 
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
