@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
+import java.time.LocalDate
+
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
 import com.outworkers.util.domain.ShortString
 import org.scalacheck.Arbitrary.arbitrary
@@ -27,6 +29,7 @@ import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import com.outworkers.util.samplers._
 import play.api.libs.json.Json
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 
 class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -51,7 +54,7 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
     val dstRegNumber = arbitrary[DSTRegNumber].sample.value
-    val periods = arbitrary[List[Period]].sample.value
+    val periods = arbitrary[List[Period]].sample.value.map(_ -> Option.empty[LocalDate])
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
@@ -70,7 +73,6 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
       period <- arbitrary[Period]
       ret <- arbitrary[Return]
     } yield (dstRegNumber, period, ret)
-
 
     val resp = ReturnResponse(
       gen[ShortString].value,

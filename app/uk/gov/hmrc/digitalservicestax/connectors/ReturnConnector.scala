@@ -73,6 +73,12 @@ class ReturnConnector @Inject()(val http: HttpClient,
     ec: ExecutionContext
   ): Future[ReturnResponse] = {
 
+    implicit val writes: Writes[Return] = services.EeittInterface.returnRequestWriter(
+      dstRegNo,
+      period,
+      isAmend
+    )
+
     val url = s"$desURL/cross-regime/return/DST/eeits/$dstRegNo"
     val result = desPost[JsValue, ReturnResponse](
       url,

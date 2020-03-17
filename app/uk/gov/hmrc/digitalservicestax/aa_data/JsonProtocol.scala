@@ -185,11 +185,4 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-
-  implicit val writes: Writes[Return] = services.EeittInterface.returnRequestWriter(
-    dstRegNo,
-    period,
-    isAmend
-  )
-
 }
