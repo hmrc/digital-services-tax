@@ -37,8 +37,7 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse()
-        .withStatus(200)))
+        .willReturn(aResponse().withStatus(200)))
 
     val response = ReturnTestConnector.getNextPendingPeriod(dstRegNumber)
     whenReady(response.failed) { res =>
@@ -51,8 +50,7 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse()
-        .withStatus(200)))
+        .willReturn(aResponse().withStatus(200)))
 
     val response = ReturnTestConnector.getPeriods(dstRegNumber)
     whenReady(response.failed) { res =>
