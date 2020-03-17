@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
+
 import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
-
 import cats.implicits._
+import uk.gov.hmrc.digitalservicestax.services
 
 trait SimpleJson {
 
@@ -148,5 +151,45 @@ object BackendAndFrontendJson extends SimpleJson {
       ))
     }
   }
+
+  implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
+    import cats.syntax.either._
+    def reads(i: JsValue): JsResult[LocalDate] = i match {
+      case JsString(s) =>
+        Either.catchOnly[DateTimeParseException]{
+          LocalDate.parse(s)
+        }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
+      case o => JsError(s"expected a JsString(YYYY-MM-DD), got a $o")
+    }
+  }
+
+  implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
+    def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
+      val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
+
+      val periods = obligations.toList.flatMap{ j =>
+        val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
+        elems.toList
+      }
+      JsSuccess(periods.map { json =>
+        (
+          Period(
+            {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
+            {json \ "periodKey"}.as[Period.Key]
+          ),
+          {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
+        )
+      })
+    }
+  }
+
+
+  implicit val writes: Writes[Return] = services.EeittInterface.returnRequestWriter(
+    dstRegNo,
+    period,
+    isAmend
+  )
 
 }

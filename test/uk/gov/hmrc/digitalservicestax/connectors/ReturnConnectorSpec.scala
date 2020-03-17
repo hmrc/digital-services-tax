@@ -51,10 +51,11 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
     val dstRegNumber = arbitrary[DSTRegNumber].sample.value
+    val periods = arbitrary[List[Period]].sample.value
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200)))
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(periods).toString())))
 
     val response = ReturnTestConnector.getPeriods(dstRegNumber)
     whenReady(response.failed) { res =>
