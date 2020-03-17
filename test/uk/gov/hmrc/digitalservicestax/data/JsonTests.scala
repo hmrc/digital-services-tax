@@ -54,10 +54,9 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
   }
 
   it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
-    val generated = gen[ShortString].value
-    val parsed = Json.parse(s""" "$generated" """).validate[Postcode]
+    val parsed = Json.parse(s""" "124124125125125" """).validate[Postcode]
     parsed.isSuccess shouldEqual false
-    parsed shouldEqual JsError(s"Expected a valid postcode, got $generated instead")
+    parsed shouldEqual JsError(s"Expected a valid postcode, got 124124125125125 instead")
   }
 
 
