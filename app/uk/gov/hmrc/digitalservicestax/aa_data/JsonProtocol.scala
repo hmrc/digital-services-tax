@@ -139,7 +139,6 @@ object BackendAndFrontendJson extends SimpleJson {
 
   val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-      println(Json.prettyPrint(json))
       JsSuccess(CompanyRegWrapper (
         Company(
           {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
@@ -165,9 +164,9 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
-      val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
+      val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
 
-      val periods = obligations.toList.flatMap{ j =>
+      val periods = obligations.toList.flatMap { j =>
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList
       }
