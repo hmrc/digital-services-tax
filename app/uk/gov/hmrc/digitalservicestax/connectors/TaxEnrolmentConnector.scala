@@ -37,7 +37,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
-  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", false)
+  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
@@ -70,7 +70,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
     HttpResponse(e.responseCode, Some(Json.toJson(e.message)))
   }
 
-  private def subscribeUrl(subscriptionId: String) =
+  def subscribeUrl(subscriptionId: String) =
     s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
   private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
