@@ -24,7 +24,7 @@ import org.scalacheck.Gen
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import cats.implicits._
-import uk.gov.hmrc.digitalservicestax.TestInstances._
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 

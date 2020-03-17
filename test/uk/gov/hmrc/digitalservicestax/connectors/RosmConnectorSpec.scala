@@ -13,56 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
+import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
+import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
+import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import org.scalacheck.Arbitrary.arbitrary
 
-class RosmConnectorSpec extends WiremockSpec {
+class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
   object TestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig) {
     override val desURL: String = mockServerUrl
   }
 
-  val req = RosmRegisterRequest("CT", false, false)
-  val res = RegistrationResponse(
-    "safe1",
-    None,
-    true,
-    false,
-    true,
-    None,
-    None,
-    RosmResponseAddress("line1", None, None, None, "EN", "AA11AA"),
-    RosmResponseContactDetails(None, None, None, None)
-  )
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should get no response back if des is not available" in {
+    val req = RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      arbitrary[Company].sample.value,
+      arbitrary[ContactDetails].sample.value
+    )
+
     stubFor(
       post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
         .willReturn(aResponse()
           .withStatus(500)))
 
-    val response: Future[Option[RosmRegisterResponse]] = TestConnector.retrieveROSMDetails("1234567890", req)
-    response.map { x =>
+    val response = TestConnector.retrieveROSMDetails("1234567890")
+    whenReady(response) { x =>
       x mustBe None
     }
   }
 
   "should get an upstream5xx response if des is returning 429" in {
+    val req = RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      arbitrary[Company].sample.value,
+      arbitrary[ContactDetails].sample.value
+    )
+
     stubFor(
       post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
         .willReturn(aResponse().withStatus(429)))
 
-    val ex = the[Exception] thrownBy (TestConnector.retrieveROSMDetails("1234567890", req).futureValue)
+    val ex = the[Exception] thrownBy (TestConnector.retrieveROSMDetails("1234567890").futureValue)
     ex.getMessage must startWith("The future returned an exception of type: uk.gov.hmrc.http.Upstream5xxResponse")
   }
 
   "should get a response back if des available" in {
+    val req = RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      arbitrary[Company].sample.value,
+      arbitrary[ContactDetails].sample.value
+    )
+
     stubFor(
       post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
         .willReturn(
@@ -70,9 +86,9 @@ class RosmConnectorSpec extends WiremockSpec {
             .withStatus(200)
             .withBody(Json.toJson(req).toString())))
 
-    val response: Future[Option[RosmRegisterResponse]] = TestConnector.retrieveROSMDetails("1234567890", req)
-    response.map { x =>
-      x mustBe Some(res)
+    val future = TestConnector.retrieveROSMDetails("1234567890")
+    whenReady(future) { x =>
+      x mustBe defined
     }
   }
 }

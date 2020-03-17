@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax
+package uk.gov.hmrc.digitalservicestax.util
 
 import java.time.LocalDate
 
-import enumeratum.scalacheck._
-import cats.implicits.{none, _}
-import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
-import org.scalacheck.cats.implicits._
-import org.scalacheck.{Arbitrary, Gen, _}
+import cats.implicits._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
