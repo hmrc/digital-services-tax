@@ -96,10 +96,10 @@ class RegistrationsController @Inject()(
           case (Some(r), Some(safeId: SafeId)) => {
             {persistence.registrations(request.internalId) = data} >>             
             {persistence.pendingCallbacks(r.formBundleNumber) = request.internalId} >> 
-            taxEnrolmentConnector.subscribe(
-              safeId,
-              r.formBundleNumber
-            ) >>
+              taxEnrolmentConnector.subscribe(
+                safeId,
+                r.formBundleNumber
+              ) >>
               emailConnector.sendSubmissionReceivedEmail(
                 data.contact,
                 data.ultimateParent

@@ -20,6 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -30,7 +31,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   val mode: Mode,
   servicesConfig: ServicesConfig,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  testConnector: TestConnector
 ) extends DesHelpers(servicesConfig) {
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
@@ -55,7 +57,10 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   }
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
-    http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
+    if (enabled)
+      http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
+    else
+      testConnector.getSubscription(subscriptionId)
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
