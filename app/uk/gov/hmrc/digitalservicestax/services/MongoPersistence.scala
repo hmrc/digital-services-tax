@@ -57,7 +57,7 @@ object MongoPersistence {
 class MongoPersistence @Inject()(
   mongo: ReactiveMongoApi
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
-  import mongo.database  
+  import mongo.database
   import MongoPersistence._
   implicit val formatWrapper: OFormat[CallbackWrapper] = Json.format[CallbackWrapper]
 

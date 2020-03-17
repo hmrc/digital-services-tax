@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.digitalservicestax
+package util
 
 import java.time.LocalDate
 
@@ -62,13 +63,13 @@ object TestInstances {
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
     Gen.option(UTR.gen)
-  ).mapN(GroupCompany.apply)
+    ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
       arbitrary[Money]
-    ).tupled
+      ).tupled
   )
 
   def genBankAccount: Gen[BankAccount] = {
@@ -123,6 +124,7 @@ object TestInstances {
 
   implicit def arbNEString: Arbitrary[NonEmptyString] = Arbitrary { neString() }
   implicit def arbPostcode: Arbitrary[Postcode] = Arbitrary(Postcode.gen)
+  implicit def arbDSTNumber: Arbitrary[DSTRegNumber] = Arbitrary(DSTRegNumber.gen)
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
@@ -204,6 +206,6 @@ object TestInstances {
       arbitrary[Boolean],
       arbitrary[Company],
       arbitrary[ContactDetails]
-    ).mapN(RosmRegisterWithoutIDRequest.apply)
+      ).mapN(RosmRegisterWithoutIDRequest.apply)
   }
 }

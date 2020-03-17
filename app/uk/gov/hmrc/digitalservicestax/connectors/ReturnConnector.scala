@@ -58,7 +58,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
 
-    implicit def basicDateFormat = new Reads[LocalDate] {
+    implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
       import cats.syntax.either._
       def reads(i: JsValue): JsResult[LocalDate] = i match {
         case JsString(s) => 
@@ -69,7 +69,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
       }
     }
 
-    implicit def readPeriods = new Reads[List[(Period, Option[LocalDate])]] {
+    implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
       def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
         val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
 

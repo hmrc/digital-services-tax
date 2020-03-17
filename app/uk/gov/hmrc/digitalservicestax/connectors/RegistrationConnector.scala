@@ -31,7 +31,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 @Singleton
-class RegistrationConnector @Inject()(val http: HttpClient,
+class RegistrationConnector @Inject()(
+  val http: HttpClient,
   val mode: Mode,
   servicesConfig: ServicesConfig,
   appConfig: AppConfig)

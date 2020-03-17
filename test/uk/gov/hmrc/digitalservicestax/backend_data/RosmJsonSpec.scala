@@ -24,7 +24,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
-import TestInstances._
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 

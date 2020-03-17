@@ -20,7 +20,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.{Format, JsError, JsPath, JsResult, JsString, Json, JsonValidationError}
-import uk.gov.hmrc.digitalservicestax.TestInstances._
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._

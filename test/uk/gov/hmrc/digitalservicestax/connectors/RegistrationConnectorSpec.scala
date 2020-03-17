@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.config
+package uk.gov.hmrc.digitalservicestax.connectors
 
-import org.scalatest.{FlatSpec, Matchers}
-import uk.gov.hmrc.digitalservicestax.util.TestWiring
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 
-class AppConfigTests extends FlatSpec with Matchers with TestWiring {
+class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  it should "read a non empty authbase URL from app config" in {
-    appConfig.authBaseUrl.isEmpty shouldEqual false
+  object TestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, appConfig) {
+    override val desURL: String = mockServerUrl
   }
+
 }
