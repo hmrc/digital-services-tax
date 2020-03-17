@@ -58,7 +58,6 @@ class RegistrationsController @Inject()(
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
-  log.error(s"startup ${this.getClass} logging")
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
@@ -100,10 +99,10 @@ class RegistrationsController @Inject()(
           case (Some(r), Some(safeId: SafeId)) => {
             {persistence.registrations(userId) = data} >>             
             {persistence.pendingCallbacks(r.formBundleNumber) = userId} >> 
-            taxEnrolmentConnector.subscribe(
-              safeId,
-              r.formBundleNumber
-            ) >>
+              taxEnrolmentConnector.subscribe(
+                safeId,
+                r.formBundleNumber
+              ) >>
               emailConnector.sendSubmissionReceivedEmail(
                 data.contact,
                 data.ultimateParent

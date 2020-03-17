@@ -11,3 +11,5 @@
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
+
+GET        /test-only/trigger-te-callback/:seed    uk.gov.hmrc.digitalservicestax.test.TestController.triggerTaxEnrolmentCallback(seed: String)
