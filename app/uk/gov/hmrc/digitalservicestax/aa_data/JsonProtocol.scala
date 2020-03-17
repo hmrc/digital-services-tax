@@ -166,6 +166,37 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
+
+  case class PeriodList(
+    list: List[(Period, Option[LocalDate])]
+  )
+
+  implicit def writePeriods: Writes[List[(Period, Option[LocalDate])]] = new Writes[List[(Period, Option[LocalDate])]] {
+    override def writes(o: List[(Period, Option[LocalDate])]): JsValue = {
+
+      val details = o.map { case (period, mapping) =>
+        JsObject(
+          Seq(
+           "inboundCorrespondenceFromDate" -> Json.toJson(period.start),
+           "inboundCorrespondenceToDate" -> Json.toJson(period.end),
+           "inboundCorrespondenceDueDate" -> Json.toJson(period.returnDue),
+           "periodKey" -> Json.toJson(period.key),
+            "inboundCorrespondenceDateReceived" -> Json.toJson(mapping)
+          )
+        )
+
+      }
+
+      JsObject(Seq(
+        "obligations" -> JsArray(details.map { dt =>
+          JsObject(Seq(
+            "obligationDetails" -> dt
+          ))
+        })
+      ))
+    }
+  }
+
   implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
       val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
@@ -174,6 +205,7 @@ object BackendAndFrontendJson extends SimpleJson {
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList
       }
+
       JsSuccess(periods.map { json =>
         (
           Period(

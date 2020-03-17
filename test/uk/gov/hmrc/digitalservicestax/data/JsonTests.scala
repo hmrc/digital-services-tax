@@ -159,14 +159,11 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     val generator = for {
       num <- Gen.chooseNum(2, 15)
       periods <- Gen.listOfN(num, periodArb.arbitrary).map { list =>
-        list.map(_ -> Gen.some(arbDate).sample.get)
+        list.map(_ -> Gen.some(arbDate.arbitrary).sample.value)
       }
     } yield periods
 
-
-    forAll(generator) { periods =>
-      // Json.toJson(periods)
-    }
+    testJsonRoundtrip(generator)
   }
 
 //
