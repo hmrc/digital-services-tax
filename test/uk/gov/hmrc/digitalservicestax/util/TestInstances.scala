@@ -124,6 +124,7 @@ object TestInstances {
 
   implicit def arbNEString: Arbitrary[NonEmptyString] = Arbitrary { neString() }
   implicit def arbPostcode: Arbitrary[Postcode] = Arbitrary(Postcode.gen)
+  implicit def arbDSTNumber: Arbitrary[DSTRegNumber] = Arbitrary(DSTRegNumber.gen)
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)

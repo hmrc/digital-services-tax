@@ -52,9 +52,7 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
       "force" -> false
     )
 
-    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map { _ =>
-      ()
-    }
+    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map { _ => () }
   }
 
   def sendSubmissionReceivedEmail(contact: ContactDetails, parentCompany: Option[Company])(
