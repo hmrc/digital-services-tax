@@ -17,10 +17,11 @@
 package uk.gov.hmrc.digitalservicestax.config
 
 import org.scalatest.{FlatSpec, Matchers}
+import uk.gov.hmrc.digitalservicestax.util.TestWiring
 
-class AppConfigTests extends FlatSpec with Matchers {
+class AppConfigTests extends FlatSpec with Matchers with TestWiring {
 
   it should "read a non empty authbase URL from app config" in {
-
+    appConfig.authBaseUrl.isEmpty shouldEqual false
   }
 }
