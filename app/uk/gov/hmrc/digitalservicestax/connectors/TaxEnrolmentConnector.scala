@@ -60,7 +60,6 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
     if (enabled)
       http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
     else {
-      Console.println("This is using a testConnector")
       testConnector.getSubscription(subscriptionId)
     }
   }
