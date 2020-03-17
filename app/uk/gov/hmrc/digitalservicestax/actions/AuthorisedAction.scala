@@ -79,7 +79,11 @@ class LoggedInAction @Inject()(
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
     implicit val req: Request[A] = request
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
+    implicit val hc: HeaderCarrier =
+      HeaderCarrierConverter.fromHeadersAndSessionAndRequest(
+        request.headers,
+        request = Some(request)
+      )
 
     val retrieval = allEnrolments and internalId and credentials
 
@@ -97,13 +101,7 @@ class LoggedInAction @Inject()(
             case (None, _) => Left(Forbidden("No internal ID"))
           }
         )
-    } recover {
-      case _ : NoActiveSession =>
-        Logger.info(s"No active session")
-        Left(
-          Forbidden("No active session")
-        )
-    }
+    } 
   }
 
   override def parser = mcc.parsers.anyContent

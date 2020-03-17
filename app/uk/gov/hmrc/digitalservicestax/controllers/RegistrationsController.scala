@@ -126,7 +126,14 @@ class RegistrationsController @Inject()(
     
   }
 
-  def lookupRegistration(): Action[AnyContent] = loggedIn.andThen(registered) { request => 
-    Ok(Json.toJson(request.registration))
+  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
+    persistence.registrations.get(request.internalId).map { response =>
+      response match {
+        case Some(r) =>
+          Ok(Json.toJson(r))
+        case None => NotFound
+      }
+    }
   }
+
 }
