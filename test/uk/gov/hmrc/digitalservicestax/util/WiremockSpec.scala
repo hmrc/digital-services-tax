@@ -24,8 +24,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import scala.concurrent.ExecutionContext
 
 trait WiremockSpec extends FakeApplicationSpec with BeforeAndAfterEach with BeforeAndAfterAll with ScalaFutures {
-  val port = WireMockSupport.port
-  val mockServer = new WireMockServer(port)
+  protected[this] val port: Int = WireMockSupport.port
+  protected[this] val mockServer = new WireMockServer(port)
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 

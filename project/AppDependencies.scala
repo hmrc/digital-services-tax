@@ -10,7 +10,7 @@ object AppDependencies {
     "org.typelevel"          %% "cats-core"                % "2.0.0",
     // simple-reactivemongo held back because of platform issue
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
-    "org.reactivemongo"      %% "play2-reactivemongo"      % "0.18.6-play26",    
+    "org.reactivemongo"      %% "play2-reactivemongo"      % "0.18.6-play26",
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.5.0",
     "com.beachape"           %% "enumeratum"               % "1.5.13",
     "com.beachape"           %% "enumeratum-play-json"     % "1.5.13",
