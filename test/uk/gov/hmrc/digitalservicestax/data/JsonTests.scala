@@ -25,6 +25,7 @@ import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import uk.gov.hmrc.digitalservicestax.services.EeittInterface._
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
@@ -147,6 +148,21 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     val jsValue = Json.toJson(Activity.SocialMedia)
     jsValue shouldEqual JsString("SocialMedia")
   }
+
+  it should "serialize a list of periods and local dates" in {
+    val generator = for {
+      num <- Gen.chooseNum(2, 15)
+      periods <- Gen.listOfN(num, periodArb.arbitrary).map { list =>
+        list.map(_ -> Gen.some(arbDate).sample.get)
+      }
+    } yield periods
+
+
+    forAll(generator) { periods =>
+      // Json.toJson(periods)
+    }
+  }
+
 //
 //  it should "serialize and de-serialise a DomesticBankAccount instance" in {
 //    testJsonRoundtrip[DomesticBankAccount]

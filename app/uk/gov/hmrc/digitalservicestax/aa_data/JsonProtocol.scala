@@ -137,7 +137,7 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-  val readCompanyReg = new Reads[CompanyRegWrapper] {
+  val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
       println(Json.prettyPrint(json))
       JsSuccess(CompanyRegWrapper (
