@@ -21,18 +21,15 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
 import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, ApplicationLoader}
 import play.core.DefaultWebCommands
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
-
-import scala.collection.mutable
-import scala.concurrent.{Future, ExecutionContext => EC}
 
 trait FakeApplicationSpec
   extends PlaySpec with BaseOneAppPerSuite with FakeApplicationFactory with TestWiring with MockitoSugar {
-  protected val context = ApplicationLoader.Context(
+  protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context(
     environment,
     sourceMapper = None,
     new DefaultWebCommands,
@@ -44,7 +41,7 @@ trait FakeApplicationSpec
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
   lazy val httpClient: HttpClient = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
 
-  override def fakeApplication(): Application = null.asInstanceOf[Application]
-    //new FakeApplicationFactory().load(context)
-
+  override def fakeApplication(): Application = {
+    GuiceApplicationBuilder(environment = environment).build()
+  }
 }
