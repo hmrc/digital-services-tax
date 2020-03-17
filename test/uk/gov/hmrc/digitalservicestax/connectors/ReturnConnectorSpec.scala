@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
+import com.outworkers.util.domain.ShortString
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
+import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
+import com.outworkers.util.samplers._
+import play.api.libs.json.Json
 
 class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -56,6 +60,34 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
     whenReady(response.failed) { res =>
       res
     }
+  }
+
+
+  "should send a new period/DST number" in {
+    val customGen = for {
+      dstRegNumber <- arbitrary[DSTRegNumber]
+      period <- arbitrary[Period]
+      ret <- arbitrary[Return]
+    } yield (dstRegNumber, period, ret)
+
+
+    val resp = ReturnResponse(
+      gen[ShortString].value,
+      gen[ShortString].value
+    )
+
+    forAll(customGen) { case (dstNo, period, ret) =>
+
+      stubFor(
+        post(urlPathEqualTo(s"""/cross-regime/return/DST/eeits/$dstNo"""))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
+
+      val response = ReturnTestConnector.send(dstNo, period, ret, isAmend = false)
+      whenReady(response) { res =>
+        res mustEqual resp
+      }
+    }
+
   }
 
 }
