@@ -57,4 +57,14 @@ class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
     }
   }
 
+  "should throw an error if no FormBundleNumber id Number" in {
+    val idType = gen[ShortString].value
+    val reg = arbitrary[Registration].sample.value
+
+    whenReady(RegTestConnector.send(idType, None, reg).failed) { ex =>
+      ex.getMessage mustEqual s"Missing idNumber for idType: $idType"
+    }
+
+  }
+
 }
