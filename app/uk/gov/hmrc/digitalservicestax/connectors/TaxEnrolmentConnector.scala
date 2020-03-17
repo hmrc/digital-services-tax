@@ -59,8 +59,10 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     if (enabled)
       http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
-    else
+    else {
+      Console.println("This is using a testConnector")
       testConnector.getSubscription(subscriptionId)
+    }
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {

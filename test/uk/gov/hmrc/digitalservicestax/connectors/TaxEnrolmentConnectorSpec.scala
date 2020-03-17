@@ -16,8 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlPathEqualTo}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import com.outworkers.util.samplers._
+import play.api.libs.json.Json
+import uk.gov.hmrc.http.HeaderCarrier
 
 class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -30,5 +35,27 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
   ) {
     override lazy val taxEnrolmentsUrl: String = mockServerUrl
   }
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  "should retrieve the latest DST period for a DSTRegNumber" ignore {
+    val subscriptionId = gen[ShortString].value
+    val enrolment = gen[TaxEnrolmentsSubscription]
+
+    stubFor(
+      get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$subscriptionId"""))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(Json.toJson(enrolment).toString())
+        )
+    )
+
+    val response = TaxTestConnector.getSubscription(subscriptionId)
+    whenReady(response) { res =>
+      res mustEqual enrolment
+    }
+  }
+
 
 }

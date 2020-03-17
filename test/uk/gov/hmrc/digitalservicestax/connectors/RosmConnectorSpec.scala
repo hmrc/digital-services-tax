@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.connectors
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest}
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier

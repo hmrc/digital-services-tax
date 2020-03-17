@@ -49,6 +49,10 @@ trait FakeApplicationSpec extends PlaySpec
   val testConnector: TestConnector = new TestConnector(httpClient, environment, configuration, servicesConfig)
 
   override def fakeApplication(): Application = {
-    GuiceApplicationBuilder(environment = environment).build()
+    GuiceApplicationBuilder(environment = environment).configure(
+      Map(
+        "tax-enrolments.enabled" -> "true"
+      )
+    ).build()
   }
 }
