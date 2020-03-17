@@ -1,14 +1,28 @@
+/*
+ * Copyright 2020 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails, DSTRegNumber, NonEmptyString, Period}
+import uk.gov.hmrc.digitalservicestax.data.{ContactDetails, DSTRegNumber, NonEmptyString, Period}
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import org.scalacheck.Arbitrary.arbitrary
 
 class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -34,6 +48,21 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
 
   }
 
-  "should get an upstream5xx response if des is returning 429" in {}
+  "should send a confirmation email for a submission received" in {
+    val contactDetails = arbitrary[ContactDetails].sample.value
+    val parentRef = arbitrary[NonEmptyString].sample.value
+
+    stubFor(
+      post(urlPathEqualTo("/hmrc/email"))
+        .willReturn(aResponse()
+        .withStatus(200)))
+
+    val response = TestConnector.sendSubmissionReceivedEmail(
+      contactDetails,
+      None)
+
+    whenReady(response) { res => }
+
+  }
 
 }
