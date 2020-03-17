@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -138,6 +140,10 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
 
   it should "serialize and de-serialise a Map[GroupCompany, Money]" in {
     testJsonRoundtrip[Map[GroupCompany, Money]](gencomap)
+  }
+
+  it should "serialize and de-serialise a LocalDate" in {
+    testJsonRoundtrip[LocalDate]
   }
 
   it should "serialize and de-serialise a Map[Activity, Percent]" in {

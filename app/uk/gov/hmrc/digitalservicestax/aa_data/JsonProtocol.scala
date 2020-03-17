@@ -151,6 +151,10 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
+  implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
+    def writes(dt: LocalDate): JsValue = JsString(dt.toString)
+  }
+
   implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
     import cats.syntax.either._
     def reads(i: JsValue): JsResult[LocalDate] = i match {
