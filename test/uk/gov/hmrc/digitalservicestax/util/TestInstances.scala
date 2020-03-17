@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.util
+package uk.gov.hmrc.digitalservicestax
+package util
 
 import java.time.LocalDate
 
-import cats.implicits._
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Gen}
+import enumeratum.scalacheck._
+import cats.implicits.{none, _}
+import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
+import org.scalacheck.cats.implicits._
+import org.scalacheck.{Arbitrary, Gen, _}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -60,13 +63,13 @@ object TestInstances {
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
     Gen.option(UTR.gen)
-  ).mapN(GroupCompany.apply)
+    ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
       arbitrary[Money]
-    ).tupled
+      ).tupled
   )
 
   def genBankAccount: Gen[BankAccount] = {
@@ -202,6 +205,6 @@ object TestInstances {
       arbitrary[Boolean],
       arbitrary[Company],
       arbitrary[ContactDetails]
-    ).mapN(RosmRegisterWithoutIDRequest.apply)
+      ).mapN(RosmRegisterWithoutIDRequest.apply)
   }
 }

@@ -40,11 +40,11 @@ trait FakeApplicationSpec
     new DefaultApplicationLifecycle
   )
 
-  lazy val messagesApi = app.injector.instanceOf[MessagesApi]
-  lazy val wsClient = app.injector.instanceOf[WSClient]
+  lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
+  lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
   lazy val httpClient: HttpClient = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
 
-  override def fakeApplication(): Application =
-    new FakeApplicationFactory().load(context)
+  override def fakeApplication(): Application = null.asInstanceOf[Application]
+    //new FakeApplicationFactory().load(context)
 
 }
