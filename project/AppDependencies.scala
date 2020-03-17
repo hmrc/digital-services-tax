@@ -20,6 +20,7 @@ object AppDependencies {
 
   val test = Seq(
     "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.5.0"                 % Test classifier "tests",
+    "org.mockito"            % "mockito-core"              % "3.3.3"                 % Test,
     "org.scalatest"          %% "scalatest"                % "3.0.8"                 % Test,
     "com.typesafe.play"      %% "play-test"                % current                 % Test,
     "org.pegdown"             % "pegdown"                  % "1.6.0"                 % "test, it",
