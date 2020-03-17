@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.util
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.scalatest.concurrent.ScalaFutures
@@ -24,7 +25,6 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import scala.concurrent.ExecutionContext
 
 trait WiremockSpec extends FakeApplicationSpec with BeforeAndAfterEach with BeforeAndAfterAll with ScalaFutures {
-  protected[this] val port: Int = WireMockSupport.port
   protected[this] val mockServer = new WireMockServer(port)
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
@@ -41,6 +41,7 @@ trait WiremockSpec extends FakeApplicationSpec with BeforeAndAfterEach with Befo
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
+    SharedMetricRegistries.clear()
     WireMock.reset()
   }
 

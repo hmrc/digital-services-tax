@@ -45,10 +45,9 @@ trait TestWiring {
   lazy val configuration: Configuration = Configuration.load(environment, Map("auditing.enabled" -> "false"))
   lazy val runMode: RunMode = wire[RunMode]
   lazy val environment: Environment = Environment.simple(new File("."))
-  lazy val mode: Mode = environment.mode
+  lazy val mode = environment.mode
 
   implicit def clock: Clock = Clock.systemDefaultZone()
-  lazy val actorSystem: ActorSystem = Play.current.actorSystem
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
 

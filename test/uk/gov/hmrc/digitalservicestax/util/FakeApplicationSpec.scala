@@ -17,8 +17,9 @@
 package uk.gov.hmrc.digitalservicestax.util
 
 
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
+import akka.actor.ActorSystem
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -28,8 +29,9 @@ import play.core.DefaultWebCommands
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 
-trait FakeApplicationSpec
-  extends PlaySpec with BaseOneAppPerSuite with FakeApplicationFactory with TestWiring with MockitoSugar {
+trait FakeApplicationSpec extends PlaySpec
+  with GuiceOneServerPerSuite
+  with TestWiring {
   protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context(
     environment,
     sourceMapper = None,
@@ -37,6 +39,8 @@ trait FakeApplicationSpec
     configuration,
     new DefaultApplicationLifecycle
   )
+
+  implicit lazy val actorSystem: ActorSystem = fakeApplication().actorSystem
 
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
