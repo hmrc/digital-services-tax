@@ -16,13 +16,37 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import com.outworkers.util.samplers._
+import uk.gov.hmrc.http.HeaderCarrier
 
 class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
   object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, appConfig) {
     override val desURL: String = mockServerUrl
+  }
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  "should retrieve the a list of DST periods for a DSTRegNumber" in {
+    val idType = gen[ShortString].value
+    val idNumber = gen[ShortString].value
+    val reg = arbitrary[Registration].sample.value
+
+    stubFor(
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
+        .willReturn(aResponse().withStatus(200)))
+
+
+    val response = RegTestConnector.send(idType, Some(idNumber), reg)
+    whenReady(response) { res =>
+      res
+    }
   }
 
 }

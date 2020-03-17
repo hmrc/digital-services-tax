@@ -59,7 +59,7 @@ class RegistrationConnector @Inject()(
         result
       }
       case _ =>
-        throw new IllegalArgumentException(s"Missing idNumber for idType: $idType")
+        Future.failed(new IllegalArgumentException(s"Missing idNumber for idType: $idType"))
     }
   }
 }
