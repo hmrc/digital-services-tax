@@ -29,7 +29,7 @@ import org.scalacheck.Arbitrary.arbitrary
 
 class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  object TestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig) {
+  object RosmTestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig) {
     override val desURL: String = mockServerUrl
   }
 
@@ -49,7 +49,7 @@ class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks
           .withBody(Json.toJson(req).toString())
           .withStatus(500)))
 
-    val response = TestConnector.retrieveROSMDetails("1234567890")
+    val response = RosmTestConnector.retrieveROSMDetails("1234567890")
     whenReady(response.failed) { res =>
       res
     }
@@ -70,7 +70,7 @@ class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks
         .withBody(Json.toJson(req).toString())
         .withStatus(429)))
 
-    whenReady(TestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
+    whenReady(RosmTestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
       Console.println(ex.getMessage)
     }
   }
@@ -90,7 +90,7 @@ class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks
             .withStatus(200)
             .withBody(Json.toJson(req).toString())))
 
-    val future = TestConnector.retrieveROSMDetails("1234567890")
+    val future = RosmTestConnector.retrieveROSMDetails("1234567890")
     whenReady(future) { x =>
       x mustBe defined
     }

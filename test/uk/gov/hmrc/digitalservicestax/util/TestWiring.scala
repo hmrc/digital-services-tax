@@ -25,6 +25,7 @@ import com.softwaremill.macwire._
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment, Play}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -50,4 +51,5 @@ trait TestWiring {
   lazy val actorSystem: ActorSystem = Play.current.actorSystem
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
+  val testConnector: TestConnector = wire[TestConnector]
 }

@@ -21,7 +21,7 @@ import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 
 class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  object TestConnector extends ReturnConnector(httpClient, environment.mode, servicesConfig, appConfig) {
+  object ReturnTestConnector extends ReturnConnector(httpClient, environment.mode, servicesConfig, appConfig) {
     override val desURL: String = mockServerUrl
   }
 

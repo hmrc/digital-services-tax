@@ -21,7 +21,13 @@ import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 
 class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  object TestConnector extends TaxEnrolmentConnector(httpClient, environment.mode, servicesConfig, appConfig) {
+  object TaxTestConnector extends TaxEnrolmentConnector(
+    httpClient,
+    environment.mode,
+    servicesConfig,
+    appConfig,
+    testConnector
+  ) {
     override val taxEnrolmentsUrl: String = mockServerUrl
   }
 
