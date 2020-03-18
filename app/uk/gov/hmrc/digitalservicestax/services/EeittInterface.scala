@@ -45,7 +45,7 @@ object EeittInterface {
           case ((key, ""), i) => Nil
           case ((key, value), i) =>
             List(Json.obj(
-              "paramSequence" -> "01", //i.toString, TODO work out why this parameter exists (and if there's a god)
+              "paramSequence" -> "01",
               "paramName" -> key,
               "paramValue" -> value
             ))
@@ -202,7 +202,7 @@ object EeittInterface {
       val regimeSpecificJson = JsArray(
         regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
           Json.obj(
-            "paramSequence" -> i.toString,
+            "paramSequence" -> "01",
             "paramName" -> key,
             "paramValue" -> value
           )
