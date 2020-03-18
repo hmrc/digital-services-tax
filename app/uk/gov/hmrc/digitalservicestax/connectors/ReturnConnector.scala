@@ -114,7 +114,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
       isAmend
     )
 
-    val url = s"$desURL/cross-regime/return/DST/eeits/$dstRegNo"
+    val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
     val result = desPost[JsValue, ReturnResponse](
       url,
       Json.toJson(request)
