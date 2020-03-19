@@ -19,12 +19,28 @@ package uk.gov.hmrc.digitalservicestax.services
 import cats.implicits.{none, _}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
-import uk.gov.hmrc.digitalservicestax.data.{BackendAndFrontendJson, DSTRegNumber, FormBundleNumber, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 
 object AuditingHelper {
+
+  implicit val foreignAddressFormat: OFormat[ForeignAddress] = Json.format[ForeignAddress]
+  val defaulAddressFormat = Json.format[UkAddress]
+  implicit val ukAddressFormat = new Format[UkAddress] {
+    override def reads(json: JsValue): JsResult[UkAddress] =
+      defaulAddressFormat.reads(json)
+
+    override def writes(o: UkAddress): JsValue =
+      defaulAddressFormat.writes(o).as[JsObject] ++ Json.obj("countryCode" -> "GB")
+  }
+  implicit val addressFormat: OFormat[Address] = Json.format[Address]
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+  implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
+  implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
+  implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
+
 
   implicit def optFormatter[A](implicit innerFormatter: Format[A]): Format[Option[A]] =
     new Format[Option[A]] {
@@ -70,10 +86,15 @@ object AuditingHelper {
       "authProviderType" -> "GovernmentGateway",
       "authProviderId" -> providerId,
       "deviceId" -> hc.deviceID
-    ).++(Json.toJson(data)(BackendAndFrontendJson.registrationFormat).as[JsObject])
+    ).++(registrationJson(data))
 
-    baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail = details)
+    baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail =details)
   }
+
+  private def registrationJson(data: Registration): JsObject =
+    (JsPath \ "companyReg" \ "company" \ "address" \ "_type")
+      .prune(Json.toJson(data)(this.registrationFormat)
+        .as[JsObject]).get
 
   def buildReturnResponseAudit(
     outcome: String,
@@ -96,7 +117,7 @@ object AuditingHelper {
       "authProviderType" -> "GovernmentGateway",
       "authProviderId" -> providerId,
       "deviceId" -> hc.deviceID
-    ).++(Json.toJson(data)(BackendAndFrontendJson.returnFormat).as[JsObject])
+    ).++(Json.toJson(data)(uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.returnFormat).as[JsObject])
 
     baseEvent("returnSubmitted").copy(detail = details)
   }
