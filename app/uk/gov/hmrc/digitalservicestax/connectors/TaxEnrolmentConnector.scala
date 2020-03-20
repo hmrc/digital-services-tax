@@ -75,7 +75,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
     Json.obj(
       "serviceName" -> serviceName,
-      "callback" -> s"$callbackUrl?subscriptionId=$formBundleNumber",
+      "callback" -> s"$callbackUrl$formBundleNumber",
       "etmpId" -> safeId
     )
   }
