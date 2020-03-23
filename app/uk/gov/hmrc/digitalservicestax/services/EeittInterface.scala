@@ -45,7 +45,7 @@ object EeittInterface {
           case ((key, ""), i) => Nil
           case ((key, value), i) =>
             List(Json.obj(
-              "paramSequence" -> "01", //i.toString, TODO work out why this parameter exists (and if there's a god)
+              "paramSequence" -> "01",
               "paramName" -> key,
               "paramValue" -> value
             ))
@@ -142,9 +142,9 @@ object EeittInterface {
           }
 
           List(
-            s"DST_${key}_CHARGE_PROVISION" -> bool(true),
-            s"DST_${key}_LOSS" -> bool(v == 0),
-            s"DST_${key}_OP_MARGIN" -> v.toString
+            s"A_DST_${key}_CHARGE_PROVISION" -> bool(true),
+            s"A_DST_${key}_LOSS" -> bool(v == 0),
+            s"A_DST_${key}_OP_MARGIN" -> v.toString
           )
         }
 
@@ -156,53 +156,53 @@ object EeittInterface {
             case OnlineMarketplace => "MARKETPLACE"
           }
 
-          (s"DST_SUBJECT_${key}" -> bool(alternateCharge.isDefinedAt(activityType)))
+          (s"A_DST_SUBJECT_${key}" -> bool(alternateCharge.isDefinedAt(activityType)))
         }
 
       val repaymentInfo: Seq[(String, String)] =
         repayment.fold(Seq.empty[(String, String)]){
           case RepaymentDetails(acctName, DomesticBankAccount(sortCode, acctNo, bsNo)) =>
             Seq[(String, String)](
-              "BANK_NAME" -> acctName,  // Name of account CHAR40
-              "BANK_NON_UK" -> bool(false),
+              "A_BANK_NAME" -> acctName,  // Name of account CHAR40
+              "A_BANK_NON_UK" -> bool(false),
 //              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
-              "BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
-              "BANK_ACC_NO" -> acctNo // Account number CHAR8
+              "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
+              "A_BANK_ACC_NO" -> acctNo // Account number CHAR8
             ) ++ Some(bsNo).filter(_.nonEmpty).map { a => 
-              "BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
+              "A_BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
             }.toSeq
 
           case RepaymentDetails(acctName, ForeignBankAccount(iban)) => Seq(
-            "BANK_IBAN" -> iban, // IBAN if non-UK bank account CHAR34
-            "BANK_NAME" -> acctName // Name of account CHAR40
+            "A_BANK_IBAN" -> iban, // IBAN if non-UK bank account CHAR34
+            "A_BANK_NAME" -> acctName // Name of account CHAR40
           )
         }
 
       val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
         Seq(
-          "DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
-          "DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
+          "A_DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
+          "A_DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
         ) ++ company.utr.map { u => 
-          ("DST_GROUP_MEM_ID" -> u)
+          ("A_DST_GROUP_MEM_ID" -> u)
         }.toList
       }
 
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
-        "REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
-        "PERIOD_FROM" -> period.start.toString, // MANDATORY Period From  DATS
-        "PERIOD_TO" -> period.start.toString, // MANDATORY Period To  DATS
-        "DST_FIRST_RETURN" -> bool(!isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
-        "DST_RELIEF" -> bool(crossBorderReliefAmount > 0), // Are you claiming relief for relevant cross-border transactions? CHAR1
-        "DST_TAX_ALLOWANCE" -> allowanceAmount.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
-        "DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
-        "DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
-        "DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
+        "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
+        "A_PERIOD_FROM" -> period.start.toString, // MANDATORY Period From  DATS
+        "A_PERIOD_TO" -> period.start.toString, // MANDATORY Period To  DATS
+        "A_DST_FIRST_RETURN" -> bool(!isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
+        "A_DST_RELIEF" -> bool(crossBorderReliefAmount > 0), // Are you claiming relief for relevant cross-border transactions? CHAR1
+        "A_DST_TAX_ALLOWANCE" -> allowanceAmount.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
+        "A_DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
+        "A_DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
+        "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
       ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries
 
       val regimeSpecificJson = JsArray(
         regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
           Json.obj(
-            "paramSequence" -> i.toString,
+            "paramSequence" -> "01",
             "paramName" -> key,
             "paramValue" -> value
           )

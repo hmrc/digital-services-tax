@@ -92,7 +92,9 @@ class ReturnConnector @Inject()(val http: HttpClient,
       }
     }
 
-    val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" //"?from={from}&to={to}"
+    val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
+      s"?from=${appConfig.obligationStartDate}" +
+      s"&to=${LocalDate.now.plusYears(1)}"
     desGet[List[(Period, Option[LocalDate])]](url)
   }
 
@@ -112,7 +114,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
       isAmend
     )
 
-    val url = s"$desURL/cross-regime/return/DST/eeits/$dstRegNo"
+    val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
     val result = desPost[JsValue, ReturnResponse](
       url,
       Json.toJson(request)
