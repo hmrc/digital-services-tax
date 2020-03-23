@@ -30,6 +30,8 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import java.time.{LocalDate, format}, format.DateTimeParseException
+import BackendAndFrontendJson._
+
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
   val mode: Mode,
@@ -57,11 +59,10 @@ class ReturnConnector @Inject()(val http: HttpClient,
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
-
     implicit def basicDateFormat = new Reads[LocalDate] {
       import cats.syntax.either._
       def reads(i: JsValue): JsResult[LocalDate] = i match {
-        case JsString(s) => 
+        case JsString(s) =>
           Either.catchOnly[DateTimeParseException]{
             LocalDate.parse(s)
           }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
@@ -82,19 +83,20 @@ class ReturnConnector @Inject()(val http: HttpClient,
             Period(
               {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
               {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
-              {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],              
+              {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
               {json \ "periodKey"}.as[Period.Key]
             ),
             {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
           )
         })
-        
+
       }
     }
 
     val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
       s"?from=${appConfig.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"
+
     desGet[List[(Period, Option[LocalDate])]](url)
   }
 

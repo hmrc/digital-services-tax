@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
+
 import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
-
 import cats.implicits._
+import uk.gov.hmrc.digitalservicestax.services
 
 trait SimpleJson {
 
@@ -134,9 +137,8 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-  val readCompanyReg = new Reads[CompanyRegWrapper] {
+  val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-      println(Json.prettyPrint(json))
       JsSuccess(CompanyRegWrapper (
         Company(
           {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
@@ -146,6 +148,77 @@ object BackendAndFrontendJson extends SimpleJson {
           {json \ "safeId"}.as[String]
         ).some
       ))
+    }
+  }
+
+  implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
+    def writes(dt: LocalDate): JsValue = JsString(dt.toString)
+  }
+
+  implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
+    import cats.syntax.either._
+    def reads(i: JsValue): JsResult[LocalDate] = i match {
+      case JsString(s) =>
+        Either.catchOnly[DateTimeParseException]{
+          LocalDate.parse(s)
+        }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
+      case o => JsError(s"expected a JsString(YYYY-MM-DD), got a $o")
+    }
+  }
+
+
+  case class PeriodList(
+    list: List[(Period, Option[LocalDate])]
+  )
+
+  implicit def writePeriods: Writes[List[(Period, Option[LocalDate])]] = new Writes[List[(Period, Option[LocalDate])]] {
+    override def writes(o: List[(Period, Option[LocalDate])]): JsValue = {
+
+      val details = o.map { case (period, mapping) =>
+        JsObject(
+          Seq(
+           "inboundCorrespondenceFromDate" -> Json.toJson(period.start),
+           "inboundCorrespondenceToDate" -> Json.toJson(period.end),
+           "inboundCorrespondenceDueDate" -> Json.toJson(period.returnDue),
+           "periodKey" -> Json.toJson(period.key),
+            "inboundCorrespondenceDateReceived" -> Json.toJson(mapping)
+          )
+        )
+
+      }
+
+      JsObject(Seq(
+        "obligations" -> JsArray(details.map { dt =>
+          JsObject(Seq(
+            "obligationDetails" -> dt
+          ))
+        })
+      ))
+    }
+  }
+
+  implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
+    def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
+      val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
+
+      Console.println(Json.prettyPrint(JsArray(obligations)))
+
+      val periods = obligations.toList.flatMap { j =>
+        val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
+        elems.toList
+      }
+
+      JsSuccess(periods.map { json =>
+        (
+          Period(
+            {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
+            {json \ "periodKey"}.as[Period.Key]
+          ),
+          {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
+        )
+      })
     }
   }
 

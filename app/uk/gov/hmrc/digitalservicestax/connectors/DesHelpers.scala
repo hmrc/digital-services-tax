@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class DesHelpers(servicesConfig: ServicesConfig) {
 
-  val http: HttpClient
+  def http: HttpClient
 
   def desGet[O](url: String)(implicit rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.GET[O](url)(rds, addHeaders, ec)

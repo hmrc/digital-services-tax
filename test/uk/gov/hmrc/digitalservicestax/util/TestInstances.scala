@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.digitalservicestax
+package util
 
 import java.time.LocalDate
 
@@ -24,7 +25,7 @@ import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
+import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, FormBundleNumber, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 object TestInstances {
@@ -62,13 +63,13 @@ object TestInstances {
   def genGroupCo: Gen[GroupCompany] = (
     nonEmptyString,
     Gen.option(UTR.gen)
-  ).mapN(GroupCompany.apply)
+    ).mapN(GroupCompany.apply)
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
       arbitrary[Money]
-    ).tupled
+      ).tupled
   )
 
   def genBankAccount: Gen[BankAccount] = {
@@ -123,6 +124,8 @@ object TestInstances {
 
   implicit def arbNEString: Arbitrary[NonEmptyString] = Arbitrary { neString() }
   implicit def arbPostcode: Arbitrary[Postcode] = Arbitrary(Postcode.gen)
+  implicit def arbDSTNumber: Arbitrary[DSTRegNumber] = Arbitrary(DSTRegNumber.gen)
+  implicit def arbFormBundleNumber: Arbitrary[FormBundleNumber] = Arbitrary(FormBundleNumber.gen)
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
@@ -204,6 +207,6 @@ object TestInstances {
       arbitrary[Boolean],
       arbitrary[Company],
       arbitrary[ContactDetails]
-    ).mapN(RosmRegisterWithoutIDRequest.apply)
+      ).mapN(RosmRegisterWithoutIDRequest.apply)
   }
 }
