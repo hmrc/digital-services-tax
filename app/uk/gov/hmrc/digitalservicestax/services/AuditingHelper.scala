@@ -117,7 +117,7 @@ object AuditingHelper {
       "authProviderType" -> "GovernmentGateway",
       "authProviderId" -> providerId,
       "deviceId" -> hc.deviceID
-    ).++(Json.toJson(data)(uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.returnFormat).as[JsObject])
+    ).++(Json.toJson(data)(BackendAndFrontendJson.returnFormat).as[JsObject])
 
     baseEvent("returnSubmitted").copy(detail = details)
   }
