@@ -80,9 +80,8 @@ class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChec
     )
 
     forAll(customGen) { case (dstNo, period, ret) =>
-
       stubFor(
-        post(urlPathEqualTo(s"""/cross-regime/return/DST/eeits/$dstNo"""))
+        post(urlPathEqualTo(s"""/cross-regime/return/DST/zdst/$dstNo"""))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
 
       val response = ReturnTestConnector.send(dstNo, period, ret, isAmend = false)
