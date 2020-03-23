@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  object TestConnector extends EmailConnector(httpClient, environment.mode, servicesConfig) {
+  object EmailTestConnector extends EmailConnector(httpClient, environment.mode, servicesConfig) {
     override val emailUrl: String = mockServerUrl
   }
 
@@ -43,7 +43,7 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
         .willReturn(aResponse()
         .withStatus(200)))
 
-    val response = TestConnector.sendConfirmationEmail(contactDetails, parentRef, dstNumber, period)
+    val response = EmailTestConnector.sendConfirmationEmail(contactDetails, parentRef, dstNumber, period)
     whenReady(response) { res => }
 
   }
@@ -57,7 +57,7 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
         .willReturn(aResponse()
         .withStatus(200)))
 
-    val response = TestConnector.sendSubmissionReceivedEmail(
+    val response = EmailTestConnector.sendSubmissionReceivedEmail(
       contactDetails,
       None)
 

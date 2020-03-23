@@ -25,12 +25,13 @@ import com.softwaremill.macwire._
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment, Play}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{AuditingConfigProvider, RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpAuditing
+import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, HttpClient}
 
 trait TestWiring {
   val appName: String = configuration.get[String]("appName")
@@ -44,10 +45,10 @@ trait TestWiring {
   lazy val configuration: Configuration = Configuration.load(environment, Map("auditing.enabled" -> "false"))
   lazy val runMode: RunMode = wire[RunMode]
   lazy val environment: Environment = Environment.simple(new File("."))
-  lazy val mode: Mode = environment.mode
+  lazy val mode = environment.mode
 
   implicit def clock: Clock = Clock.systemDefaultZone()
-  lazy val actorSystem: ActorSystem = Play.current.actorSystem
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
+
 }

@@ -48,7 +48,6 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
     }
   }
 
-
   def oreads(json: JsObject): JsResult[CompanyRegWrapper] = {
 
     if ({json \ "organisation"}.isEmpty) {

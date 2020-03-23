@@ -25,6 +25,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import actions._
 import services.{AuditingHelper, JsonSchemaChecker, MongoPersistence}
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -40,14 +41,16 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 @Singleton()
 class ReturnsController @Inject()(
-  val authConnector: AuthConnector,
+  val authConnector: AuthConnector,  
   val runModeConfiguration: Configuration,
   val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
   persistence: MongoPersistence,
   connector: connectors.ReturnConnector,
-  auditing: AuditConnector
+  auditing: AuditConnector,
+  registered: Registered,
+  loggedIn: LoggedInAction
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
@@ -55,35 +58,26 @@ class ReturnsController @Inject()(
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def submitReturn(periodKeyString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val periodKey = Period.Key(periodKeyString)
-    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId and credentials) { case uid ~ creds =>
-
-      val userId = uid.flatMap{InternalId.of}getOrElse(
-        throw new java.security.AccessControlException("No internalId available")
-      )
-
+  def submitReturn(periodKeyString: String): Action[JsValue] =
+    loggedIn.andThen(registered).async(parse.json) { implicit request =>
+      val regNo = request.registration.registrationNumber.get
+      val periodKey = Period.Key(periodKeyString)
       withJsonBody[Return](data => {
         for {
-          reg <- persistence.registrations(userId)
-          regNo = reg.registrationNumber.getOrElse {
-            throw new IllegalStateException(s"Registration is still pending")
-          }
           allPeriods <- connector.getPeriods(regNo)
           (period, previous) = allPeriods.find{_._1.key == periodKey}.getOrElse {
             throw new NoSuchElementException(s"no period found for $periodKey")
           }
           _ <- connector.send(regNo, period, data, previous.isDefined)
-          providerId = creds.fold(
-            throw new java.security.AccessControlException("No providerId available")
-          )(_.providerId)
-          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, providerId, data))
-          _ <- persistence.returns(reg, period.key) = data
+          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, request.authRequest.providerId, data))
+          _ <- persistence.returns(request.registration, period.key) = data
           _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
         } yield {
           Ok(JsNull)
         }
       }).recoverWith {
+        case e: NoSuchElementException =>
+          Future.successful(NotFound)
         case e =>
           auditing.sendExtendedEvent(
             AuditingHelper.buildReturnResponseAudit("ERROR", e.getMessage.some)
@@ -92,26 +86,13 @@ class ReturnsController @Inject()(
             throw e
           }
       }
-    }
   }
 
-  def lookupOutstandingReturns(): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { uid =>
-      val userId = uid.flatMap{InternalId.of}getOrElse(
-        throw new java.security.AccessControlException("No internalId available")
-      )
-
-      for {
-        reg <- persistence.registrations(userId)
-        regNo = reg.registrationNumber.getOrElse {
-          throw new IllegalStateException(s"Registration is still pending")
-        }
-        periodsAndDates <- connector.getPeriods(regNo)
-      } yield Ok(JsArray(
-        periodsAndDates.collect { case (p, None) => Json.toJson(p) }
-      ))
-
+  def lookupOutstandingReturns(): Action[AnyContent] =
+    loggedIn.andThen(registered).async { implicit request =>
+      val regNo = request.registration.registrationNumber.get
+      connector.getPeriods(regNo).map { a => Ok(JsArray(
+          a.collect { case (p, None) => Json.toJson(p) }
+        )) }
     }
-  }
-
 }

@@ -37,7 +37,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
-  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", false)
+  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
@@ -59,8 +59,9 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     if (enabled)
       http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
-    else
+    else {
       testConnector.getSubscription(subscriptionId)
+    }
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
@@ -68,20 +69,24 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
     HttpResponse(e.responseCode, Some(Json.toJson(e.message)))
   }
 
-  private def subscribeUrl(subscriptionId: String) =
+  def subscribeUrl(subscriptionId: String) =
     s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
   private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
     Json.obj(
       "serviceName" -> serviceName,
-      "callback" -> s"$callbackUrl?subscriptionId=$formBundleNumber",
+      "callback" -> s"$callbackUrl$formBundleNumber",
       "etmpId" -> safeId
     )
   }
 
 }
 
-case class TaxEnrolmentsSubscription(identifiers: Option[Seq[Identifier]], etmpId: String, state: String, errorResponse: Option[String])
+case class TaxEnrolmentsSubscription(
+  identifiers: Option[Seq[Identifier]],
+  etmpId: String, state: String,
+  errorResponse: Option[String]
+)
 
 object TaxEnrolmentsSubscription {
   implicit val format: Format[TaxEnrolmentsSubscription] = Json.format[TaxEnrolmentsSubscription]
