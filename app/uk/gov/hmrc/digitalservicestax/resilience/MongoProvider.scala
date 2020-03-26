@@ -24,6 +24,17 @@ import play.modules.reactivemongo._
 import reactivemongo.api.{Cursor,ReadPreference}
 import reactivemongo.play.json._, collection._
 import scala.concurrent._
+import javax.inject._
+
+@Singleton
+class DstMongoProvider @Inject()(
+  mongo: ReactiveMongoApi,
+  ec: ExecutionContext
+) extends MongoProvider[(Int, String)](mongo, 
+  {
+    case _ => (500, "an error has occurred")
+  }
+)(ec, implicitly)
 
 class MongoProvider[E](
   mongo: ReactiveMongoApi,
@@ -90,7 +101,7 @@ class MongoProvider[E](
       }
     }
 
-    def tick(maxTasks: Int = 20): Future[Unit] = {
+    def tick(maxTasks: Int = 1): Future[Unit] = {
       val selector = Json.obj(
         "nextAttempt" -> Json.obj("$lt" -> LocalDateTime.now)
       )

@@ -39,19 +39,19 @@ class RegistrationConnector @Inject()(
   servicesConfig: ServicesConfig,
   appConfig: AppConfig,
   ec: ExecutionContext,
-  resilienceProvider: ResilienceProvider[Future, Format, Format, Throwable]
+  resilienceProvider: DstMongoProvider
 )
   extends DesHelpers(servicesConfig) {
 
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
-  val resilientSend: ResilientFunction[Future, (String, Option[String], Registration), Option[RegistrationResponse], Throwable] = {
-    def rule = new RetryRule[Throwable] {
+  val resilientSend: ResilientFunction[Future, (String, Option[String], Registration), Option[RegistrationResponse], (Int,String)] = {
+    def rule = new RetryRule[(Int,String)] {
 
-      def nextRetry(previous: List[(LocalDateTime, Throwable)]): Option[LocalDateTime] = {
+      def nextRetry(previous: List[(LocalDateTime, (Int,String))]): Option[LocalDateTime] = {
 
-        def isFatal(t: Throwable): Boolean = false
+        def isFatal(t: (Int,String)): Boolean = false
 
         previous match {
           case ((_,lastError)::_) if isFatal(lastError) => None
