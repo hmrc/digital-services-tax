@@ -19,22 +19,67 @@ package ltbs.resilientcalls
 import cats.implicits._
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+import akka.actor.ActorSystem
 import play.api.libs.json._
 import play.modules.reactivemongo._
-import reactivemongo.api.{Cursor,ReadPreference}
-import reactivemongo.play.json._, collection._
+import reactivemongo.api.{Cursor, ReadPreference}
+import reactivemongo.play.json._
+import collection._
+
 import scala.concurrent._
 import javax.inject._
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 class DstMongoProvider @Inject()(
   mongo: ReactiveMongoApi,
-  ec: ExecutionContext
-) extends MongoProvider[(Int, String)](mongo, 
+  val actorSystem: ActorSystem,
+  val appConfig: AppConfig,
+  implicit val ec: ExecutionContext
+) extends MongoProvider[(Int, String)](mongo,
   {
     case _ => (500, "an error has occurred")
   }
-)(ec, implicitly)
+) with ActorTrigger {
+
+
+  override def ticker: Future[Unit] = Future.successful(println("tick!") )
+
+
+  override def apply[I: Format, O: Format](
+  key: String,
+  f: I => Future[O],
+  rule: RetryRule[(Int, String)]
+  ): ResilientFunction[Future, I, O, (Int, String)] = {
+    val g: ResilientFunction[Future, I, O, (Int, String)] = super.apply(key, f, rule)
+    trigger(???) // TOOD g.tick? ask LT about adding tick to
+    g
+  }
+}
+
+trait ActorTrigger {
+  val actorSystem: ActorSystem
+  val appConfig: AppConfig
+  implicit val ec: ExecutionContext
+
+  def ticker: Future[Unit]
+
+  def trigger(f: _ => Future[Unit]) = actorSystem.scheduler.schedule(
+    FiniteDuration(10, TimeUnit.SECONDS),
+    new FiniteDuration(appConfig.resilienceTickInterval, TimeUnit.SECONDS)
+  ) {
+
+    f
+    ticker
+
+  }
+}
+
 
 class MongoProvider[E](
   mongo: ReactiveMongoApi,

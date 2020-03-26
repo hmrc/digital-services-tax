@@ -32,4 +32,6 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 
+  val resilienceTickInterval: Long = config.getOptional[Long]("tick.interval").getOrElse(900)
+
 }

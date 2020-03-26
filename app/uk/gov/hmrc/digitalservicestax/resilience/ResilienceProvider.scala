@@ -18,8 +18,12 @@ package ltbs.resilientcalls
 
 import java.time.LocalDateTime
 import java.util.UUID
-import shapeless.{:: => _,_}, tag._
+
+import shapeless.{:: => _, _}
+import tag._
 import cats.implicits._
+
+import scala.concurrent.Future
 
 trait RetryRule[ERROR] {
   def nextRetry(previous: List[(LocalDateTime, ERROR)]): Option[LocalDateTime]
