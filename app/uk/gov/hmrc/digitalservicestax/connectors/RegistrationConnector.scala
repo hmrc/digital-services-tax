@@ -68,7 +68,7 @@ class RegistrationConnector @Inject()(
        case (idType: String, idNumber: Option[String], request: Registration) =>
          implicit val hc = new HeaderCarrier // will this work with the HoD?
          implicit val e = ec
-         send(idType, idNumber, request)
+         send(idType, idNumber, request)(addHeaders, ec) // either way you'll need the added headers
      }
 
     import BackendAndFrontendJson._
