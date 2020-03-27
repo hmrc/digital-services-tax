@@ -47,19 +47,8 @@ class DstMongoProvider @Inject()(
   }
 ) with ActorTrigger {
 
+  override def triggerAction: Future[Unit] = tick()
 
-  override def ticker: Future[Unit] = Future.successful(println("tick!") )
-
-
-  override def apply[I: Format, O: Format](
-  key: String,
-  f: I => Future[O],
-  rule: RetryRule[(Int, String)]
-  ): ResilientFunction[Future, I, O, (Int, String)] = {
-    val g: ResilientFunction[Future, I, O, (Int, String)] = super.apply(key, f, rule)
-    trigger(???) // TOOD g.tick? ask LT about adding tick to
-    g
-  }
 }
 
 trait ActorTrigger {
@@ -67,16 +56,13 @@ trait ActorTrigger {
   val appConfig: AppConfig
   implicit val ec: ExecutionContext
 
-  def ticker: Future[Unit]
+  def triggerAction: Future[Unit]
 
-  def trigger(f: _ => Future[Unit]) = actorSystem.scheduler.schedule(
+  def trigger = actorSystem.scheduler.schedule(
     FiniteDuration(10, TimeUnit.SECONDS),
     new FiniteDuration(appConfig.resilienceTickInterval, TimeUnit.SECONDS)
   ) {
-
-    f
-    ticker
-
+    triggerAction
   }
 }
 
@@ -85,6 +71,13 @@ class MongoProvider[E](
   mongo: ReactiveMongoApi,
   readError: Throwable => E
 )(implicit ec: ExecutionContext, errFmt: Format[E]) extends ResilienceProvider[Future, Format, Format, E] {
+
+  val maxTasks: Int = 1
+
+  @volatile private var functions: List[() => Future[Unit]] = Nil
+
+  def tick(): Future[Unit] =
+    functions.map{_.apply}.sequence_
 
   class MongoFuncImpl[I: Format, O: Format](
     val key: String,
@@ -146,7 +139,7 @@ class MongoProvider[E](
       }
     }
 
-    def tick(maxTasks: Int = 1): Future[Unit] = {
+    def tick: Future[Unit] = {
       val selector = Json.obj(
         "nextAttempt" -> Json.obj("$lt" -> LocalDateTime.now)
       )
@@ -183,6 +176,8 @@ class MongoProvider[E](
     f: I => Future[O],
     rule: RetryRule[E]
   ): ResilientFunction[Future, I, O, E] = {
-    new MongoFuncImpl[I,O](key, f, rule)
+    val out = new MongoFuncImpl[I,O](key, f, rule)
+    functions = out.tick _ :: functions
+    out
   }
 }
