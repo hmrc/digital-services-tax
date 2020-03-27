@@ -127,8 +127,6 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
             line2 = "605 West 42nd Street",
             line3 = "New York",
             line4 = "",
-            line5 = "",
-            postalCode = "10036",
             CountryCode("US")
           )
         ),
