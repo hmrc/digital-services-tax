@@ -108,12 +108,10 @@ object EeittInterface {
              "A_DATA_ORIGIN" -> "1",
              "A_DST_PERIOD_END_DATE" -> strDate(accountingPeriodEnd),
              "A_TAX_START_DATE" -> strDate(dateLiable),
-             "A_BUS_ADR_LINE_5" -> contactAddress.line5,
              "A_CORR_ADR_LINE_1" -> companyReg.company.address.line1,
              "A_CORR_ADR_LINE_2" -> companyReg.company.address.line2,
              "A_CORR_ADR_LINE_3" -> companyReg.company.address.line3,
              "A_CORR_ADR_LINE_4" -> companyReg.company.address.line4,
-             "A_CORR_ADR_LINE_5" -> companyReg.company.address.line5,
              "A_CORR_ADR_POST_CODE" -> companyReg.company.address.postalCode,
              "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
 //             "A_DST_GLOBAL_ID" -> ultimateOwner.reference

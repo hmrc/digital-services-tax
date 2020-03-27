@@ -40,8 +40,6 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
           {json \ "addressLine2"}.asOpt[String].getOrElse(""),
           {json \ "addressLine3"}.asOpt[String].getOrElse(""),
           {json \ "addressLine4"}.asOpt[String].getOrElse(""),
-          {json \ "addressLine5"}.asOpt[String].getOrElse(""),
-          {json \ "postalCode"}.as[String],
           CountryCode(country)
         )
       }

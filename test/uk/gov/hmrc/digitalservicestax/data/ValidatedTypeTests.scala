@@ -55,7 +55,6 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
         ukAddress.line2,
         ukAddress.line3,
         ukAddress.line4,
-        ukAddress.line5,
         ukAddress.postalCode,
         ukAddress.countryCode
       )
