@@ -35,9 +35,9 @@ import BackendAndFrontendJson._
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
+  val servicesConfig: ServicesConfig,
   appConfig: AppConfig)
-  extends DesHelpers(servicesConfig) {
+  extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"

@@ -98,10 +98,6 @@ class RegistrationsController @Inject()(
             safeId,
             r.formBundleNumber
           ) >>
-          emailConnector.sendSubmissionReceivedEmail(
-            data.contact,
-            data.ultimateParent
-          ) >>
           auditing.sendExtendedEvent(
             AuditingHelper.buildRegistrationAudit(
               data, providerId, r.formBundleNumber.some, "SUCCESS"
@@ -148,7 +144,10 @@ class RegistrationsController @Inject()(
             for {
               reg <- resilientSendP.async(("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId))
             } yield (reg, data.companyReg.safeId)
-        }) >> Future.successful(Ok(JsNull))
+      }) >> emailConnector.sendSubmissionReceivedEmail(
+            data.contact,
+            data.ultimateParent
+          ) >> Future.successful(Ok(JsNull))
       })
     
   }
@@ -161,6 +160,10 @@ class RegistrationsController @Inject()(
         case None => NotFound
       }
     }
+  }
+
+  def tick() = Action.async {
+    resilienceProvider.tick() >> Future(Ok("done"))
   }
 
 }

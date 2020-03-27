@@ -162,7 +162,8 @@ class MongoProvider[E](
                   case Right(o) =>
                     Wrapper(uuid, i, att, None, Some(o))
                 }
-                collection.flatMap(_.insert(ordered = false).one(newRecord))
+                val selector = Json.obj("uuid" -> uuid.toString)
+                collection.flatMap(_.update(selector, newRecord))
               }
           }
           allTasks.sequence_
