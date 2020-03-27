@@ -24,10 +24,10 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class DesHelpers(servicesConfig: ServicesConfig) {
+trait DesHelpers {
 
   def http: HttpClient
-
+  def servicesConfig: ServicesConfig
   def desGet[O](url: String)(implicit rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.GET[O](url)(rds, addHeaders, ec)
 
@@ -37,11 +37,30 @@ abstract class DesHelpers(servicesConfig: ServicesConfig) {
   def desPut[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.PUT[I, O](url, body)(wts, rds, addHeaders, ec)
 
-
   def addHeaders(implicit hc: HeaderCarrier): HeaderCarrier = {
     hc.withExtraHeaders(
       "Environment" -> servicesConfig.getConfString("des.environment", "")
     ).copy(authorization = Some(Authorization(s"Bearer ${servicesConfig.getConfString("des.token", "")}")))
+  }
+
+}
+
+object DesRetryRule extends ltbs.resilientcalls.RetryRule[(Int,String)] {
+
+  import concurrent._, duration._
+  import java.time.LocalDateTime
+
+  def nextRetry(previous: List[(LocalDateTime, (Int,String))]): Option[LocalDateTime] = {
+
+    def isFatal(t: (Int,String)): Boolean = false
+
+    previous match {
+      case ((_,lastError)::_) if isFatal(lastError) => None
+      case xs if xs.size > 4 => None
+      case r =>
+        val delay: Duration = ((Math.pow(2,r.size)) * 5.minute)
+        Some(LocalDateTime.now.plusSeconds(delay.toSeconds))
+    }
   }
 }
 
