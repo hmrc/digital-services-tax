@@ -92,7 +92,6 @@ class RegistrationsController @Inject()(
 
       registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
         {
-          {persistence.registrations(internalId) = data} >>
           {persistence.pendingCallbacks(r.formBundleNumber) = internalId} >>
           taxEnrolmentConnector.subscribe(
             safeId,
@@ -128,12 +127,14 @@ class RegistrationsController @Inject()(
   }
 
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
-
     withJsonBody[Registration](data => {
+      {persistence.registrations(request.internalId) = data} >>
       ((data.companyReg.utr, data.companyReg.safeId, data.companyReg.useSafeId) match {
-          case (_, _, true) =>
+
+        case (_, _, true) =>
             for {
               safeId <- getSafeId(data)
+              
               reg <- resilientSendP.async(("safe", safeId, data, safeId.get, request.internalId, request.providerId))
             } yield (reg, safeId)
           case (Some(utr), Some(safeId),false) =>
@@ -145,11 +146,10 @@ class RegistrationsController @Inject()(
               reg <- resilientSendP.async(("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId))
             } yield (reg, data.companyReg.safeId)
       }) >> emailConnector.sendSubmissionReceivedEmail(
-            data.contact,
-            data.ultimateParent
-          ) >> Future.successful(Ok(JsNull))
-      })
-    
+        data.contact,
+        data.ultimateParent
+      ) >> Future.successful(Ok(JsNull))
+    })
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>

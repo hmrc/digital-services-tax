@@ -52,13 +52,19 @@ object DesRetryRule extends ltbs.resilientcalls.RetryRule[(Int,String)] {
 
   def nextRetry(previous: List[(LocalDateTime, (Int,String))]): Option[LocalDateTime] = {
 
-    def isFatal(t: (Int,String)): Boolean = false
+    // retry 5XX errors, give up on everything else
+    def isFatal(t: (Int,String)): Boolean =
+      t._1 < 500 || t._1 >= 600
 
+    val initalDelay = 1.second
+
+    // double the previous delay after each failed attempt
+    // give up after 5 failed attempts (or a fatal error)
     previous match {
       case ((_,lastError)::_) if isFatal(lastError) => None
       case xs if xs.size > 4 => None
       case r =>
-        val delay: Duration = ((Math.pow(2,r.size)) * 5.minute)
+        val delay: Duration = ((Math.pow(2,r.size)) * initalDelay)
         Some(LocalDateTime.now.plusSeconds(delay.toSeconds))
     }
   }

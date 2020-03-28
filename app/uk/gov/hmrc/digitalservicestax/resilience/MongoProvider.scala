@@ -20,7 +20,7 @@ import cats.implicits._
 import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-
+import play.api.Logger
 import akka.actor.ActorSystem
 import play.api.libs.json._
 import play.modules.reactivemongo._
@@ -43,7 +43,9 @@ class DstMongoProvider @Inject()(
   implicit val ec: ExecutionContext
 ) extends MongoProvider[(Int, String)](mongo,
   {
-    case _ => (500, "an error has occurred")
+    case uk.gov.hmrc.http.Upstream4xxResponse(msg, code, _, _) => (code, msg)
+    case uk.gov.hmrc.http.Upstream5xxResponse(msg, code, _) => (code, msg)
+    case e => (-1, e.getLocalizedMessage)
   }
 ) with ActorTrigger {
 
@@ -73,6 +75,8 @@ class MongoProvider[E](
 )(implicit ec: ExecutionContext, errFmt: Format[E]) extends ResilienceProvider[Future, Format, Format, E] {
 
   val maxTasks: Int = 1
+
+  val log = Logger("resilience")
 
   @volatile private var functions: List[() => Future[Unit]] = Nil
 
@@ -126,6 +130,7 @@ class MongoProvider[E](
     def async(input: I): Future[ID] = {
       val newId = randomID()
       val record = Wrapper(newId, input, Nil)
+      log.info(s"$key / $newId: task created")
       collection.flatMap(_.insert(ordered = false).one(record)).map{_ => newId}
     }
 
@@ -157,9 +162,26 @@ class MongoProvider[E](
                 val newRecord = r match {
                   case Left(e) =>
                     val newAtt = (LocalDateTime.now, readError(e)) :: att
-                    val nextRerun = rule.nextRetry(newAtt)
+                    val nextRerun = rule.nextRetry(newAtt);
+                    {
+                      val basicLogMessage =
+                        s"$key / $uuid / attempt #${att.size + 1}: ${e.getLocalizedMessage}"
+                      nextRerun match {
+                        case Some(when) =>
+                          log.warn(s"${basicLogMessage}\n  Next attempting after $when.")
+                        case None =>
+                          log.error(
+                            List(
+                              basicLogMessage,
+                              "  Giving up - no further attempts.",
+                              s"  original payload: $i"
+                            ).mkString("\n")
+                          )
+                      }
+                    }
                     Wrapper(uuid, i, newAtt, nextRerun, None)
                   case Right(o) =>
+                    log.info(s"$key / $uuid / attempt #${att.size + 1}: $o")
                     Wrapper(uuid, i, att, None, Some(o))
                 }
                 val selector = Json.obj("uuid" -> uuid.toString)
