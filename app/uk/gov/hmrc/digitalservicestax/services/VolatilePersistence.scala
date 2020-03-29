@@ -20,7 +20,10 @@ package services
 import cats.Id
 import data._
 import java.time.{LocalDate, LocalDateTime}
+
 import cats.implicits._
+
+import scala.concurrent.Future
 
 trait VolatilePersistence extends Persistence[Id] {
 
@@ -40,10 +43,15 @@ trait VolatilePersistence extends Persistence[Id] {
     DSTRegNumber(s"${c}${c}DST$digits")
   }
 
-  val registrations = new Registrations {
+  val registrations: Registrations = new Registrations {
 
     @volatile private var _data: Map[InternalId, (Registration, LocalDateTime)] = Map.empty
-    
+
+    override def insert(
+      user: uk.gov.hmrc.digitalservicestax.data.InternalId,
+      reg: uk.gov.hmrc.digitalservicestax.data.Registration
+    ): Id[Unit] = ()
+
     val fixedDstNumber = randomDstNumber
     def get(user: InternalId) = {
       _data.get(user) match {
@@ -72,8 +80,7 @@ trait VolatilePersistence extends Persistence[Id] {
 
     def update(reg: Registration, period: Period.Key, ret: Return): Unit = {
       val updatedMap = {
-        val existing = _data.get(reg).
-          getOrElse(Map.empty[Period.Key, Return])
+        val existing = _data.get(reg).getOrElse(Map.empty[Period.Key, Return])
         existing + (period -> ret)
       }
       update(reg, updatedMap)

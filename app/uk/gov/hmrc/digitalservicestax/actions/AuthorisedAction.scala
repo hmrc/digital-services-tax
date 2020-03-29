@@ -42,7 +42,7 @@ class Registered @Inject()(
 )(implicit executionContext: ExecutionContext) extends RegisteredOrPending(persistence) {
   override protected def refine[A](
     request: LoggedInRequest[A]
-  ): Future[Either[Result,RegisteredRequest[A]]] = super.refine(request).map {
+  ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
     case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
       Left(Forbidden("Registration is not confirmed"))
     case x => x 
@@ -93,7 +93,7 @@ class LoggedInAction @Inject()(
         val providerId = creds.map(_.providerId)
 
         Future.successful(
-          (id.map{InternalId.of}, creds.map(_.providerId)) match {
+          (id.map { InternalId.of }, creds.map(_.providerId)) match {
             case (Some(Some(internalId)), Some(provider)) =>
               Right(LoggedInRequest(internalId, enrolments, provider, request))
             case (_, None) => Left(Forbidden("No provider ID"))
@@ -104,7 +104,7 @@ class LoggedInAction @Inject()(
     } 
   }
 
-  override def parser = mcc.parsers.anyContent
+  override def parser: BodyParser[AnyContent] = mcc.parsers.anyContent
 }
 
 case class LoggedInRequest[A](
@@ -113,8 +113,9 @@ case class LoggedInRequest[A](
   providerId: String,
   request: Request[A]
 ) extends WrappedRequest(request) {
+
   lazy val utr: Option[UTR] = enrolments
-      .getEnrolment("IR-CT")
-      .orElse(enrolments.getEnrolment("IR-SA"))
-      .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
+    .getEnrolment("IR-CT")
+    .orElse(enrolments.getEnrolment("IR-SA"))
+    .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
 }

@@ -50,6 +50,7 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
     override def confirm(user: InternalId, newRegNo: DSTRegNumber) =
       f(V.confirm(user, newRegNo))
 
+    override def insert(user: InternalId, reg: Registration): Future[Unit] = Future.successful(())
   }
 
   val returns = new Returns {

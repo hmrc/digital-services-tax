@@ -39,11 +39,15 @@ abstract class Persistence[F[_]: cats.Monad] {
   def pendingCallbacks: PendingCallbacks
 
   protected trait Registrations {
-    def apply(user: InternalId): F[Registration] = get(user).map{
+    def apply(user: InternalId): F[Registration] = get(user).map {
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
+
+    def insert(user: InternalId, reg: Registration): F[Unit]
+
     def get(user: InternalId): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
+
     private[services] def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
       for {
         existing <- apply(user)

@@ -20,18 +20,17 @@ package uk.gov.hmrc.digitalservicestax.util
 import java.io.File
 import java.time.Clock
 
-import akka.actor.ActorSystem
 import com.softwaremill.macwire._
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment, Play}
+import play.api.{Configuration, Environment}
+import play.modules.reactivemongo.ReactiveMongoApi
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.test.TestConnector
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{AuditingConfigProvider, RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, HttpClient}
+import uk.gov.hmrc.play.bootstrap.http.DefaultHttpAuditing
 
 trait TestWiring {
   val appName: String = configuration.get[String]("appName")
@@ -50,5 +49,7 @@ trait TestWiring {
   implicit def clock: Clock = Clock.systemDefaultZone()
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
+  val reactiveMongoApi: ReactiveMongoApi = wire[ReactiveMongoApi]
+  val mongoPersistence: MongoPersistence = wire[MongoPersistence]
 
 }

@@ -18,15 +18,18 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import uk.gov.hmrc.mongo.{MongoConnector, ReactiveRepository}
+
 import scala.concurrent._
 import java.time.LocalDateTime
-import data._, BackendAndFrontendJson._
+
+import data._
+import BackendAndFrontendJson._
 import reactivemongo.api.indexes.{Index, IndexType}
 import play.api.libs.json._
 import cats.instances.future._
-
-import reactivemongo.api.Cursor
-import reactivemongo.play.json._, collection._
+import reactivemongo.api.{Cursor, WriteConcern}
+import reactivemongo.play.json._
+import collection._
 import play.modules.reactivemongo._
 import javax.inject._
 
@@ -74,6 +77,13 @@ class MongoPersistence @Inject()(
       }
     }
 
+    def insert(wrapper: CallbackWrapper): Future[Unit] = {
+      collection.flatMap(_.insert(ordered = true, WriteConcern.Journaled).one(wrapper)).map {
+        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
+        case e => throw new Exception(s"$e")
+      }
+    }
+
     def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =  {
       val selector = Json.obj("formBundle" -> formBundle.toString)
       collection.flatMap(
@@ -114,6 +124,14 @@ class MongoPersistence @Inject()(
 
     implicit val formatWrapper: OFormat[RegWrapper] = Json.format[RegWrapper]
 
+    def insert(user: InternalId, value: Registration): Future[Unit] = {
+      val wrapper = RegWrapper(user, value)
+      collection.flatMap(_.insert(ordered = false, WriteConcern.Journaled).one(wrapper)).map {
+        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
+        case e => throw new Exception(s"$e")
+      }
+    }
+
     override def update(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)
       val selector = Json.obj("session" -> user.toString)
@@ -130,7 +148,7 @@ class MongoPersistence @Inject()(
 
   }
 
-  def returns = new Returns {
+  def returns: Returns = new Returns {
 
     lazy val collection: Future[JSONCollection] = {
       database.map(_.collection[JSONCollection]("returns")).flatMap { c =>
@@ -146,7 +164,7 @@ class MongoPersistence @Inject()(
       }
     }
 
-    implicit val formatWrapper = Json.format[RetWrapper]
+    implicit val formatWrapper: OFormat[RetWrapper] = Json.format[RetWrapper]
 
     def get(reg: Registration): Future[Map[Period.Key, Return]] =  {
       val selector = Json.obj("regNo" -> reg.registrationNumber.fold(

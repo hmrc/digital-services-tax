@@ -31,7 +31,8 @@ object AppDependencies {
     "com.beachape"           %% "enumeratum-scalacheck"    % "1.5.16"                % Test,
     "wolfendale"             %% "scalacheck-gen-regexp"    % "0.1.2"                 % Test,
     "com.github.tomakehurst" %  "wiremock-jre8"            % "2.25.1"                % Test,
-    "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test
+    "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test,
+    "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.19.0-play-26"        % Test
 
   )
 
