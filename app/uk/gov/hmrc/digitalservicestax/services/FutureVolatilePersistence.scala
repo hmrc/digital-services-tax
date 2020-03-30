@@ -22,12 +22,9 @@ import data._
 import scala.concurrent._
 import cats.instances.future._
 import javax.inject._
-import java.time.LocalTime
 
 import akka.actor._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
-
-import scala.concurrent.duration._
 
 @Singleton
 class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {

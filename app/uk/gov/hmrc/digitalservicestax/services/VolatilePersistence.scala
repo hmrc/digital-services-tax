@@ -24,8 +24,6 @@ import java.time.{LocalDate, LocalDateTime}
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
-import scala.concurrent.Future
-
 trait VolatilePersistence extends Persistence[Id] {
 
   val pendingCallbacks = new PendingCallbacks {
