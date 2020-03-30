@@ -23,15 +23,21 @@ import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.anyvals.PosInt
+import org.scalatest.BeforeAndAfterEach
 
 class RegistationPersistenceSpec extends FakeApplicationSpec
   with ScalaFutures
+  with BeforeAndAfterEach
   with ScalaCheckDrivenPropertyChecks {
+
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
+
+  override def beforeEach = {
+    super.beforeEach()
+  }
 
   "it should retrieve a registration using the apply object" in {
     forAll { (id: InternalId, reg: Registration) =>
