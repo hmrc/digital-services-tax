@@ -38,7 +38,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
 
   val volatile = new FutureVolatilePersistence(actorSystem = actorSystem) {}
 
-  "it should retrieve a registration using the apply object" in {
+  "it should retrieve a registration using .apply" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
         _ <- volatile.registrations.insert(id, reg)
@@ -51,7 +51,22 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
     }
   }
 
-  "it should persist a registration object using the MongoConnector" in {
+  "it automatically generate a DST reg number if one is missing" in {
+    forAll { (id: InternalId, reg: Registration) =>
+      val updatedValue = reg.copy(registrationNumber = None)
+
+      val chain = for {
+        _ <- volatile.registrations.insert(id, updatedValue)
+        dbReg <- volatile.registrations.get(id)
+      } yield dbReg
+
+      whenReady(chain) { _ =>
+        reg.registrationNumber.isDefined mustBe true
+      }
+    }
+  }
+
+  "it should persist a registration object and retrieve it with .get" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
         _ <- volatile.registrations.insert(id, reg)

@@ -191,7 +191,7 @@ object TestInstances {
     {
       (
         arbitrary[CompanyRegWrapper],
-        arbitrary[Option[Address]],
+        Gen.option(arbitrary[Address]),
         arbitrary[Option[Company]],
         arbitrary[ContactDetails],
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
