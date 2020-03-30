@@ -146,6 +146,10 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[LocalDate]
   }
 
+  it should "serialize and de-serialise an optional LocalDate" in {
+    testJsonRoundtrip[Option[LocalDate]]
+  }
+
   it should "serialize and de-serialise a Map[Activity, Percent]" in {
     testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
   }
