@@ -59,40 +59,6 @@ class ReturnConnector @Inject()(val http: HttpClient,
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
-    implicit def basicDateFormat = new Reads[LocalDate] {
-      import cats.syntax.either._
-      def reads(i: JsValue): JsResult[LocalDate] = i match {
-        case JsString(s) =>
-          Either.catchOnly[DateTimeParseException]{
-            LocalDate.parse(s)
-          }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
-        case o => JsError(s"expected a JsString(YYYY-MM-DD), got a $o")
-      }
-    }
-
-    implicit def readPeriods = new Reads[List[(Period, Option[LocalDate])]] {
-      def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
-        val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
-
-        val periods = obligations.toList.flatMap{ j =>
-          val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
-          elems.toList
-        }
-        JsSuccess(periods.map { json =>
-          (
-            Period(
-              {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
-              {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
-              {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
-              {json \ "periodKey"}.as[Period.Key]
-            ),
-            {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
-          )
-        })
-
-      }
-    }
-
     val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
       s"?from=${appConfig.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"

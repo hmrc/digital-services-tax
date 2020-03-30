@@ -197,17 +197,15 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-  implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
+
+  implicit def readPeriods = new Reads[List[(Period, Option[LocalDate])]] {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
-      val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
+      val JsArray(obligations) = {jsonOuter \ "obligations"}.as[JsArray]
 
-      Console.println(Json.prettyPrint(JsArray(obligations)))
-
-      val periods = obligations.toList.flatMap { j =>
+      val periods = obligations.toList.flatMap{ j =>
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList
       }
-
       JsSuccess(periods.map { json =>
         (
           Period(
@@ -219,6 +217,7 @@ object BackendAndFrontendJson extends SimpleJson {
           {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
         )
       })
+
     }
   }
 
