@@ -26,7 +26,9 @@ import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
+import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.services.EeittInterface._
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
@@ -168,6 +170,19 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     } yield periods
 
     testJsonRoundtrip(generator)
+  }
+
+  it should "test the JSON schema for Company" in {
+    forAll { company: Company =>
+      JsonSchemaChecker[data.Company](company, "rosm-response")
+    }
+  }
+
+
+  it should "test the JSON schema for registratiom" in {
+    forAll { reg: Registration =>
+      JsonSchemaChecker[data.Registration](reg, "rosm-response")
+    }
   }
 
 //
