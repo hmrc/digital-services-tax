@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax.persistence
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Registration, Return}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -37,6 +37,19 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
 
   override def beforeEach = {
     super.beforeEach()
+  }
+
+  "it fail to retrieve a non existing registration with a NoSuchElementException" in {
+    forAll { (id: InternalId) =>
+      val chain = for {
+        dbReg <- mongoPersistence.registrations.apply(id)
+      } yield dbReg
+
+      whenReady(chain.failed) { ex =>
+        ex mustBe a [NoSuchElementException]
+        ex.getMessage mustBe s"user not found: $id"
+      }
+    }
   }
 
   "it should retrieve a registration using the apply object" in {

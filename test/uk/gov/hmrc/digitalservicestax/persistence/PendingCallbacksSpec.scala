@@ -34,6 +34,19 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
+  "it fail to retrieve a non existing form bundle with a NoSuchElementException" in {
+    forAll { (formNo: FormBundleNumber) =>
+      val chain = for {
+        dbReg <- mongoPersistence.pendingCallbacks.apply(formNo)
+      } yield dbReg
+
+      whenReady(chain.failed) { ex =>
+        ex mustBe a [NoSuchElementException]
+        ex.getMessage mustBe s"formBundle not found: $formNo"
+      }
+    }
+  }
+
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {

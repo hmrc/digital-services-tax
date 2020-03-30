@@ -162,24 +162,29 @@ class MongoPersistence @Inject()(
           unique = true
         )
         
-        c.indexesManager.ensure(sessionIndex).map { case _ => c }
+        c.indexesManager.ensure(sessionIndex).map(_ => c)
       }
     }
 
     implicit val formatWrapper: OFormat[RetWrapper] = Json.format[RetWrapper]
 
     def get(reg: Registration): Future[Map[Period.Key, Return]] =  {
-      val selector = Json.obj("regNo" -> reg.registrationNumber.fold(
-        throw new IllegalArgumentException("Registration is not active"))
-      (_.toString))
-      collection.flatMap(
-        _.find(selector)
-          .cursor[RetWrapper]()
-          .collect[List](
-            maxDocs = 1000,
-            err = Cursor.FailOnError[List[RetWrapper]]()
-          ).map { _.map{x => (x.periodKey, x.data)}.toMap }
-      )
+      reg.registrationNumber match {
+        case Some(regNo) =>
+          val selector = Json.obj("regNo" -> regNo.toString)
+
+          collection.flatMap(
+            _.find(selector)
+              .cursor[RetWrapper]()
+              .collect[List](
+                maxDocs = 1000,
+                err = Cursor.FailOnError[List[RetWrapper]]()
+              ).map { _.map{x => (x.periodKey, x.data)}.toMap }
+          )
+
+        case None => Future.failed(new IllegalArgumentException("Registration is not active"))
+      }
+
     }
 
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] = {

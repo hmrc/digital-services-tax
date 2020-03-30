@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.persistence
 import org.scalactic.anyvals.PosInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{Period, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Period, Registration, Return}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -33,6 +33,34 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
   val period = Period.Key.of("0220").value
+
+  "it fail to retrieve a non existing return with a NoSuchElementException" in {
+    forAll { (reg: Registration) =>
+      val chain = for {
+        dbReg <- mongoPersistence.returns.apply(reg, period)
+      } yield dbReg
+
+      whenReady(chain.failed) { ex =>
+        ex mustBe a [NoSuchElementException]
+        ex.getMessage mustBe s"return not found: $reg/$period"
+      }
+    }
+  }
+
+  "it fail to persist a return if the registration key doesn't have a DST Reg number" in {
+    forAll { (reg: Registration) =>
+      val adjustedReg = reg.copy(registrationNumber = None)
+
+      val chain = for {
+        dbReg <- mongoPersistence.returns.get(adjustedReg)
+      } yield dbReg
+
+      whenReady(chain.failed) { ex =>
+        ex mustBe a [IllegalArgumentException]
+        ex.getMessage mustBe "Registration is not active"
+      }
+    }
+  }
 
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
