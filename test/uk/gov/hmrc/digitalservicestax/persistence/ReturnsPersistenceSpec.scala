@@ -16,61 +16,62 @@
 
 package uk.gov.hmrc.digitalservicestax.persistence
 
+import org.scalactic.anyvals.PosInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data.{Period, Registration, Return}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalactic.anyvals.PosInt
 
-class RegistationPersistenceSpec extends FakeApplicationSpec
+class ReturnsPersistenceSpec extends FakeApplicationSpec
   with ScalaFutures
   with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  "it should retrieve a registration using the apply object" in {
-    forAll { (id: InternalId, reg: Registration) =>
+  val period = Period.Key.of("0220").value
+
+  "it should persist a return object using the apply method" in {
+    forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
-        dbReg <- mongoPersistence.registrations(id)
+        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        dbReg <- mongoPersistence.returns(reg, period)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
-        dbRes mustEqual reg
+        dbRes mustEqual ret
       }
     }
   }
 
-  "it should persist a registration object using the MongoConnector" in {
-    forAll { (id: InternalId, reg: Registration) =>
+  "it should persist a return object" in {
+    forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
-        dbReg <- mongoPersistence.registrations.get(id)
+        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        dbReg <- mongoPersistence.returns.get(reg, period)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
-        dbRes.value mustEqual reg
+        dbRes.value mustEqual ret
       }
     }
   }
 
-  "it should update a registration by userId" in {
-    forAll { (id: InternalId, reg: Registration, updated: Registration) =>
+  "it should update a return by registration and period" in {
+    forAll { (reg: Registration, ret: Return, updatedReturn: Return) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
-        dbReg <- mongoPersistence.registrations.get(id)
-        _ <- mongoPersistence.registrations.update(id, updated)
-        postUpdate <- mongoPersistence.registrations.get(id)
+        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        dbReg <- mongoPersistence.returns.get(reg, period)
+        _ <- mongoPersistence.returns.update(reg, period, updatedReturn)
+        postUpdate <- mongoPersistence.returns.get(reg, period)
       } yield dbReg -> postUpdate
 
       whenReady(chain) { case (dbRes, postUpdate) =>
-        dbRes.value mustEqual reg
-        postUpdate.value mustEqual updated
+        dbRes.value mustEqual ret
+        //postUpdate.value mustEqual updatedReturn
       }
     }
   }

@@ -32,6 +32,7 @@ import reactivemongo.play.json._
 import collection._
 import play.modules.reactivemongo._
 import javax.inject._
+import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
 object MongoPersistence {
 
@@ -77,7 +78,8 @@ class MongoPersistence @Inject()(
       }
     }
 
-    def insert(wrapper: CallbackWrapper): Future[Unit] = {
+    def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
+      val wrapper = CallbackWrapper(internalId, formBundleNumber)
       collection.flatMap(_.insert(ordered = true, WriteConcern.Journaled).one(wrapper)).map {
         case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
         case e => throw new Exception(s"$e")
@@ -200,6 +202,15 @@ class MongoPersistence @Inject()(
         _.update(ordered = false)
           .one(selector, wrapper, upsert = true)
       ).map{
+        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
+        case e => throw new Exception(s"$e")
+      }
+    }
+
+    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] = {
+      val wrapper = RetWrapper(reg.registrationNumber.get, key, ret)
+
+      collection.flatMap(_.insert(ordered = false, WriteConcern.Journaled).one(wrapper)).map {
         case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
         case e => throw new Exception(s"$e")
       }

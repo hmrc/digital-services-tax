@@ -49,7 +49,5 @@ trait TestWiring {
   implicit def clock: Clock = Clock.systemDefaultZone()
   lazy val appConfig: AppConfig = wire[AppConfig]
   val servicesConfig: ServicesConfig = wire[ServicesConfig]
-  val reactiveMongoApi: ReactiveMongoApi = wire[ReactiveMongoApi]
-  val mongoPersistence: MongoPersistence = wire[MongoPersistence]
 
 }

@@ -25,7 +25,7 @@ import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, FormBundleNumber, GroupCompany, IBAN, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
+import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, FormBundleNumber, GroupCompany, IBAN, InternalId, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 object TestInstances {
@@ -35,6 +35,7 @@ object TestInstances {
     Gen.alphaNumStr.map{_.take(255)}
     //    RegexpGen.from("""^[0-9a-zA-Z{À-˿’}\\- &`'^._|]{1,255}$""")
   )
+
 
   // what range of values is acceptable? pennies? fractional pennies?
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
@@ -129,6 +130,7 @@ object TestInstances {
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
+  implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary(InternalId.gen)
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
   implicit def arbEmail: Arbitrary[Email] = Arbitrary{
@@ -196,7 +198,7 @@ object TestInstances {
         arbitrary[ContactDetails],
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
-        Gen.const(none[DSTRegNumber])
+        Gen.some(arbitrary[DSTRegNumber])
         ).mapN(Registration.apply)
     }
   )
@@ -209,4 +211,6 @@ object TestInstances {
       arbitrary[ContactDetails]
       ).mapN(RosmRegisterWithoutIDRequest.apply)
   }
+
+
 }
