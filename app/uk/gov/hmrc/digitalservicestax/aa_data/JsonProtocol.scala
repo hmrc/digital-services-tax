@@ -137,7 +137,7 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-  val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
+  implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
       JsSuccess(CompanyRegWrapper (
         Company(
@@ -147,6 +147,18 @@ object BackendAndFrontendJson extends SimpleJson {
         safeId = SafeId(
           {json \ "safeId"}.as[String]
         ).some
+      ))
+    }
+  }
+
+  implicit val writeCompanyReg: OWrites[CompanyRegWrapper] = new OWrites[CompanyRegWrapper] {
+    override def writes(o: CompanyRegWrapper): JsObject = {
+      JsObject(Seq(
+        "organisation" -> JsObject(Seq(
+          "organisationName" -> JsString(o.company.name)
+        )),
+        "address" -> Json.toJson(o.company.address),
+        "safeId" -> o.safeId.map(JsString.apply).getOrElse(JsNull)
       ))
     }
   }

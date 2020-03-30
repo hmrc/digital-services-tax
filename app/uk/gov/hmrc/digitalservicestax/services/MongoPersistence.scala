@@ -17,8 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import uk.gov.hmrc.mongo.{MongoConnector, ReactiveRepository}
-
 import scala.concurrent._
 import java.time.LocalDateTime
 

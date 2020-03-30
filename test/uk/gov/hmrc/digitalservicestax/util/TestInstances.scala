@@ -21,9 +21,11 @@ import java.time.LocalDate
 
 import enumeratum.scalacheck._
 import cats.implicits.{none, _}
+import org.scalacheck
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Address, BankAccount, Company, CompanyRegWrapper, ContactDetails, CountryCode, DSTRegNumber, DomesticBankAccount, Email, ForeignAddress, ForeignBankAccount, FormBundleNumber, GroupCompany, IBAN, InternalId, Money, NonEmptyString, Percent, Period, PhoneNumber, Postcode, RegexValidatedString, Registration, RepaymentDetails, Return, SafeId, SortCode, UTR, UkAddress}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -65,6 +67,27 @@ object TestInstances {
     nonEmptyString,
     Gen.option(UTR.gen)
     ).mapN(GroupCompany.apply)
+
+  implicit def genEnrolmentIdentifier: Arbitrary[EnrolmentIdentifier] = Arbitrary {
+    (
+      nonEmptyString,
+      nonEmptyString
+    ).mapN(EnrolmentIdentifier)
+  }
+
+  implicit def enrolmentArbitrary: Arbitrary[Enrolment] = Arbitrary {
+    for {
+      key <- arbitrary[NonEmptyString]
+      sized <- Gen.chooseNum(1, 10)
+      enrolments <- Gen.listOfN(sized, genEnrolmentIdentifier.arbitrary)
+      state <- nonEmptyString
+      delegate <- Gen.const(none[String])
+    } yield Enrolment(key, enrolments, state, delegate)
+  }
+
+  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Arbitrary {
+    Gen.listOf(enrolmentArbitrary.arbitrary).map(list => Enrolments(list.toSet))
+  }
 
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (

@@ -156,6 +156,11 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
   }
 
+
+  it should "serialize and de-serialise a CompanyRegFormat" in {
+    testJsonRoundtrip[CompanyRegWrapper]
+  }
+
   it should "serialize an enum entry as a string" in {
     val jsValue = Json.toJson(Activity.SocialMedia)
     jsValue shouldEqual JsString("SocialMedia")

@@ -17,13 +17,10 @@
 package uk.gov.hmrc.digitalservicestax.util
 
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import com.softwaremill.macwire.wire
 import org.scalatest.TryValues
-import org.scalatest.concurrent.{PatienceConfiguration, ScalaFutures}
-import org.scalatest.time.{Seconds, Span}
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
 import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
@@ -55,7 +52,6 @@ trait FakeApplicationSpec extends PlaySpec
     configuration,
     new DefaultApplicationLifecycle
   )
-
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
 
