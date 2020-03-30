@@ -40,7 +40,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class Registered @Inject()(
   persistence: MongoPersistence
 )(implicit executionContext: ExecutionContext) extends RegisteredOrPending(persistence) {
-  override protected def refine[A](
+  override def refine[A](
     request: LoggedInRequest[A]
   ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
     case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
@@ -55,7 +55,7 @@ class RegisteredOrPending @Inject()(
     ActionRefiner[LoggedInRequest, RegisteredRequest]
 {
 
-  protected def refine[A](
+  def refine[A](
     request: LoggedInRequest[A]
   ): Future[Either[Result,RegisteredRequest[A]]] =
     persistence.registrations.get(request.internalId).map {
@@ -77,7 +77,7 @@ class LoggedInAction @Inject()(
 )(implicit val executionContext: ExecutionContext)
   extends ActionBuilder[LoggedInRequest, AnyContent] with ActionRefiner[Request, LoggedInRequest] with AuthorisedFunctions {
 
-  override protected def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
+  override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
     implicit val req: Request[A] = request
     implicit val hc: HeaderCarrier =
       HeaderCarrierConverter.fromHeadersAndSessionAndRequest(

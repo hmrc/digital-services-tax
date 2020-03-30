@@ -17,16 +17,17 @@
 package uk.gov.hmrc.digitalservicestax.actions
 
 import org.scalactic.anyvals.PosInt
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterEach, EitherValues}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.http.ContentTypes
+import play.api.http.{ContentTypes, Status}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import play.api.mvc.Results
+import play.api.mvc.Results.Forbidden
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -34,6 +35,7 @@ import scala.concurrent.Future
 class ActionsTest extends FakeApplicationSpec
   with ScalaFutures
   with BeforeAndAfterEach
+  with EitherValues
   with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(
@@ -60,7 +62,25 @@ class ActionsTest extends FakeApplicationSpec
       })
 
       whenReady(block) { resp =>
-        Console.println(resp.body.as(ContentTypes.TEXT))
+        resp.header.status mustEqual Status.OK
+      }
+    }
+  }
+
+  "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
+    val action = new Registered(mongoPersistence)
+
+    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+
+      val req = LoggedInRequest(
+        internal,
+        enrolments,
+        providerId,
+        FakeRequest()
+      )
+
+      whenReady(action.refine(req)) { res =>
+        res.left.value.header.status mustBe Status.FORBIDDEN
       }
     }
   }
@@ -83,7 +103,7 @@ class ActionsTest extends FakeApplicationSpec
       })
 
       whenReady(block) { resp =>
-        Console.println(resp.body.as(ContentTypes.TEXT))
+        resp.header.status mustEqual Status.OK
       }
     }
   }
