@@ -221,4 +221,14 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
+  implicit def optFormatter[A](implicit innerFormatter: Format[A]): Format[Option[A]] =
+    new Format[Option[A]] {
+      def reads(json: JsValue): JsResult[Option[A]] = json match {
+        case JsNull => JsSuccess(none[A])
+        case a      => innerFormatter.reads(a).map{_.some}
+      }
+      def writes(o: Option[A]): JsValue =
+        o.map{innerFormatter.writes}.getOrElse(JsNull)
+    }
+
 }
