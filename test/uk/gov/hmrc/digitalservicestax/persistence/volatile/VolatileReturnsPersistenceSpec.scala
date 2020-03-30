@@ -73,7 +73,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
 
       whenReady(chain) { case (dbRes, postUpdate) =>
         dbRes.value mustEqual ret
-        //postUpdate.value mustEqual updatedReturn
+        postUpdate.value mustEqual updatedReturn
       }
     }
   }

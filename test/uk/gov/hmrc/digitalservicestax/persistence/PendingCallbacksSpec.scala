@@ -20,7 +20,7 @@ import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -56,6 +56,22 @@ class PendingCallbacksSpec extends FakeApplicationSpec
 
       whenReady(chain) { dbRes =>
         dbRes mustEqual id
+      }
+    }
+  }
+
+
+  "it should confirm a registraion using the pending callbacks process" in {
+    forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
+      val chain = for {
+        _ <- mongoPersistence.registrations.insert(id, reg)
+        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.pendingCallbacks.process(formNo, reg.registrationNumber.value)
+        formBundle <- mongoPersistence.pendingCallbacks.get(formNo)
+      } yield formBundle
+
+      whenReady(chain) { dbRes =>
+        dbRes mustBe empty
       }
     }
   }

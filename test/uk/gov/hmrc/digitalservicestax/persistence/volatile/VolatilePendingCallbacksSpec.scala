@@ -20,7 +20,7 @@ import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -59,6 +59,21 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
 
       whenReady(chain) { dbRes =>
         dbRes.value mustEqual id
+      }
+    }
+  }
+
+  "it should confirm a registraion using the pending callbacks process" in {
+    forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
+      val chain = for {
+        _ <- volatile.registrations.insert(id, reg)
+        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.pendingCallbacks.process(formNo, reg.registrationNumber.value)
+        formBundle <- volatile.pendingCallbacks.get(formNo)
+      } yield formBundle
+
+      whenReady(chain) { dbRes =>
+        dbRes mustBe empty
       }
     }
   }
