@@ -17,7 +17,13 @@
 package uk.gov.hmrc.digitalservicestax.util
 
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
+import com.softwaremill.macwire.wire
+import org.scalatest.TryValues
+import org.scalatest.concurrent.{PatienceConfiguration, ScalaFutures}
+import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
 import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
@@ -25,12 +31,22 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, ApplicationLoader}
 import play.core.DefaultWebCommands
+import play.modules.reactivemongo.DefaultReactiveMongoApi
+import reactivemongo.api.MongoConnection
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
+import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 trait FakeApplicationSpec extends PlaySpec
   with BaseOneAppPerSuite
+  with MongoSpecSupport
   with FakeApplicationFactory
+  with TryValues
+  with ScalaFutures
   with TestWiring {
   protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context(
     environment,
@@ -39,6 +55,7 @@ trait FakeApplicationSpec extends PlaySpec
     configuration,
     new DefaultApplicationLifecycle
   )
+
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
 
@@ -55,4 +72,16 @@ trait FakeApplicationSpec extends PlaySpec
       )
     ).build()
   }
+
+  val reactiveMongoApi = new DefaultReactiveMongoApi(
+    parsedUri = MongoConnection.parseURI(mongoUri).success.value,
+    dbName = databaseName,
+    strictMode = false,
+    configuration = configuration,
+    new DefaultApplicationLifecycle
+  )
+
+  val mongoPersistence: MongoPersistence = wire[MongoPersistence]
+
+  implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 5.seconds, interval = 100.millis)
 }

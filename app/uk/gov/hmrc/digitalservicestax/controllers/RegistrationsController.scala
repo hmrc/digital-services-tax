@@ -60,19 +60,19 @@ class RegistrationsController @Inject()(
   registered: RegisteredOrPending
 ) extends BackendController(cc) with AuthorisedFunctions {
 
-  val log = Logger(this.getClass())
+  val log: Logger = Logger(this.getClass)
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
-        RosmRegisterWithoutIDRequest(
-        isAnAgent = false,
-        isAGroup = false,
-        data.companyReg.company,
-        data.contact
-      )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
+      RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      data.companyReg.company,
+      data.contact
+    )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
@@ -84,7 +84,7 @@ class RegistrationsController @Inject()(
               safeId <- getSafeId(data)
               reg <- registrationConnector.send("safe", safeId, data)
             } yield (reg, safeId)
-          case (Some(utr), Some(safeId),false) =>
+          case (Some(utr), Some(_), false) =>
             for {
               reg <- registrationConnector.send("utr", utr.some, data)
             } yield (reg, data.companyReg.safeId)
@@ -94,7 +94,7 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
         }).flatMap {
           case (Some(r), Some(safeId: SafeId)) => {
-            {persistence.registrations(request.internalId) = data} >>             
+            {persistence.registrations(request.internalId) = data} >>
             {persistence.pendingCallbacks(r.formBundleNumber) = request.internalId} >> 
               taxEnrolmentConnector.subscribe(
                 safeId,

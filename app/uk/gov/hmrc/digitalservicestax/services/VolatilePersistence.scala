@@ -20,7 +20,9 @@ package services
 import cats.Id
 import data._
 import java.time.{LocalDate, LocalDateTime}
+
 import cats.implicits._
+import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
 trait VolatilePersistence extends Persistence[Id] {
 
@@ -31,6 +33,10 @@ trait VolatilePersistence extends Persistence[Id] {
     def delete(formBundle: FormBundleNumber) = _data = _data - formBundle
     def update(formBundle: FormBundleNumber, internalId: InternalId) =
       _data = _data + (formBundle -> internalId)
+
+    override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Id[Unit] = {
+      _data = _data + (formBundleNumber -> internalId)
+    }
   }
 
   def randomDstNumber: DSTRegNumber = {
@@ -40,10 +46,17 @@ trait VolatilePersistence extends Persistence[Id] {
     DSTRegNumber(s"${c}${c}DST$digits")
   }
 
-  val registrations = new Registrations {
+  val registrations: Registrations = new Registrations {
 
     @volatile private var _data: Map[InternalId, (Registration, LocalDateTime)] = Map.empty
-    
+
+    override def insert(
+      user: InternalId,
+      reg: Registration
+    ): Id[Unit] = {
+      _data = _data + (user -> ((reg, LocalDateTime.now)))
+    }
+
     val fixedDstNumber = randomDstNumber
     def get(user: InternalId) = {
       _data.get(user) match {
@@ -59,24 +72,27 @@ trait VolatilePersistence extends Persistence[Id] {
 
   }
 
-  val returns = new Returns {
+  val returns: Returns = new Returns {
 
     @volatile private var _data: Map[Registration, Map[Period.Key, Return]] =
       Map.empty
 
     def get(reg: Registration): Map[Period.Key,Return] = _data(reg)
 
-    def update(reg: Registration, all: Map[Period.Key,Return]): Unit = {
+    def update(reg: Registration, all: Map[Period.Key, Return]): Unit = {
       _data = _data + (reg -> all)
     }
 
     def update(reg: Registration, period: Period.Key, ret: Return): Unit = {
       val updatedMap = {
-        val existing = _data.get(reg).
-          getOrElse(Map.empty[Period.Key, Return])
+        val existing = _data.getOrElse(reg, Map.empty[Period.Key, Return])
         existing + (period -> ret)
       }
       update(reg, updatedMap)
+    }
+
+    override def insert(reg: Registration, key: Key, ret: Return): Id[Unit] = {
+      _data = _data + (reg -> Map(key -> ret))
     }
   }
 }

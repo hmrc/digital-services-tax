@@ -18,10 +18,8 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import scala.language.higherKinds
-
 import cats.implicits._
 import data._
-import java.time.LocalDateTime
 
 abstract class Persistence[F[_]: cats.Monad] {
 
@@ -29,6 +27,9 @@ abstract class Persistence[F[_]: cats.Monad] {
     def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map{
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
     }
+
+    def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): F[Unit]
+
     def get(formBundle: FormBundleNumber): F[Option[InternalId]]
     def delete(formBundle: FormBundleNumber): F[Unit]    
     def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
@@ -39,11 +40,15 @@ abstract class Persistence[F[_]: cats.Monad] {
   def pendingCallbacks: PendingCallbacks
 
   protected trait Registrations {
-    def apply(user: InternalId): F[Registration] = get(user).map{
+    def apply(user: InternalId): F[Registration] = get(user).map {
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
+
+    def insert(user: InternalId, reg: Registration): F[Unit]
+
     def get(user: InternalId): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
+
     private[services] def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
       for {
         existing <- apply(user)
@@ -59,6 +64,8 @@ abstract class Persistence[F[_]: cats.Monad] {
     def apply(reg: Registration, periodKey: Period.Key): F[Return] = get(reg, periodKey).map{
       _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$periodKey"))
     }
+
+    def insert(reg: Registration, key: Period.Key, ret: Return): F[Unit]
 
     def get(reg: Registration): F[Map[Period.Key, Return]]
     def get(reg: Registration, period: Period.Key): F[Option[Return]] =
