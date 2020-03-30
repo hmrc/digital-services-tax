@@ -16,25 +16,32 @@
 
 package uk.gov.hmrc.digitalservicestax.actions
 
+import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.http.ContentTypes
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString}
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import play.api.mvc.Results
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ActionsTest extends FakeApplicationSpec
   with ScalaFutures
   with BeforeAndAfterEach
   with ScalaCheckDrivenPropertyChecks {
 
+  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(
+    minSize = 1,
+    minSuccessful = PosInt(1)
+  )
 
-
-  "should execute an action against a registered user" in {
+  "should execute an action against a registered user using LoggedInRequest" in {
     val action = new Registered(mongoPersistence)
 
     forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
@@ -45,12 +52,40 @@ class ActionsTest extends FakeApplicationSpec
         providerId,
         FakeRequest()
       )
-//
-//      action.invokeBlock(req, req => {
-//        req.registration.registrationNumber
-//      })
-    }
 
+      val block = action.invokeBlock(req, { req: RegisteredRequest[_] =>
+        Future.successful(
+          Results.Ok(req.registration.registrationNumber.value)
+        )
+      })
+
+      whenReady(block) { resp =>
+        Console.println(resp.body.as(ContentTypes.TEXT))
+      }
+    }
+  }
+
+  "should execute an action against a registered user using Registered request" in {
+    val action = new RegisteredOrPending(mongoPersistence)
+
+    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+      val loggedInReq = LoggedInRequest(
+        internal,
+        enrolments,
+        providerId,
+        FakeRequest()
+      )
+
+      val block = action.invokeBlock(loggedInReq, { req: RegisteredRequest[_] =>
+        Future.successful(
+          Results.Ok(req.registration.registrationNumber.value)
+        )
+      })
+
+      whenReady(block) { resp =>
+        Console.println(resp.body.as(ContentTypes.TEXT))
+      }
+    }
   }
 
 }
