@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.persistence
 import org.scalactic.anyvals.PosInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Period, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data.{Period, Registration, Return}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -61,6 +61,20 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
       }
     }
   }
+
+  "it should persist a return object and retrieve it using the the apply method" in {
+    forAll { (reg: Registration, ret: Return) =>
+      val chain = for {
+        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        dbReg <- mongoPersistence.returns(reg)
+      } yield dbReg
+
+      whenReady(chain) { dbRes =>
+        dbRes mustEqual Map(period -> reg)
+      }
+    }
+  }
+
 
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
