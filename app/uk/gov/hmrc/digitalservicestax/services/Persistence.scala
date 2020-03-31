@@ -25,6 +25,26 @@ import java.time.LocalDateTime
 
 abstract class Persistence[F[_]: cats.Monad] {
 
+  protected trait PendingEnrolments {
+    def apply(user: InternalId): F[(SafeId, FormBundleNumber)] = get(user).map{
+      _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
+    }
+    def get(user: InternalId): F[Option[(SafeId, FormBundleNumber)]]
+    def delete(user: InternalId): F[Unit]    
+    def update(user: InternalId, value: (SafeId, FormBundleNumber)): F[Unit]
+    def consume(user: InternalId): F[Option[(SafeId, FormBundleNumber)]] =
+      get(user) >>= {
+        case Some(p) =>
+          delete(user) >> p.some.pure[F]
+        case None =>
+          none.pure[F]
+      }
+  }
+
+  /** Stores records of users who have registered with ETMP, but not yet 
+    * subscribed with tax enrolments */
+  def pendingEnrolments: PendingEnrolments
+
   protected trait PendingCallbacks {
     def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map{
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
