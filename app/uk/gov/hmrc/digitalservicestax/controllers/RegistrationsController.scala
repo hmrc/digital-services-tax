@@ -71,6 +71,7 @@ class RegistrationsController @Inject()(
   implicit val ec: ExecutionContext = cc.executionContext
 
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
+    println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
     rosmConnector.retrieveROSMDetailsWithoutID(
         RosmRegisterWithoutIDRequest(
         isAnAgent = false,
