@@ -21,7 +21,7 @@ import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
 import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.Logger
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, Json, Writes}
 
 import scala.collection.JavaConversions._
 
@@ -36,7 +36,7 @@ object JsonSchemaChecker {
     JsonLoader.fromString(schemaText)
   }
 
-  def apply[A](model: A, file: String)(implicit format: Format[A]): Unit = {
+  def apply[A](model: A, file: String)(implicit format: Writes[A]): Unit = {
     val schema = retrieveSchema(file)
     val validator = JsonSchemaFactory.byDefault.getValidator
     val json = JsonLoader.fromString(Json.prettyPrint(Json.toJson(model)))
@@ -47,6 +47,8 @@ object JsonSchemaChecker {
           s"failed to validate against json schema, schema: ${x.asJson().get("schema")}, " +
             s"instance: ${x.asJson().get("instance")}, problem: ${x.asJson().get("keyword")}"
         )
+    } else {
+      Logger.debug(s"Successful schema validation for $file.schema.json")
     }
   }
 

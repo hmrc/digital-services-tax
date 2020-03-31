@@ -29,7 +29,7 @@ import com.outworkers.util.samplers._
 
 class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
-  object RosmTestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig) {
+  object RosmTestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig, appConfig) {
     override val desURL: String = mockServerUrl
   }
 

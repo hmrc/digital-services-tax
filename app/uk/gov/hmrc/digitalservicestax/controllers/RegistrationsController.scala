@@ -88,15 +88,15 @@ class RegistrationsController @Inject()(
     internalId: InternalId,
     providerId: String
   ): Future[Unit] = {
-      implicit val hc = addHeaders(new HeaderCarrier)
+    implicit val hc = addHeaders(new HeaderCarrier)
 
       registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
         {
           {persistence.pendingCallbacks(r.formBundleNumber) = internalId} >>
-          taxEnrolmentConnector.subscribe(
-            safeId,
-            r.formBundleNumber
-          ) >>
+          // we cannot subscribe the user to tax enrolments as the HC
+          // will not have the users bearer-token, make a note to subscribe
+          // them instead as soon as they log in
+          {persistence.pendingEnrolments(internalId) = (safeId, r.formBundleNumber)} >>
           auditing.sendExtendedEvent(
             AuditingHelper.buildRegistrationAudit(
               data, providerId, r.formBundleNumber.some, "SUCCESS"
@@ -153,10 +153,22 @@ class RegistrationsController @Inject()(
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.registrations.get(request.internalId).map {
-      case Some(r) =>
-        Ok(Json.toJson(r))
-      case None => NotFound
+    persistence.pendingEnrolments.consume(request.internalId).flatMap {
+      case Some((safeId, formBundleNumber)) =>
+        // the user has registered with ETMP, but is not yet subscribed
+        // with tax enrolments
+        taxEnrolmentConnector.subscribe(
+          safeId,
+          formBundleNumber
+        )
+      case None => ().pure[Future]
+    } >>
+    persistence.registrations.get(request.internalId).map { response =>
+      response match {
+        case Some(r) =>
+          Ok(Json.toJson(r))
+        case None => NotFound
+      }
     }
   }
 

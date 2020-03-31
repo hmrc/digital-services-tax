@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.Mode
+import play.api.{Logger, Mode}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
@@ -28,13 +28,17 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import BackendAndFrontendJson.{companyRegWrapperFormat => _, _}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RosmConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig
+  val servicesConfig: ServicesConfig,
+  appConfig: AppConfig
 ) extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")
@@ -45,6 +49,8 @@ class RosmConnector @Inject()(
   def retrieveROSMDetailsWithoutID(
     request: RosmRegisterWithoutIDRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
+    if (appConfig.logRegResponse) Logger.debug(s"RosmWithoutIdRequest is $request")
+    JsonSchemaChecker(request, "rosm-without-id-request")
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
   }
 
