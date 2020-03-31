@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.backend_data
 
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.digitalservicestax.data._
 
@@ -28,7 +28,33 @@ case class RosmRegisterWithoutIDRequest(
 )
 
 object RosmRegisterWithoutIDRequest {
+
+
+  def purgeNullAndEmpty(json: JsObject): JsObject = json match {
+    case JsObject(inner) =>
+      val data: Map[String, JsValue] = (inner collect {
+        case (k, o: JsObject) => Some(k -> purgeNullAndEmpty(o))
+        case (_, JsNull)      => None
+        case (_, JsString(value)) if value.isEmpty => None
+        case (k, other)       => Some(k -> other)
+      }).flatten.toMap
+      JsObject(data)
+  }
+
+
   implicit object RosmJsonWriter extends Writes[RosmRegisterWithoutIDRequest] {
+    private def address(o: RosmRegisterWithoutIDRequest): JsValue = {
+
+      purgeNullAndEmpty(Json.obj(
+        "addressLine1" -> o.organisation.address.line1,
+        "addressLine2" -> o.organisation.address.line2,
+        "addressLine3" -> o.organisation.address.line3,
+        "addressLine4" -> o.organisation.address.line4,
+        "postalCode" -> o.organisation.address.postalCode,
+        "countryCode" -> o.organisation.address.countryCode
+      ))
+    }
+
 
     override def writes(o: RosmRegisterWithoutIDRequest): JsValue = {
       Json.obj(
@@ -39,14 +65,7 @@ object RosmRegisterWithoutIDRequest {
         "organisation" -> Json.obj(
           "organisationName" -> o.organisation.name
         ),
-        "address" -> Json.obj(
-          "addressLine1" -> o.organisation.address.line1,
-          "addressLine2" -> o.organisation.address.line2,
-          "addressLine3" -> o.organisation.address.line3,
-          "addressLine4" -> o.organisation.address.line4,
-          "postalCode" -> o.organisation.address.postalCode,
-          "countryCode" -> o.organisation.address.countryCode
-        ),
+        "address" -> address(o),
         "contactDetails" -> Json.obj(
           "phoneNumber" -> o.contactDetails.phoneNumber,
           "emailAddress" -> o.contactDetails.email
