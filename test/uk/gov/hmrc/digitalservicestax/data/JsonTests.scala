@@ -27,7 +27,6 @@ import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import uk.gov.hmrc.digitalservicestax.data
-import uk.gov.hmrc.digitalservicestax.services.EeittInterface._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
