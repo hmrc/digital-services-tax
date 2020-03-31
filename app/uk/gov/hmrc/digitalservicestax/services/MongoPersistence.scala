@@ -73,7 +73,7 @@ class MongoPersistence @Inject()(
       database.map(_.collection[JSONCollection]("pending-enrolments")).flatMap { c =>
 
         val sessionIndex = Index(
-          key = Seq("internalid" -> IndexType.Ascending),
+          key = Seq("internalId" -> IndexType.Ascending),
           unique = true
         )
         
@@ -82,7 +82,7 @@ class MongoPersistence @Inject()(
     }
 
     def get(user: InternalId): Future[Option[(SafeId, FormBundleNumber)]] = {
-      val selector = Json.obj("internalid" -> user.toString)
+      val selector = Json.obj("internalId" -> user.toString)
       collection.flatMap(
         _.find(selector)
           .one[EnrolmentWrapper]
@@ -90,13 +90,13 @@ class MongoPersistence @Inject()(
     }
 
     def delete(user: InternalId): Future[Unit] = {
-      val selector = Json.obj("internalid" -> user.toString)
+      val selector = Json.obj("internalId" -> user.toString)
       collection.flatMap(_.delete.one(selector)).map{_ => ()}
     }
 
     def update(user: InternalId, value: (SafeId, FormBundleNumber)): Future[Unit] = {
       val record = EnrolmentWrapper(user, value._1, value._2)
-      val selector = Json.obj("internalid" -> user.toString)
+      val selector = Json.obj("internalId" -> user.toString)
       collection.flatMap(_.update(ordered = false).one(selector, record, upsert = true)).map{
         case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
         case e => throw new Exception(s"$e")
