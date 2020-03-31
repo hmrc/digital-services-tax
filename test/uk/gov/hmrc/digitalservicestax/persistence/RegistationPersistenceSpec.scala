@@ -35,10 +35,6 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  override def beforeEach = {
-    super.beforeEach()
-  }
-
   "it fail to retrieve a non existing registration with a NoSuchElementException using the apply method" in {
     forAll { (id: InternalId) =>
       val chain = for {
