@@ -222,4 +222,21 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
+  implicit def optFormat[A](implicit in: Format[A]) = new Format[Option[A]] {
+    def reads(json: JsValue): JsResult[Option[A]] = json match {
+      case JsNull => JsSuccess(None)
+      case x => in.reads(x).map{Some(_)}
+    }
+    def writes(o: Option[A]): JsValue = o.fold(JsNull: JsValue)(in.writes)
+  }
+
+  implicit val unitFormat = new Format[Unit] {
+    def reads(json: JsValue): JsResult[Unit] = json match {
+      case JsNull => JsSuccess(())
+      case e => JsError(s"expected JsNull, encountered $e")
+    }
+
+    def writes(o: Unit): JsValue = JsNull
+  }
+
 }

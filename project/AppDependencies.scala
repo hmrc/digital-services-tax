@@ -15,7 +15,9 @@ object AppDependencies {
     "com.beachape"           %% "enumeratum"               % "1.5.13",
     "com.beachape"           %% "enumeratum-play-json"     % "1.5.13",
     "com.chuusai"            %% "shapeless"                % "2.3.3",
-    "commons-validator"       % "commons-validator"        % "1.6"
+    "commons-validator"       % "commons-validator"        % "1.6",
+    compilerPlugin("com.github.ghik" %% "silencer-plugin"  % "1.4.2"),
+    "com.github.ghik"        %% "silencer-lib"             % "1.4.2" % Provided
   )
 
   val test = Seq(

@@ -30,10 +30,10 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
+  val servicesConfig: ServicesConfig,
   appConfig: AppConfig,
   testConnector: TestConnector
-) extends DesHelpers(servicesConfig) {
+) extends DesHelpers {
 
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
