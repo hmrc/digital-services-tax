@@ -31,10 +31,11 @@ import BackendAndFrontendJson.{companyRegWrapperFormat => _, _}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RosmConnector @Inject()(val http: HttpClient,
+class RosmConnector @Inject()(
+  val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig)
-  extends DesHelpers(servicesConfig) {
+  val servicesConfig: ServicesConfig
+) extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")
 

@@ -218,6 +218,7 @@ object BackendAndFrontendJson extends SimpleJson {
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList
       }
+
       JsSuccess(periods.map { json =>
         (
           Period(
@@ -242,5 +243,14 @@ object BackendAndFrontendJson extends SimpleJson {
       def writes(o: Option[A]): JsValue =
         o.map{innerFormatter.writes}.getOrElse(JsNull)
     }
+
+  implicit val unitFormat = new Format[Unit] {
+    def reads(json: JsValue): JsResult[Unit] = json match {
+      case JsNull => JsSuccess(())
+      case e => JsError(s"expected JsNull, encountered $e")
+    }
+
+    def writes(o: Unit): JsValue = JsNull
+  }
 
 }
