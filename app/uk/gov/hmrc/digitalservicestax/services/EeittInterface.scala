@@ -123,7 +123,7 @@ object EeittInterface {
      }
   }
 
-  def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false) = new Writes[Return] {
+  def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false, showReliefAmount: Boolean = false) = new Writes[Return] {
     def writes(o: Return): JsValue = {
       import o._
 
@@ -185,6 +185,11 @@ object EeittInterface {
         }.toList
       }
 
+      // N.B. not required for ETMP (yet) but needed for auditing
+      val reliefAmount: Seq[(String, String)] =
+        if (showReliefAmount) Seq("A_DST_RELIEF_AMOUNT" -> crossBorderReliefAmount.toString).toList
+        else List.empty[(String,String)]
+
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
         "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
         "A_PERIOD_FROM" -> period.start.toString, // MANDATORY Period From  DATS
@@ -195,7 +200,7 @@ object EeittInterface {
         "A_DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
         "A_DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
         "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
-      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries
+      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries ++ reliefAmount
 
       val regimeSpecificJson = JsArray(
         regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
