@@ -20,6 +20,7 @@ import cats.implicits.{none, _}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
@@ -109,15 +110,24 @@ object AuditingHelper {
   def buildReturnSubmissionAudit(
     regNo: DSTRegNumber,
     providerId: String,
-    data: Return
+    period: Period,
+    data: Return,
+    isAmend: Boolean
   )(implicit hc: HeaderCarrier): ExtendedDataEvent = {
+
+    implicit val writes: Writes[Return] = services.EeittInterface.returnRequestWriter(
+      regNo,
+      period,
+      isAmend,
+      true
+    )
 
     val details = Json.obj(
       "dstRegistrationNumber" -> regNo.toString,
       "authProviderType" -> "GovernmentGateway",
       "authProviderId" -> providerId,
       "deviceId" -> hc.deviceID
-    ).++(Json.toJson(data)(BackendAndFrontendJson.returnFormat).as[JsObject])
+    ).++(Json.toJson(data)(writes).as[JsObject])
 
     baseEvent("returnSubmitted").copy(detail = details)
   }

@@ -69,7 +69,7 @@ class ReturnsController @Inject()(
             throw new NoSuchElementException(s"no period found for $periodKey")
           }
           _ <- connector.send(regNo, period, data, previous.isDefined)
-          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, request.authRequest.providerId, data))
+          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, request.authRequest.providerId, period, data, previous.isDefined))
           _ <- persistence.returns(request.registration, period.key) = data
           _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
         } yield {
