@@ -79,5 +79,5 @@ trait FakeApplicationSpec extends PlaySpec
 
   val mongoPersistence: MongoPersistence = wire[MongoPersistence]
 
-  implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 5.seconds, interval = 100.millis)
+  implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 100.millis)
 }

@@ -46,7 +46,7 @@ class ActionsTest extends FakeApplicationSpec
   "should execute an action against a registered user using LoggedInRequest" in {
     val action = new Registered(mongoPersistence)
 
-    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
 
       val req = LoggedInRequest(
         internal,
@@ -55,13 +55,16 @@ class ActionsTest extends FakeApplicationSpec
         FakeRequest()
       )
 
-      val block = action.invokeBlock(req, { req: RegisteredRequest[_] =>
-        Future.successful(
-          Results.Ok(req.registration.registrationNumber.value)
-        )
-      })
+      val chain = for {
+        _ <- mongoPersistence.registrations.insert(internal, reg)
+        block <- action.invokeBlock(req, { req: RegisteredRequest[_] =>
+          Future.successful(
+            Results.Ok(req.registration.registrationNumber.value)
+          )
+        })
+      } yield block
 
-      whenReady(block) { resp =>
+      whenReady(chain) { resp =>
         resp.header.status mustEqual Status.OK
       }
     }
@@ -88,7 +91,7 @@ class ActionsTest extends FakeApplicationSpec
   "should execute an action against a registered user using Registered request" in {
     val action = new RegisteredOrPending(mongoPersistence)
 
-    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+    forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
       val loggedInReq = LoggedInRequest(
         internal,
         enrolments,
@@ -96,13 +99,16 @@ class ActionsTest extends FakeApplicationSpec
         FakeRequest()
       )
 
-      val block = action.invokeBlock(loggedInReq, { req: RegisteredRequest[_] =>
-        Future.successful(
-          Results.Ok(req.registration.registrationNumber.value)
-        )
-      })
+      val chain = for {
+        _ <- mongoPersistence.registrations.insert(internal, reg)
+        block <- action.invokeBlock(loggedInReq, { req: RegisteredRequest[_] =>
+          Future.successful(
+            Results.Ok(req.registration.registrationNumber.value)
+          )
+        })
+      } yield block
 
-      whenReady(block) { resp =>
+      whenReady(chain) { resp =>
         resp.header.status mustEqual Status.OK
       }
     }
