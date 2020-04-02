@@ -206,7 +206,7 @@ object TestInstances {
       ).mapN(DomesticBankAccount.apply)
 
     val genForeign: Gen[ForeignBankAccount] =
-      arbIban.map{ForeignBankAccount.apply}
+      arbIban.arbitrary.map{ForeignBankAccount.apply}
     Gen.oneOf(genDomestic, genForeign)
   }
 
@@ -254,7 +254,11 @@ object TestInstances {
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
-  implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary(InternalId.gen)
+
+  implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
+    import com.outworkers.util.samplers._
+    Sample.generator[ShortString].map(s => InternalId(s"Int-${s.value}"))
+  }
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
   implicit def arbEmail: Arbitrary[Email] = Arbitrary{

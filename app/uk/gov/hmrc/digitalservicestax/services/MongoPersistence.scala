@@ -172,6 +172,7 @@ class MongoPersistence @Inject()(
 
     def insert(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)
+
       collection.flatMap(_.insert(ordered = false, WriteConcern.Journaled).one(wrapper)).map {
         case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
         case e => throw new Exception(s"$e")

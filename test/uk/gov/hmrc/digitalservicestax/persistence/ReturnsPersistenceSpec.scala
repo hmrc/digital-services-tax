@@ -70,6 +70,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
       } yield dbReg
 
       whenReady(chain) { dbRes =>
+        dbRes.size mustEqual 1
         dbRes mustEqual Map(period -> reg)
       }
     }
