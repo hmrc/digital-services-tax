@@ -33,6 +33,10 @@ trait VolatilePersistence extends Persistence[Id] {
     def delete(user: InternalId) = _data = _data - user
     def update(user: InternalId, value: (SafeId, FormBundleNumber)) =
       _data = _data + (user -> value)
+
+    override def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): Id[Unit] = {
+      _data += user -> (safeId -> formBundleNumber)
+    }
   }
 
   val pendingCallbacks = new PendingCallbacks {

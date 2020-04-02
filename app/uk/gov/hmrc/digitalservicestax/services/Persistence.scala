@@ -27,6 +27,9 @@ abstract class Persistence[F[_]: cats.Monad] {
     def apply(user: InternalId): F[(SafeId, FormBundleNumber)] = get(user).map{
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
+
+    def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): F[Unit]
+
     def get(user: InternalId): F[Option[(SafeId, FormBundleNumber)]]
     def delete(user: InternalId): F[Unit]    
     def update(user: InternalId, value: (SafeId, FormBundleNumber)): F[Unit]

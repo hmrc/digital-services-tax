@@ -99,7 +99,15 @@ class MongoPersistence @Inject()(
     def update(user: InternalId, value: (SafeId, FormBundleNumber)): Future[Unit] = {
       val record = EnrolmentWrapper(user, value._1, value._2)
       val selector = Json.obj("internalId" -> user.toString)
-      collection.flatMap(_.update(ordered = false).one(selector, record, upsert = true)).map{
+      collection.flatMap(_.update(ordered = false).one(selector, record, upsert = true)).map {
+        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
+        case e => throw new Exception(s"$e")
+      }
+    }
+
+    override def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): Future[Unit] = {
+      val record = EnrolmentWrapper(user, safeId, formBundleNumber)
+      collection.flatMap(_.insert(ordered = false).one(record)).map {
         case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
         case e => throw new Exception(s"$e")
       }

@@ -38,6 +38,10 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
     def get(user: InternalId) = f(V.get(user))
     def delete(user: InternalId) = f(V.delete(user))
     def update(user: InternalId, value: (SafeId, FormBundleNumber)) = f(V.update(user, value))
+
+    override def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): Future[Unit] = {
+      f(V.insert(user, safeId, formBundleNumber))
+    }
   }
 
   val pendingCallbacks = new PendingCallbacks {
