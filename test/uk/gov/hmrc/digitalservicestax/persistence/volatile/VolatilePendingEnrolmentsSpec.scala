@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.persistence
+package uk.gov.hmrc.digitalservicestax.persistence.volatile
 
 import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Registration, SafeId}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, SafeId}
+import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PendingEnrolmentsSpec extends FakeApplicationSpec
+class VolatilePendingEnrolmentsSpec extends FakeApplicationSpec
   with ScalaFutures
   with BeforeAndAfterEach
   with ScalaCheckDrivenPropertyChecks {
@@ -34,10 +35,12 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
+  val volatile = new FutureVolatilePersistence(actorSystem = actorSystem) {}
+
   "it fail to retrieve a non existing enrolment with a NoSuchElementException" in {
     forAll { (internalId: InternalId) =>
       val chain = for {
-        dbReg <- mongoPersistence.pendingEnrolments.apply(internalId)
+        dbReg <- volatile.pendingEnrolments.apply(internalId)
       } yield dbReg
 
       whenReady(chain.failed) { ex =>
@@ -50,8 +53,8 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
   "it should retrieve a pending enrolment id using the apply method" in {
     forAll { (internalId: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber) =>
       val chain = for {
-        _ <- mongoPersistence.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
-        dbReg <- mongoPersistence.pendingEnrolments.apply(internalId)
+        _ <- volatile.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
+        dbReg <- volatile.pendingEnrolments.apply(internalId)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
@@ -64,8 +67,8 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
   "it should retrieve a pending enrolment id using the get method" in {
     forAll { (internalId: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber) =>
       val chain = for {
-        _ <- mongoPersistence.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
-        dbReg <- mongoPersistence.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
+        dbReg <- volatile.pendingEnrolments.get(internalId)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
@@ -84,10 +87,10 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
       newFormNumber: FormBundleNumber
     ) =>
       val chain = for {
-        _ <- mongoPersistence.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
-        beforeUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
-        _ <- mongoPersistence.pendingEnrolments.update(internalId, safeId -> newFormNumber)
-        afterUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
+        beforeUpdate <- volatile.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.update(internalId, safeId -> newFormNumber)
+        afterUpdate <- volatile.pendingEnrolments.get(internalId)
       } yield beforeUpdate -> afterUpdate
 
       whenReady(chain) { case (beforeUpdate, afterUpdate) =>
@@ -108,10 +111,10 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
       formBundleNumber: FormBundleNumber
     ) =>
       val chain = for {
-        _ <- mongoPersistence.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
-        beforeUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
-        _ <- mongoPersistence.pendingEnrolments.delete(internalId)
-        afterUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
+        beforeUpdate <- volatile.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.delete(internalId)
+        afterUpdate <- volatile.pendingEnrolments.get(internalId)
       } yield beforeUpdate -> afterUpdate
 
       whenReady(chain) { case (beforeUpdate, afterUpdate) =>
@@ -123,9 +126,9 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
     }
   }
 
-   "do nothing when consuming a non exising user id" in {
+  "do nothing when consuming a non exising user id" in {
     forAll { internalId: InternalId =>
-      whenReady(mongoPersistence.pendingEnrolments.consume(internalId)) { res =>
+      whenReady(volatile.pendingEnrolments.consume(internalId)) { res =>
         res mustBe empty
       }
     }
@@ -139,10 +142,10 @@ class PendingEnrolmentsSpec extends FakeApplicationSpec
       formBundleNumber: FormBundleNumber
     ) =>
       val chain = for {
-        _ <- mongoPersistence.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
-        beforeUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
-        _ <- mongoPersistence.pendingEnrolments.consume(internalId)
-        afterUpdate <- mongoPersistence.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.insert(internalId, safeId, formBundleNumber)
+        beforeUpdate <- volatile.pendingEnrolments.get(internalId)
+        _ <- volatile.pendingEnrolments.consume(internalId)
+        afterUpdate <- volatile.pendingEnrolments.get(internalId)
       } yield beforeUpdate -> afterUpdate
 
       whenReady(chain) { case (beforeUpdate, afterUpdate) =>

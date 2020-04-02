@@ -27,7 +27,7 @@ import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
 import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 object TestInstances {
@@ -251,6 +251,7 @@ object TestInstances {
   implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
+  implicit def safeId: Arbitrary[SafeId] = Arbitrary(SafeId.gen)
 
   implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
     import com.outworkers.util.samplers._
