@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.data
 import java.time.LocalDate
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
+import org.scalatest.{Assertion, EitherValues, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.{Format, JsError, JsPath, JsResult, JsString, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -30,7 +30,11 @@ import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
+class JsonTests extends FlatSpec
+  with Matchers
+  with ScalaCheckDrivenPropertyChecks
+  with EitherValues
+  with OptionValues {
 
   def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
     forAll { sample: T =>
@@ -147,6 +151,20 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[LocalDate]
   }
 
+  it should "fail to parse an invalid LocalDate" in {
+    val source = JsString(gen[ShortString].value)
+    val expectionSpec = implicitly[Format[LocalDate]].reads(source)
+    val lastError = JsError(expectionSpec.asEither.left.value)
+
+    val jsError = JsError(
+      List(
+        (JsPath, List(JsonValidationError(List(s"Text '${source.value}' could not be parsed at index 0"))))
+      )
+    )
+
+    lastError shouldBe jsError
+  }
+
   it should "serialize and de-serialise an optional LocalDate" in {
     testJsonRoundtrip[Option[LocalDate]]
   }
@@ -182,6 +200,19 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     }
   }
 
+
+  it should "serialize a scala.Unit" in {
+    testJsonRoundtrip[Unit](Gen.const(()))
+  }
+
+  it should "fail to parse a scala.Unit from a non JsNull JSON source" in {
+    val jsstr = JsString("abasgjas")
+    unitFormat.reads(jsstr) shouldBe JsError(s"expected JsNull, encountered $jsstr")
+  }
+
+  it should "serialize a random option format" in {
+    testJsonRoundtrip[Option[NonEmptyString]](Gen.option(nonEmptyString))
+  }
 
   it should "test the JSON schema for registratiom" in {
     forAll { reg: Registration =>

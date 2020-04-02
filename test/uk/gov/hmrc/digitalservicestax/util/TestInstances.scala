@@ -21,7 +21,7 @@ import java.time.LocalDate
 
 import enumeratum.scalacheck._
 import cats.implicits.{none, _}
-import org.scalacheck
+import com.outworkers.util.samplers.Sample
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
@@ -83,15 +83,7 @@ object TestInstances {
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
-  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Arbitrary {
-    for {
-      size <- Gen.chooseNum(1, 5)
-      enrolments <- Gen.buildableOfN[
-        scala.collection.immutable.Set[Enrolment],
-        Enrolment
-      ](size, enrolmentArbitrary.arbitrary)
-    } yield Enrolments(enrolments)
-  }
+  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Sample.arbitrary[Enrolments]
 
   val ibanList = List(
     "AD9179714843548170724658",
@@ -249,7 +241,7 @@ object TestInstances {
       Gen.alphaNumChar,
       arbitrary[String]
       ).mapN(_ + _).
-      map{_.take(maxLen)}.map{NonEmptyString.apply}
+      map{_.take(maxLen)}.map { NonEmptyString.apply }
     )
 
   implicit def arbNEString: Arbitrary[NonEmptyString] = Arbitrary { neString() }
