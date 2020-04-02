@@ -21,11 +21,12 @@ import java.time.LocalDate
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, EitherValues, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, JsError, JsPath, JsResult, JsString, Json, JsonValidationError}
+import play.api.libs.json.{Format, JsError, JsNull, JsObject, JsPath, JsResult, JsString, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -59,6 +60,22 @@ class JsonTests extends FlatSpec
 
   it should "serialize and de-serialise a Postcode instance" in {
     testJsonRoundtrip[Postcode]
+  }
+
+  it should "purge none and empty values from a map of js values" in {
+    val generated = JsString(gen[ShortString].value)
+    val source = JsObject(Seq(
+      "object_example" -> JsObject(Seq("bla" -> generated)),
+      "null-example" -> JsNull,
+      "empty-string-example" -> JsString(""),
+      "good-example" -> JsString("good")
+    ))
+
+    val res = RosmRegisterWithoutIDRequest.purgeNullAndEmpty(source)
+    res.value should contain theSameElementsAs (JsObject(Seq(
+      "object_example" -> JsObject(Seq("bla" -> generated)),
+      "good-example" -> JsString("good")
+    )).value)
   }
 
   it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
