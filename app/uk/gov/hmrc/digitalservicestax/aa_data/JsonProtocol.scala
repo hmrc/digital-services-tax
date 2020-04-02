@@ -137,31 +137,6 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-  implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
-    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-      JsSuccess(CompanyRegWrapper (
-        Company(
-          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
-          {json \ "address"}.as[Address]
-        ),
-        safeId = SafeId(
-          {json \ "safeId"}.as[String]
-        ).some
-      ))
-    }
-  }
-
-  implicit val writeCompanyReg: OWrites[CompanyRegWrapper] = new OWrites[CompanyRegWrapper] {
-    override def writes(o: CompanyRegWrapper): JsObject = {
-      JsObject(Seq(
-        "organisation" -> JsObject(Seq(
-          "organisationName" -> JsString(o.company.name)
-        )),
-        "address" -> Json.toJson(o.company.address),
-        "safeId" -> o.safeId.map(JsString.apply).getOrElse(JsNull)
-      ))
-    }
-  }
 
   implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
     def writes(dt: LocalDate): JsValue = JsString(dt.toString)
@@ -209,7 +184,6 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-
   implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
       val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
@@ -233,15 +207,13 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-  implicit def optFormatter[A](implicit innerFormatter: Format[A]): Format[Option[A]] =
-    new Format[Option[A]] {
-      def reads(json: JsValue): JsResult[Option[A]] = json match {
-        case JsNull => JsSuccess(none[A])
-        case a      => innerFormatter.reads(a).map{_.some}
-      }
-      def writes(o: Option[A]): JsValue =
-        o.map{innerFormatter.writes}.getOrElse(JsNull)
+  implicit def optFormat[A](implicit in: Format[A]) = new Format[Option[A]] {
+    def reads(json: JsValue): JsResult[Option[A]] = json match {
+      case JsNull => JsSuccess(None)
+      case x => in.reads(x).map{Some(_)}
     }
+    def writes(o: Option[A]): JsValue = o.fold(JsNull: JsValue)(in.writes)
+  }
 
   implicit val unitFormat = new Format[Unit] {
     def reads(json: JsValue): JsResult[Unit] = json match {
