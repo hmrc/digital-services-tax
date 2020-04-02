@@ -29,8 +29,11 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import java.time.{LocalDate, format}, format.DateTimeParseException
+import java.time.{LocalDate, format}
+import format.DateTimeParseException
+
 import BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
@@ -116,10 +119,12 @@ class ReturnConnector @Inject()(val http: HttpClient,
       isAmend
     )
 
+    JsonSchemaChecker(request,"return-submission")(writes)
+
     val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
     val result = desPost[JsValue, ReturnResponse](
       url,
-      Json.toJson(request)
+      Json.toJson(request)(writes)
     )
 
     if (appConfig.logRegResponse) Logger.debug(

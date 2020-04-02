@@ -187,8 +187,8 @@ object EeittInterface {
 
       // N.B. not required for ETMP (yet) but needed for auditing
       val reliefAmount: Seq[(String, String)] =
-        if (showReliefAmount) Seq("A_DST_RELIEF_AMOUNT" -> crossBorderReliefAmount.toString).toList
-        else List.empty[(String,String)]
+        if (showReliefAmount) Seq("A_DST_RELIEF_AMOUNT" -> crossBorderReliefAmount.toString)
+        else Seq.empty[(String,String)]
 
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
         "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
