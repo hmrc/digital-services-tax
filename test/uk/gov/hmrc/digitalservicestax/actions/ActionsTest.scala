@@ -88,7 +88,7 @@ class ActionsTest extends FakeApplicationSpec
     }
   }
 
-  "should execute an action against a registered user using Registered request" in {
+  "should execute an action against a registered user using Registered or pending request" in {
     val action = new RegisteredOrPending(mongoPersistence)
 
     forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
