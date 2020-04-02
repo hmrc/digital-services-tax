@@ -188,9 +188,4 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
       JsonSchemaChecker[data.Registration](reg, "rosm-response")
     }
   }
-
-//
-//  it should "serialize and de-serialise a DomesticBankAccount instance" in {
-//    testJsonRoundtrip[DomesticBankAccount]
-//  }
 }
