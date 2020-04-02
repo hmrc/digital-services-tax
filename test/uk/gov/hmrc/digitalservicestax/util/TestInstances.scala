@@ -84,9 +84,14 @@ object TestInstances {
   }
 
   implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Arbitrary {
-    Gen.listOf(enrolmentArbitrary.arbitrary).map(list => Enrolments(list.toSet))
+    for {
+      size <- Gen.chooseNum(1, 5)
+      enrolments <- Gen.buildableOfN[
+        scala.collection.immutable.Set[Enrolment],
+        Enrolment
+      ](size, enrolmentArbitrary.arbitrary)
+    } yield Enrolments(enrolments)
   }
-
 
   val ibanList = List(
     "AD9179714843548170724658",

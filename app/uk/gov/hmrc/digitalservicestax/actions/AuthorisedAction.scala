@@ -45,7 +45,7 @@ class Registered @Inject()(
   ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
     case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
       Left(Forbidden("Registration is not confirmed"))
-    case x => x 
+    case x => x
   }
 }
 
@@ -61,7 +61,7 @@ class RegisteredOrPending @Inject()(
     persistence.registrations.get(request.internalId).map {
       case Some(reg) if reg.registrationNumber.isDefined =>
         Right(RegisteredRequest(reg, request))
-      case None =>
+      case _ =>
         Left(Forbidden("User is not registered"))
     }
 }
