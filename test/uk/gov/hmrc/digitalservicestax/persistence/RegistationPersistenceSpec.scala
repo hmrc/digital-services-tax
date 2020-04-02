@@ -48,7 +48,6 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
     }
   }
 
-
   "it fail to retrieve a non existing registration with a NoSuchElementException using the get method" in {
     forAll { (id: InternalId) =>
       val chain = for {
