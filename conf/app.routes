@@ -7,8 +7,6 @@ GET  /lookup-company/:utr/:postcode                       uk.gov.hmrc.digitalser
 POST /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.submitRegistration()
 GET  /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.lookupRegistration()
 
-GET  /registration/tick                                   uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.tick()                            
-
 # the readme says this should be a GET, but we're receiving a POST...
 POST /tax-enrolment-callback/:subscriptionId              uk.gov.hmrc.digitalservicestax.controllers.TaxEnrolmentCallbackController.callback(subscriptionId)
 

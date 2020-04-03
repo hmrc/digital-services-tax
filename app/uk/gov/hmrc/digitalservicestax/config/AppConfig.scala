@@ -19,6 +19,7 @@ package uk.gov.hmrc.digitalservicestax.config
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import scala.concurrent.duration._
 
 @Singleton
 class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
@@ -32,6 +33,20 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 
-  val resilienceTickInterval: Long = config.getOptional[Long]("tick.interval").getOrElse(900)
+  object resilience { 
+
+    /** how frequently should the system check for jobs? */
+    val tickFrequency: FiniteDuration =
+      config.getOptional[FiniteDuration]("resilience.tick.frequency").getOrElse(10 seconds)
+
+    /** how long after the application starts up should we wait before we start checking for jobs? */
+    val tickDelay: FiniteDuration =
+      config.getOptional[FiniteDuration]("resilience.tick.delay").getOrElse(30 seconds)
+
+    /** maximum tasks per resilient function to process per tick */
+    val maxTasks: Int =
+      config.getOptional[Int]("resilience.max-tasks").getOrElse(1)
+
+  }
 
 }

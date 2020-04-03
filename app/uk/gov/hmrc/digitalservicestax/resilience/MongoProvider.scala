@@ -33,41 +33,41 @@ import javax.inject._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
+import akka.actor.Actor
+import akka.actor.Props
 
 @Singleton
 class DstMongoProvider @Inject()(
   mongo: ReactiveMongoApi,
   val actorSystem: ActorSystem,
   val appConfig: AppConfig,
-  implicit val ec: ExecutionContext
+  implicit val ec: ExecutionContext  
 ) extends MongoProvider[(Int, String)](mongo,
   {
     case uk.gov.hmrc.http.Upstream4xxResponse(msg, code, _, _) => (code, msg)
     case uk.gov.hmrc.http.Upstream5xxResponse(msg, code, _) => (code, msg)
     case e => (-1, e.getLocalizedMessage)
   }
-) with ActorTrigger {
+) {
 
-  override def triggerAction: Future[Unit] = tick()
-
-}
-
-trait ActorTrigger {
-  val actorSystem: ActorSystem
-  val appConfig: AppConfig
-  implicit val ec: ExecutionContext
-
-  def triggerAction: Future[Unit]
-
-  def trigger = actorSystem.scheduler.schedule(
-    FiniteDuration(10, TimeUnit.SECONDS),
-    new FiniteDuration(appConfig.resilienceTickInterval, TimeUnit.SECONDS)
-  ) {
-    triggerAction
+  private val Tick = "tick"
+  private class TickActor extends Actor {
+    def receive = { case Tick => tick() }
   }
-}
 
+  private val tickActor = actorSystem.actorOf(Props(classOf[TickActor], this))
+
+  import actorSystem.dispatcher
+  val tickJob = actorSystem.scheduler.schedule(
+    appConfig.resilience.tickDelay,
+    appConfig.resilience.tickFrequency,
+    tickActor,
+    Tick
+  )
+
+  override val maxTasks: Int = appConfig.resilience.maxTasks
+}
 
 class MongoProvider[E](
   mongo: ReactiveMongoApi,

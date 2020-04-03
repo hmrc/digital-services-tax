@@ -171,9 +171,4 @@ class RegistrationsController @Inject()(
       }
     }
   }
-
-  def tick() = Action.async {
-    resilienceProvider.tick() >> Future(Ok("done"))
-  }
-
 }
