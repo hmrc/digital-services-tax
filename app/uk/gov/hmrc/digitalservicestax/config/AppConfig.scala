@@ -20,10 +20,26 @@ import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import scala.concurrent.duration._
+import java.time._
+
+object AppConfigLoaders {
+  import play.api.ConfigLoader
+  import com.typesafe.config._
+  import scala.util._
+  implicit val localDateTimeLoader = new ConfigLoader[LocalDateTime] {
+    def load(config: Config, path: String): LocalDateTime = {
+      val stringDate = config.getString(path)
+      Try(LocalDateTime.parse(stringDate)) match {
+        case Failure(_) => LocalDate.parse(stringDate).atStartOfDay
+        case Success(s) => s 
+      }
+    }
+  }
+}
 
 @Singleton
 class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
-
+  import AppConfigLoaders._
   val authBaseUrl: String = servicesConfig.baseUrl("auth")
 
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
@@ -47,6 +63,21 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
     val maxTasks: Int =
       config.getOptional[Int]("resilience.max-tasks").getOrElse(1)
 
-  }
+    /** No registration jobs will be executed until this point in time */
+    val desEnabledOn: LocalDateTime = 
+      config.get[java.time.LocalDateTime]("resilience.des-enabled-on")
 
+    /** Multiplier for previous delay */
+    val rampUp: Double = 
+      config.getOptional[Double]("resilience.ramp-up").getOrElse(2)
+
+    /** Will give up after n failed attempts */
+    val maxAttempts: Int = 
+      config.getOptional[Int]("resilience.max-attempts").getOrElse(5)
+
+    /** Initial delay between creating the task and it executing */
+    val initialDelay: FiniteDuration = 
+      config.getOptional[FiniteDuration]("resilience.initial-delay").getOrElse(5 seconds)
+
+  }
 }

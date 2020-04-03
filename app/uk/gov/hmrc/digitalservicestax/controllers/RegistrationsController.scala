@@ -122,7 +122,7 @@ class RegistrationsController @Inject()(
     resilienceProvider.apply(
       "send-registration",
       {submitRegistrationP _}.tupled,
-      DesRetryRule
+      DesRetryRule(appConfig)
     )
   }
 

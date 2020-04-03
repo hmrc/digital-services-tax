@@ -21,7 +21,7 @@ import tag._
 import cats.implicits._
 import cats.kernel.Monoid
 import play.api.i18n.Messages
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime, temporal}
 
 package object data extends SimpleJson {
 
@@ -131,4 +131,16 @@ package object data extends SimpleJson {
   implicit val orderDate = new cats.Order[LocalDate] {
     def compare(x: LocalDate, y: LocalDate):Int = x.compareTo(y)
   }
+
+  implicit val orderDateTime = new cats.Order[LocalDateTime] {
+    def compare(x: LocalDateTime, y: LocalDateTime):Int = x.compareTo(y)
+  }
+
+  implicit class RichLocalDateTime(val value: LocalDateTime) extends AnyVal {
+    import scala.concurrent.duration._
+    def +(d: FiniteDuration): LocalDateTime = value.plusNanos(d.toNanos)
+    def -(d: FiniteDuration): LocalDateTime = value.minusNanos(d.toNanos)
+    def -(until: LocalDateTime): FiniteDuration = value.until(until, temporal.ChronoUnit.NANOS) nanos
+  }
+
 }

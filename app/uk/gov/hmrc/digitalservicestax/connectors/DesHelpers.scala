@@ -21,7 +21,8 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.data.RichLocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DesHelpers {
@@ -45,7 +46,7 @@ trait DesHelpers {
 
 }
 
-object DesRetryRule extends ltbs.resilientcalls.RetryRule[(Int,String)] {
+case class DesRetryRule(config: AppConfig) extends ltbs.resilientcalls.RetryRule[(Int,String)] {
 
   import concurrent._, duration._
   import java.time.LocalDateTime
@@ -56,16 +57,26 @@ object DesRetryRule extends ltbs.resilientcalls.RetryRule[(Int,String)] {
     def isFatal(t: (Int,String)): Boolean =
       t._1 < 500 || t._1 >= 600
 
-    val initalDelay = 1.second
-
     // double the previous delay after each failed attempt
     // give up after 5 failed attempts (or a fatal error)
     previous match {
-      case ((_,lastError)::_) if isFatal(lastError) => None
-      case xs if xs.size > 4 => None
-      case r =>
-        val delay: Duration = ((Math.pow(2,r.size)) * initalDelay)
-        Some(LocalDateTime.now.plusSeconds(delay.toSeconds))
+      case ((_,lastError)::_) if isFatal(lastError) =>
+        // give up if the last attempt was a fatal error
+        None
+      case xs if xs.size >= config.resilience.maxAttempts =>
+        // give up after 5 attempts
+        None
+      case Nil =>
+        // if this is the first attempt, wait until DES is live
+        Some(config.resilience.desEnabledOn)
+      case ((firstAttempt,_)::Nil) =>
+        Some(firstAttempt + config.resilience.initialDelay)
+      case ((lastAttempt,_)::(penultimateAttempt,_)::_) =>
+        // calculate the delay between the last two attempts and increase it by the rampup factor
+        (lastAttempt - penultimateAttempt) * config.resilience.rampUp match {
+          case f: FiniteDuration => Some(lastAttempt + f)
+          case _ => None
+        }
     }
   }
 }
