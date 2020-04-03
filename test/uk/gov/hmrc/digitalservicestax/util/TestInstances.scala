@@ -25,7 +25,8 @@ import com.outworkers.util.samplers.Sample
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
+import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.auth.core.{Admin, AffinityGroup, Assistant, CredentialRole, Enrolment, EnrolmentIdentifier, Enrolments, User}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -42,6 +43,16 @@ object TestInstances {
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
     Gen.choose(0L, Long.MaxValue).map{BigDecimal.apply}
   )
+
+  implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
+    Gen.oneOf(List(User, Admin, Assistant))
+  }
+
+  implicit def arbAffinityGroup: Arbitrary[AffinityGroup] = Arbitrary {
+    Gen.oneOf(List(AffinityGroup.Agent, AffinityGroup.Individual, AffinityGroup.Organisation))
+  }
+
+  implicit val arbCredentials: Arbitrary[Credentials] = Sample.arbitrary[Credentials]
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
     Gen.chooseNum(0, 100).map(b => Percent(b.toByte))

@@ -38,7 +38,7 @@ class ActionsTest extends FakeApplicationSpec
   with EitherValues
   with ScalaCheckDrivenPropertyChecks {
 
-  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(
     minSize = 1,
     minSuccessful = PosInt(1)
   )
@@ -102,6 +102,7 @@ class ActionsTest extends FakeApplicationSpec
     }
   }
 
+
   "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
     val action = new Registered(mongoPersistence)
 
@@ -150,4 +151,7 @@ class ActionsTest extends FakeApplicationSpec
     }
   }
 
+
+  "should execute an LoggedInAction or pending request" in {
+  }
 }

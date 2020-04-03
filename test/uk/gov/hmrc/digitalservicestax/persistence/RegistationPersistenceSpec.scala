@@ -38,7 +38,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
   "it fail to retrieve a non existing registration with a NoSuchElementException using the apply method" in {
     forAll { (id: InternalId) =>
       val chain = for {
-        dbReg <- mongoPersistence.registrations.apply(id)
+        dbReg <- mongoPersistence.registrations(id)
       } yield dbReg
 
       whenReady(chain.failed) { ex =>
@@ -48,7 +48,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
     }
   }
 
-  "it fail to retrieve a non existing registration with a NoSuchElementException using the get method" in {
+  "it should safely return none for a non exsting registration id" in {
     forAll { id: InternalId =>
       val chain = for {
         dbReg <- mongoPersistence.registrations.get(id)

@@ -26,6 +26,7 @@ import play.api.i18n.MessagesApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
+import play.api.mvc.MessagesControllerComponents
 import play.api.{Application, ApplicationLoader}
 import play.core.DefaultWebCommands
 import play.modules.reactivemongo.DefaultReactiveMongoApi
@@ -58,6 +59,7 @@ trait FakeApplicationSpec extends PlaySpec
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
   lazy val httpClient: HttpClient = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
+  lazy val mcc = app.injector.instanceOf[MessagesControllerComponents]
 
   val testConnector: TestConnector = new TestConnector(httpClient, environment, configuration, servicesConfig)
 

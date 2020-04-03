@@ -59,7 +59,7 @@ trait VolatilePersistence extends Persistence[Id] {
     DSTRegNumber(s"${c}${c}DST$digits")
   }
 
-  val registrations: Registrations = new Registrations {
+  val registrations = new Registrations {
 
     @volatile private var _data: Map[InternalId, (Registration, LocalDateTime)] = Map.empty
 
@@ -85,7 +85,7 @@ trait VolatilePersistence extends Persistence[Id] {
 
   }
 
-  val returns: Returns = new Returns {
+  val returns = new Returns {
 
     @volatile private var _data: Map[Registration, Map[Period.Key, Return]] =
       Map.empty

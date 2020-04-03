@@ -23,6 +23,8 @@ import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
 import cats.implicits._
+import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
 import uk.gov.hmrc.digitalservicestax.services
 
 trait SimpleJson {
@@ -93,8 +95,13 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
   implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
+  implicit val credentialWrites = Json.writes[Credentials]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
+
+  import Enrolment.idFormat
+  implicit val enrolmentWrites = Json.format[Enrolment]
+  implicit val enrolmentsFormat = Json.format[Enrolments]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
