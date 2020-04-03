@@ -36,12 +36,8 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
   "it fail to retrieve a non existing registration with a NoSuchElementException using the apply method" in {
-    forAll { (id: InternalId) =>
-      val chain = for {
-        dbReg <- mongoPersistence.registrations(id)
-      } yield dbReg
-
-      whenReady(chain.failed) { ex =>
+    forAll { id: InternalId =>
+      whenReady(mongoPersistence.registrations(id).failed) { ex =>
         ex mustBe a [NoSuchElementException]
         ex.getMessage mustBe s"user not found: $id"
       }
@@ -50,11 +46,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
 
   "it should safely return none for a non exsting registration id" in {
     forAll { id: InternalId =>
-      val chain = for {
-        dbReg <- mongoPersistence.registrations.get(id)
-      } yield dbReg
-
-      whenReady(chain) { maybeReg =>
+      whenReady(mongoPersistence.registrations.get(id)) { maybeReg =>
         maybeReg mustBe empty
       }
     }

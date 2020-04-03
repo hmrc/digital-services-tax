@@ -35,12 +35,8 @@ class PendingCallbacksSpec extends FakeApplicationSpec
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
   "it fail to retrieve a non existing form bundle with a NoSuchElementException" in {
-    forAll { (formNo: FormBundleNumber) =>
-      val chain = for {
-        dbReg <- mongoPersistence.pendingCallbacks.apply(formNo)
-      } yield dbReg
-
-      whenReady(chain.failed) { ex =>
+    forAll { formNo: FormBundleNumber =>
+      whenReady(mongoPersistence.pendingCallbacks(formNo).failed) { ex =>
         ex mustBe a [NoSuchElementException]
         ex.getMessage mustBe s"formBundle not found: $formNo"
       }
@@ -51,7 +47,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
         _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
-        dbReg <- mongoPersistence.pendingCallbacks.apply(formNo)
+        dbReg <- mongoPersistence.pendingCallbacks(formNo)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
@@ -107,7 +103,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   }
 
   "it should delete a pending callback by its form number" in {
-    forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
+    forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
         _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks.get(formNo)

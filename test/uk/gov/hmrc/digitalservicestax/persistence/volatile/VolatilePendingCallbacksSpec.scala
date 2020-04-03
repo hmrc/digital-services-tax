@@ -41,7 +41,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
         _ <- volatile.pendingCallbacks.insert(formNo, id)
-        dbReg <- volatile.pendingCallbacks.apply(formNo)
+        dbReg <- volatile.pendingCallbacks(formNo)
       } yield dbReg
 
       whenReady(chain) { dbRes =>

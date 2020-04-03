@@ -32,15 +32,11 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  val period = Period.Key.of("0220").value
+  private[this] val period = Period.Key.of("0220").value
 
   "it fail to retrieve a non existing return with a NoSuchElementException" in {
-    forAll { (reg: Registration) =>
-      val chain = for {
-        dbReg <- mongoPersistence.returns.apply(reg, period)
-      } yield dbReg
-
-      whenReady(chain.failed) { ex =>
+    forAll { reg: Registration =>
+      whenReady(mongoPersistence.returns(reg, period).failed) { ex =>
         ex mustBe a [NoSuchElementException]
         ex.getMessage mustBe s"return not found: $reg/$period"
       }
@@ -48,14 +44,10 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   }
 
   "it fail to persist a return if the registration key doesn't have a DST Reg number" in {
-    forAll { (reg: Registration) =>
+    forAll { reg: Registration =>
       val adjustedReg = reg.copy(registrationNumber = None)
 
-      val chain = for {
-        dbReg <- mongoPersistence.returns.get(adjustedReg)
-      } yield dbReg
-
-      whenReady(chain.failed) { ex =>
+      whenReady(mongoPersistence.returns.get(adjustedReg).failed) { ex =>
         ex mustBe a [IllegalArgumentException]
         ex.getMessage mustBe "Registration is not active"
       }

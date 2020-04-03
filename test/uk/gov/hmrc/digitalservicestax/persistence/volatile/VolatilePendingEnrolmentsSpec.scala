@@ -39,11 +39,7 @@ class VolatilePendingEnrolmentsSpec extends FakeApplicationSpec
 
   "it fail to retrieve a non existing enrolment with a NoSuchElementException" in {
     forAll { (internalId: InternalId) =>
-      val chain = for {
-        dbReg <- volatile.pendingEnrolments.apply(internalId)
-      } yield dbReg
-
-      whenReady(chain.failed) { ex =>
+      whenReady(volatile.pendingEnrolments(internalId).failed) { ex =>
         ex mustBe a [NoSuchElementException]
         ex.getMessage mustBe s"user not found: $internalId"
       }
