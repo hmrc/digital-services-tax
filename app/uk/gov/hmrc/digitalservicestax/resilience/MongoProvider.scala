@@ -21,7 +21,6 @@ import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import play.api.Logger
-import akka.actor.ActorSystem
 import play.api.libs.json._
 import play.modules.reactivemongo._
 import reactivemongo.api.{Cursor, ReadPreference}
@@ -29,45 +28,9 @@ import reactivemongo.play.json._
 import collection._
 
 import scala.concurrent._
-import javax.inject._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration._
-import akka.actor.Actor
-import akka.actor.Props
-
-@Singleton
-class DstMongoProvider @Inject()(
-  mongo: ReactiveMongoApi,
-  val actorSystem: ActorSystem,
-  val appConfig: AppConfig,
-  implicit val ec: ExecutionContext  
-) extends MongoProvider[(Int, String)](mongo,
-  {
-    case uk.gov.hmrc.http.Upstream4xxResponse(msg, code, _, _) => (code, msg)
-    case uk.gov.hmrc.http.Upstream5xxResponse(msg, code, _) => (code, msg)
-    case e => (-1, e.getLocalizedMessage)
-  }
-) {
-
-  private val Tick = "tick"
-  private class TickActor extends Actor {
-    def receive = { case Tick => tick() }
-  }
-
-  private val tickActor = actorSystem.actorOf(Props(classOf[TickActor], this))
-
-  import actorSystem.dispatcher
-  val tickJob = actorSystem.scheduler.schedule(
-    appConfig.resilience.tickDelay,
-    appConfig.resilience.tickFrequency,
-    tickActor,
-    Tick
-  )
-
-  override val maxTasks: Int = appConfig.resilience.maxTasks
-}
 
 class MongoProvider[E](
   mongo: ReactiveMongoApi,
@@ -106,7 +69,7 @@ class MongoProvider[E](
       uuid: ID,
       input: I,
       attempts: List[(LocalDateTime, E)],
-      nextAttempt: Option[LocalDateTime] = Some(LocalDateTime.now),
+      nextAttempt: Option[LocalDateTime] = rule.nextRetry(Nil),
       output: Option[O] = None
     )
 
@@ -130,7 +93,7 @@ class MongoProvider[E](
     def async(input: I): Future[ID] = {
       val newId = randomID()
       val record = Wrapper(newId, input, Nil)
-      log.info(s"$key / $newId: task created")
+      log.info(s"$key / $newId: task created\n  first attempt: ${record.nextAttempt}")
       collection.flatMap(_.insert(ordered = false).one(record)).map{_ => newId}
     }
 

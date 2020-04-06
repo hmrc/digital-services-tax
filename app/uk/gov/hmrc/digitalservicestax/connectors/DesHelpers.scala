@@ -54,8 +54,11 @@ case class DesRetryRule(config: AppConfig) extends ltbs.resilientcalls.RetryRule
   def nextRetry(previous: List[(LocalDateTime, (Int,String))]): Option[LocalDateTime] = {
 
     // retry 5XX errors, give up on everything else
-    def isFatal(t: (Int,String)): Boolean =
-      t._1 < 500 || t._1 >= 600
+    def isFatal(t: (Int,String)): Boolean = {
+      val is5XX = t._1 >= 500 && t._1 < 600
+      val invalidRegime = t._1 == 400 && t._2.contains("INVALID_REGIME")
+      !is5XX && !invalidRegime
+    }
 
     // double the previous delay after each failed attempt
     // give up after 5 failed attempts (or a fatal error)
