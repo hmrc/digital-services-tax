@@ -29,7 +29,6 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import ltbs.resilientcalls._
 import java.time.LocalDateTime
 
 @Singleton
