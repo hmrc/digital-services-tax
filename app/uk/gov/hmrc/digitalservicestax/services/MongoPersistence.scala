@@ -35,7 +35,7 @@ import uk.gov.hmrc.digitalservicestax.data.Period.Key
 object MongoPersistence {
 
   private[services] case class EnrolmentWrapper(
-    internalId: InternalId, 
+    internalId: InternalId,
     safeId: SafeId,
     formBundle: FormBundleNumber
   )
@@ -66,53 +66,6 @@ class MongoPersistence @Inject()(
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
   import mongo.database
   import MongoPersistence._
-
-  val pendingEnrolments: PendingEnrolments = new PendingEnrolments {
-
-    implicit val formatWrapper: OFormat[EnrolmentWrapper] = Json.format[EnrolmentWrapper]
-
-    lazy val collection: Future[JSONCollection] = {
-      database.map(_.collection[JSONCollection]("pending-enrolments")).flatMap { c =>
-
-        val sessionIndex = Index(
-          key = Seq("internalId" -> IndexType.Ascending),
-          unique = true
-        )
-        
-        c.indexesManager.ensure(sessionIndex).map(_ => c)
-      }
-    }
-
-    def get(user: InternalId): Future[Option[(SafeId, FormBundleNumber)]] = {
-      val selector = Json.obj("internalId" -> user.toString)
-      collection.flatMap(
-        _.find(selector)
-          .one[EnrolmentWrapper]
-      ).map{_.map{x => (x.safeId, x.formBundle)}}
-    }
-
-    def delete(user: InternalId): Future[Unit] = {
-      val selector = Json.obj("internalId" -> user.toString)
-      collection.flatMap(_.delete.one(selector)).map{_ => ()}
-    }
-
-    def update(user: InternalId, value: (SafeId, FormBundleNumber)): Future[Unit] = {
-      val record = EnrolmentWrapper(user, value._1, value._2)
-      val selector = Json.obj("internalId" -> user.toString)
-      collection.flatMap(_.update(ordered = false).one(selector, record, upsert = true)).map {
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
-    }
-
-    override def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): Future[Unit] = {
-      val record = EnrolmentWrapper(user, safeId, formBundleNumber)
-      collection.flatMap(_.insert(ordered = false).one(record)).map {
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
-    }
-  }
 
   val pendingCallbacks: PendingCallbacks = new PendingCallbacks {
 
@@ -203,7 +156,7 @@ class MongoPersistence @Inject()(
 
   }
 
-  def returns: Returns = new Returns {
+  def returns = new Returns {
 
     lazy val collection: Future[JSONCollection] = {
       database.map(_.collection[JSONCollection]("returns")).flatMap { c =>
@@ -219,7 +172,7 @@ class MongoPersistence @Inject()(
       }
     }
 
-    implicit val formatWrapper: OFormat[RetWrapper] = Json.format[RetWrapper]
+    implicit val formatWrapper = Json.format[RetWrapper]
 
     def get(reg: Registration): Future[Map[Period.Key, Return]] =  {
       reg.registrationNumber match {

@@ -40,7 +40,6 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import ltbs.resilientcalls._
 import java.time.LocalDateTime
 
 import scala.concurrent._
@@ -60,7 +59,6 @@ class RegistrationsController @Inject()(
   auditing: AuditConnector,
   loggedIn: LoggedInAction,
   registered: RegisteredOrPending,
-  resilienceProvider: DstMongoProvider,
   val http: HttpClient,
   val servicesConfig: ServicesConfig
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
@@ -87,16 +85,15 @@ class RegistrationsController @Inject()(
     safeId: SafeId,
     internalId: InternalId,
     providerId: String
-  ): Future[Unit] = {
-    implicit val hc = addHeaders(new HeaderCarrier)
+  )(implicit hc: HeaderCarrier): Future[Unit] = {
 
       registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
         {
           {persistence.pendingCallbacks(r.formBundleNumber) = internalId} >>
-          // we cannot subscribe the user to tax enrolments as the HC
-          // will not have the users bearer-token, make a note to subscribe
-          // them instead as soon as they log in
-          {persistence.pendingEnrolments(internalId) = (safeId, r.formBundleNumber)} >>
+          taxEnrolmentConnector.subscribe(
+            safeId,
+            r.formBundleNumber
+          ) >>
           auditing.sendExtendedEvent(
             AuditingHelper.buildRegistrationAudit(
               data, providerId, r.formBundleNumber.some, "SUCCESS"
@@ -116,16 +113,6 @@ class RegistrationsController @Inject()(
       }
   }
 
-  val resilientSendP = {
-    import BackendAndFrontendJson._
-
-    resilienceProvider.apply(
-      "send-registration",
-      {submitRegistrationP _}.tupled,
-      DesRetryRule
-    )
-  }
-
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
     withJsonBody[Registration](data => {
       {persistence.registrations(request.internalId) = data} >>
@@ -134,16 +121,16 @@ class RegistrationsController @Inject()(
         case (_, _, true) =>
             for {
               safeId <- getSafeId(data)
-
-              reg <- resilientSendP.async(("safe", safeId, data, safeId.get, request.internalId, request.providerId))
+              
+              reg <- submitRegistrationP("safe", safeId, data, safeId.get, request.internalId, request.providerId)
             } yield (reg, safeId)
           case (Some(utr), Some(_), false) =>
             for {
-              reg <- resilientSendP.async(("utr", utr.some, data, data.companyReg.safeId.get, request.internalId, request.providerId))
+              reg <- submitRegistrationP("utr", utr.some, data, data.companyReg.safeId.get, request.internalId, request.providerId)
             } yield (reg, data.companyReg.safeId)
           case _ =>
             for {
-              reg <- resilientSendP.async(("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId))
+              reg <- submitRegistrationP("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId)
             } yield (reg, data.companyReg.safeId)
       }) >> emailConnector.sendSubmissionReceivedEmail(
         data.contact,
@@ -153,27 +140,10 @@ class RegistrationsController @Inject()(
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.pendingEnrolments.consume(request.internalId).flatMap {
-      case Some((safeId, formBundleNumber)) =>
-        // the user has registered with ETMP, but is not yet subscribed
-        // with tax enrolments
-        taxEnrolmentConnector.subscribe(
-          safeId,
-          formBundleNumber
-        )
-      case None => ().pure[Future]
-    } >>
-    persistence.registrations.get(request.internalId).map { response =>
-      response match {
-        case Some(r) =>
-          Ok(Json.toJson(r))
-        case None => NotFound
-      }
+    persistence.registrations.get(request.internalId).map {
+      case Some(r) => Ok(Json.toJson(r))
+      case None => NotFound
     }
-  }
-
-  def tick() = Action.async {
-    resilienceProvider.tick() >> Future(Ok("done"))
   }
 
 }

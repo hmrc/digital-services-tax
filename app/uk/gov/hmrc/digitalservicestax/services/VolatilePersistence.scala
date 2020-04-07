@@ -26,19 +26,6 @@ import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
 trait VolatilePersistence extends Persistence[Id] {
 
-  val pendingEnrolments = new PendingEnrolments {
-
-    @volatile private var _data: Map[InternalId, (SafeId, FormBundleNumber)] = Map.empty
-    def get(user: InternalId): Option[(SafeId, FormBundleNumber)] = _data.get(user)
-    def delete(user: InternalId) = _data = _data - user
-    def update(user: InternalId, value: (SafeId, FormBundleNumber)) =
-      _data = _data + (user -> value)
-
-    override def insert(user: InternalId, safeId: SafeId, formBundleNumber: FormBundleNumber): Id[Unit] = {
-      _data += user -> (safeId -> formBundleNumber)
-    }
-  }
-
   val pendingCallbacks = new PendingCallbacks {
 
     @volatile private var _data: Map[FormBundleNumber, InternalId] = Map.empty

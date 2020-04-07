@@ -48,8 +48,4 @@ class AppConfigTests extends FlatSpec with Matchers with TestWiring {
   it should "initialise a logRegResponse flag from app config" in {
     appConfig.logRegResponse shouldEqual true
   }
-
-  it should "initialise a resilienceTickInterval flag from app config" in {
-    (appConfig.resilienceTickInterval >= 0) shouldBe true
-  }
 }
