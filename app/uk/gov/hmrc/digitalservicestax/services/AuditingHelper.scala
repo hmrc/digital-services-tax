@@ -23,36 +23,9 @@ import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-
+import BackendAndFrontendJson._
 
 object AuditingHelper {
-
-  implicit val foreignAddressFormat: OFormat[ForeignAddress] = Json.format[ForeignAddress]
-  val defaulAddressFormat = Json.format[UkAddress]
-  implicit val ukAddressFormat = new Format[UkAddress] {
-    override def reads(json: JsValue): JsResult[UkAddress] =
-      defaulAddressFormat.reads(json)
-
-    override def writes(o: UkAddress): JsValue =
-      defaulAddressFormat.writes(o).as[JsObject] ++ Json.obj("countryCode" -> "GB")
-  }
-  implicit val addressFormat: OFormat[Address] = Json.format[Address]
-  implicit val companyFormat: OFormat[Company] = Json.format[Company]
-  implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
-  implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
-  implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
-
-
-  implicit def optFormatter[A](implicit innerFormatter: Format[A]): Format[Option[A]] =
-    new Format[Option[A]] {
-      def reads(json: JsValue): JsResult[Option[A]] = json match {
-        case JsNull => JsSuccess(none[A])
-        case a      => innerFormatter.reads(a).map{_.some}
-      }
-      def writes(o: Option[A]): JsValue =
-        o.map{innerFormatter.writes}.getOrElse(JsNull)
-    }
-
 
   private def baseEvent: String => ExtendedDataEvent = ExtendedDataEvent(
     auditSource = "digital-services-tax",
@@ -94,7 +67,7 @@ object AuditingHelper {
 
   private def registrationJson(data: Registration): JsObject =
     (JsPath \ "companyReg" \ "company" \ "address" \ "_type")
-      .prune(Json.toJson(data)(this.registrationFormat)
+      .prune(Json.toJson(data)(registrationFormat)
         .as[JsObject]).get
 
   def buildReturnResponseAudit(

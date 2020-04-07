@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.digitalservicestax.config
 
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAccessor
+
 import org.scalatest.{FlatSpec, Matchers}
 import uk.gov.hmrc.digitalservicestax.util.TestWiring
 
@@ -23,5 +26,26 @@ class AppConfigTests extends FlatSpec with Matchers with TestWiring {
 
   it should "read a non empty authbase URL from app config" in {
     appConfig.authBaseUrl.isEmpty shouldEqual false
+  }
+
+  it should "read a non empty auditingEnabled flag from app config" in {
+    appConfig.auditingEnabled shouldEqual false
+  }
+
+  it should "read a non empty graphiteHost flag from app config" in {
+    appConfig.graphiteHost.nonEmpty shouldEqual true
+  }
+
+
+  it should "read an obligation start date from app config" in {
+    val pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    appConfig.obligationStartDate.nonEmpty shouldEqual true
+
+    val dt = pattern.parse(appConfig.obligationStartDate)
+    dt shouldBe a [TemporalAccessor]
+  }
+
+  it should "initialise a logRegResponse flag from app config" in {
+    appConfig.logRegResponse shouldEqual true
   }
 }
