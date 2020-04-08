@@ -40,12 +40,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class Registered @Inject()(
   persistence: MongoPersistence
 )(implicit executionContext: ExecutionContext) extends RegisteredOrPending(persistence) {
-  override protected def refine[A](
+  override def refine[A](
     request: LoggedInRequest[A]
-  ): Future[Either[Result,RegisteredRequest[A]]] = super.refine(request).map {
+  ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
     case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
       Left(Forbidden("Registration is not confirmed"))
-    case x => x 
+    case x => x
   }
 }
 
@@ -55,13 +55,13 @@ class RegisteredOrPending @Inject()(
     ActionRefiner[LoggedInRequest, RegisteredRequest]
 {
 
-  protected def refine[A](
+  def refine[A](
     request: LoggedInRequest[A]
   ): Future[Either[Result,RegisteredRequest[A]]] =
     persistence.registrations.get(request.internalId).map {
       case Some(reg) if reg.registrationNumber.isDefined =>
         Right(RegisteredRequest(reg, request))
-      case None =>
+      case _ =>
         Left(Forbidden("User is not registered"))
     }
 }
@@ -77,7 +77,7 @@ class LoggedInAction @Inject()(
 )(implicit val executionContext: ExecutionContext)
   extends ActionBuilder[LoggedInRequest, AnyContent] with ActionRefiner[Request, LoggedInRequest] with AuthorisedFunctions {
 
-  override protected def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
+  override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
     implicit val req: Request[A] = request
     implicit val hc: HeaderCarrier =
       HeaderCarrierConverter.fromHeadersAndSessionAndRequest(
@@ -93,7 +93,7 @@ class LoggedInAction @Inject()(
         val providerId = creds.map(_.providerId)
 
         Future.successful(
-          (id.map{InternalId.of}, creds.map(_.providerId)) match {
+          (id.map { InternalId.of }, creds.map(_.providerId)) match {
             case (Some(Some(internalId)), Some(provider)) =>
               Right(LoggedInRequest(internalId, enrolments, provider, request))
             case (_, None) => Left(Forbidden("No provider ID"))
@@ -104,7 +104,7 @@ class LoggedInAction @Inject()(
     } 
   }
 
-  override def parser = mcc.parsers.anyContent
+  override def parser: BodyParser[AnyContent] = mcc.parsers.anyContent
 }
 
 case class LoggedInRequest[A](
@@ -113,8 +113,9 @@ case class LoggedInRequest[A](
   providerId: String,
   request: Request[A]
 ) extends WrappedRequest(request) {
+
   lazy val utr: Option[UTR] = enrolments
-      .getEnrolment("IR-CT")
-      .orElse(enrolments.getEnrolment("IR-SA"))
-      .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
+    .getEnrolment("IR-CT")
+    .orElse(enrolments.getEnrolment("IR-SA"))
+    .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
 }
