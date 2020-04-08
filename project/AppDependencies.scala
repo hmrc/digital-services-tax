@@ -15,8 +15,7 @@ object AppDependencies {
     "com.beachape"           %% "enumeratum"               % "1.5.13",
     "com.beachape"           %% "enumeratum-play-json"     % "1.5.13",
     "com.chuusai"            %% "shapeless"                % "2.3.3",
-    "commons-validator"      % "commons-validator"         % "1.6",
-    "fr.marcwrobel"          % "jbanking"                  % "2.0.0",
+    "commons-validator"       % "commons-validator"        % "1.6",
     compilerPlugin("com.github.ghik" %% "silencer-plugin"  % "1.4.2"),
     "com.github.ghik"        %% "silencer-lib"             % "1.4.2" % Provided
   )
@@ -34,8 +33,7 @@ object AppDependencies {
     "com.beachape"           %% "enumeratum-scalacheck"    % "1.5.16"                % Test,
     "wolfendale"             %% "scalacheck-gen-regexp"    % "0.1.2"                 % Test,
     "com.github.tomakehurst" %  "wiremock-jre8"            % "2.25.1"                % Test,
-    "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test,
-    "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.19.0-play-26"        % Test
+    "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test
 
   )
 

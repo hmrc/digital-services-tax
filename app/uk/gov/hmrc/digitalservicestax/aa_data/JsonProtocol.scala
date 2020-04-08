@@ -23,8 +23,6 @@ import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
 import cats.implicits._
-import uk.gov.hmrc.auth.core.retrieve.Credentials
-import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
 import uk.gov.hmrc.digitalservicestax.services
 
 trait SimpleJson {
@@ -95,13 +93,8 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
   implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
-  implicit val credentialWrites = Json.writes[Credentials]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
-
-  import Enrolment.idFormat
-  implicit val enrolmentWrites = Json.format[Enrolment]
-  implicit val enrolmentsFormat = Json.format[Enrolments]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
@@ -144,6 +137,19 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
+  val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      JsSuccess(CompanyRegWrapper (
+        Company(
+          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "address"}.as[Address]
+        ),
+        safeId = SafeId(
+          {json \ "safeId"}.as[String]
+        ).some
+      ))
+    }
+  }
 
   implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
     def writes(dt: LocalDate): JsValue = JsString(dt.toString)
@@ -194,7 +200,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
     def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
       val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
-
+      
       val periods = obligations.toList.flatMap { j =>
         val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
         elems.toList

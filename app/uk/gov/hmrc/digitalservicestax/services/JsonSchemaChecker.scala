@@ -21,7 +21,7 @@ import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
 import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.Logger
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{Format, Json, Writes}
 
 import scala.collection.JavaConversions._
 
