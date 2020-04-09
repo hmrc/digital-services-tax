@@ -34,6 +34,7 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
 
   "should get no response back if des is not available" in {
     val contactDetails = arbitrary[ContactDetails].sample.value
+    val companyName = arbitrary[NonEmptyString].sample.value
     val parentRef = arbitrary[NonEmptyString].sample.value
     val dstNumber = arbitrary[DSTRegNumber].sample.value
     val period = arbitrary[Period].sample.value
@@ -43,14 +44,14 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
         .willReturn(aResponse()
         .withStatus(200)))
 
-    val response = EmailTestConnector.sendConfirmationEmail(contactDetails, parentRef, dstNumber, period)
+    val response = EmailTestConnector.sendConfirmationEmail(contactDetails, companyName, parentRef, dstNumber, period)
     whenReady(response) { res => }
 
   }
 
   "should send a confirmation email for a submission received" in {
     val contactDetails = arbitrary[ContactDetails].sample.value
-    val parentRef = arbitrary[NonEmptyString].sample.value
+    val companyName = arbitrary[NonEmptyString].sample.value
 
     stubFor(
       post(urlPathEqualTo("/hmrc/email"))
@@ -59,6 +60,7 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
 
     val response = EmailTestConnector.sendSubmissionReceivedEmail(
       contactDetails,
+      companyName,
       None)
 
     whenReady(response) { res => }

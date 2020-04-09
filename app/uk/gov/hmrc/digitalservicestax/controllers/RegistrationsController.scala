@@ -134,6 +134,7 @@ class RegistrationsController @Inject()(
             } yield (reg, data.companyReg.safeId)
       }) >> emailConnector.sendSubmissionReceivedEmail(
         data.contact,
+        data.companyReg.company.name,
         data.ultimateParent
       ) >> Future.successful(Ok(JsNull))
     })
