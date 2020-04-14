@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.digitalservicestax.controllers
 
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Logger}
-import play.api.libs.json.{Format, JsValue, Json, OWrites}
+import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
+import play.api.{Configuration, Logger}
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.internalId
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
+import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -39,72 +43,73 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
-  persistence: FutureVolatilePersistence
+  emailConnector: EmailConnector,
+  returnConnector: ReturnConnector,
+  persistence: MongoPersistence,
+  auditing: AuditConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def callback(formBundleNumber: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[CallbackNotification] { body =>
-      if (body.state == "SUCCEEDED") {
-        for {
-          teSub <- taxEnrolments.getSubscription(formBundleNumber)
-          // TODO here is where we talk to persistence with the formBundleNumber and the dstNumber from .getDSTNumber(teSub)
+  object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
 
-//          _ <- sendNotificationEmail(pendingSub.map(_.subscription.orgName), pendingSub.map(_.subscription.contact.email), getSdilNumber(teSub), formBundleNumber)
-//          _ <- auditing.sendExtendedEvent(buildAuditEvent(body, request.uri, formBundleNumber))
+  def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val formBundleNumber = FormBundleNumber(formBundleNumberString)
+    withJsonBody[CallbackNotification] { body =>
+      Logger.info(s"Tax-enrolment callback triggered, body: $body")
+      if (body.state == "SUCCEEDED") {
+        (for {
+          dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
+                            getDSTNumber(_).getOrElse(throw CallbackProcessingException)}
+          reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
+          period       <- returnConnector.getNextPendingPeriod(dstNumber)
+          _            <- emailConnector.sendConfirmationEmail(
+                            reg.contact,
+                            reg.companyReg.company.name,
+                            reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
+                            dstNumber,
+                            period
+                          )
         } yield {
-          Logger.info("Tax-enrolments callback and subsequent lookup successful")
+          auditing.sendExtendedEvent(
+            AuditingHelper.buildCallbackAudit(
+              body,
+              request.uri,
+              formBundleNumber,
+              "SUCCESS",
+              dstNumber.some
+            )
+          )
+          Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
+        }).recoverWith{
+          case e: Exception =>
+            Logger.warn(s"Error inside SUCCEEDED tax-enrolment callback processing: $e")
+            Future(NoContent)
+          case _ =>
+            Future(NoContent)
         }
       } else {
-        Logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
-        // TODO
-//        auditing.sendExtendedEvent(
-//          buildAuditEvent(body, request.uri, formBundleNumber)) map {
-//          _ => NoContent
-//        }
+        auditing.sendExtendedEvent(
+          AuditingHelper.buildCallbackAudit(
+            body,
+            request.uri,
+            formBundleNumber,
+            "ERROR")
+        )
+        Logger.error(s"Got error from tax-enrolments callback for ${formBundleNumber}: [${body.errorResponse.getOrElse("")}]")
         Future.successful(NoContent)
       }
     }
   }
 
-
-  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[String] = {
+  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[DSTRegNumber] = {
     taxEnrolmentsSubscription.identifiers.getOrElse(Nil).collectFirst {
-      case Identifier(_, value) if value.slice(2, 5) == "DST" => value
+      case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
   }
-
-
-  //  private def sendNotificationEmail(orgName: Option[String], email: Option[String], sdilNumber: Option[String], formBundleNumber: String)
-//    (implicit hc: HeaderCarrier): Future[Unit] = {
-//    (orgName, email) match {
-//      case (Some(o), Some(e)) => sdilNumber match {
-//        case Some(s) => emailConnector.sendConfirmationEmail(o, e, s)
-//        case None => Future.successful(Logger.error(s"Unable to send email for form bundle $formBundleNumber as enrolment is missing SDIL Number"))
-//      }
-//      case _ => Future.successful(Logger.error(s"Received callback for form bundle number $formBundleNumber, but no pending record exists"))
-//    }
-//  }
-//
-//
-//  private def buildAuditEvent(callback: CallbackNotification, path: String, subscriptionId: String)(implicit hc: HeaderCarrier) = {
-//    implicit val callbackFormat: OWrites[CallbackNotification] = Json.writes[CallbackNotification]
-//    val detailJson = Json.obj(
-//      "subscriptionId" -> subscriptionId,
-//      "url" -> s"${serviceConfig.baseUrl("tax-enrolments")}/tax-enrolments/subscriptions/$subscriptionId",
-//      "outcome" -> (callback.state match {
-//        case "SUCCEEDED" => "SUCCESS"
-//        case _ => "ERROR"
-//      }),
-//      "errorResponse" -> callback.errorResponse
-//    )
-//    new TaxEnrolmentEvent(callback.state, path, detailJson)
-//  }
-
 }
 
 case class CallbackNotification(state: String, errorResponse: Option[String])

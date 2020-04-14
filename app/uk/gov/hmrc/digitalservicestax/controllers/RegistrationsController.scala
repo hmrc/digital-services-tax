@@ -18,23 +18,29 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
-import services.FutureVolatilePersistence
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
+import uk.gov.hmrc.auth.core.retrieve._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.digitalservicestax.data._, BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.actions._
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.connectors._
+import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RegistrationResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.auth.core.retrieve._
-import v2.Retrievals._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import java.time.LocalDateTime
 
 import scala.concurrent._
 
@@ -48,11 +54,16 @@ class RegistrationsController @Inject()(
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
-  persistence: FutureVolatilePersistence
-) extends BackendController(cc) with AuthorisedFunctions {
+  emailConnector: EmailConnector,
+  persistence: MongoPersistence,
+  auditing: AuditConnector,
+  loggedIn: LoggedInAction,
+  registered: RegisteredOrPending,
+  val http: HttpClient,
+  val servicesConfig: ServicesConfig
+) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
 
   val log = Logger(this.getClass())
-  log.error(s"startup ${this.getClass} logging")
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
@@ -67,55 +78,76 @@ class RegistrationsController @Inject()(
       )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
-  def submitRegistration(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and internalId) { case enrolments ~ uid =>
+  def submitRegistrationP(
+    idType: String,
+    idNumber: Option[String],
+    data: Registration,
+    safeId: SafeId,
+    internalId: InternalId,
+    providerId: String
+  )(implicit hc: HeaderCarrier): Future[Unit] = {
 
-      val userId = uid.getOrElse(
-        throw new java.security.AccessControlException("No internalId available")
-      )
-      withJsonBody[Registration](data => {
-        ((data.companyReg.utr, data.companyReg.safeId, data.companyReg.useSafeId) match {
-          case (_, _, true) =>
+      registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
+        {
+          {persistence.pendingCallbacks(r.formBundleNumber) = internalId} >>
+          taxEnrolmentConnector.subscribe(
+            safeId,
+            r.formBundleNumber
+          ) >>
+          auditing.sendExtendedEvent(
+            AuditingHelper.buildRegistrationAudit(
+              data, providerId, r.formBundleNumber.some, "SUCCESS"
+            )
+          ) >> ().pure[Future]
+        } recoverWith {
+          case e =>
+            auditing.sendExtendedEvent(
+              AuditingHelper.buildRegistrationAudit(
+                data, providerId, None, "ERROR"
+              )
+            ) map {
+              Logger.warn(s"Error with DST Registration ${e.getMessage}")
+              throw e
+            }
+        }
+      }
+  }
+
+  def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
+    withJsonBody[Registration](data => {
+      {persistence.registrations(request.internalId) = data} >>
+      ((data.companyReg.utr, data.companyReg.safeId, data.companyReg.useSafeId) match {
+
+        case (_, _, true) =>
             for {
               safeId <- getSafeId(data)
-              reg <- registrationConnector.send("safe", safeId, data)
+              
+              reg <- submitRegistrationP("safe", safeId, data, safeId.get, request.internalId, request.providerId)
             } yield (reg, safeId)
           case (Some(utr), Some(safeId),false) =>
             for {
-              reg <- registrationConnector.send("utr", utr.some, data)
+              reg <- submitRegistrationP("utr", utr.some, data, data.companyReg.safeId.get, request.internalId, request.providerId)
             } yield (reg, data.companyReg.safeId)
           case _ =>
             for {
-              reg <- registrationConnector.send("utr", getUtrFromAuth(enrolments), data)
+              reg <- submitRegistrationP("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId)
             } yield (reg, data.companyReg.safeId)
-        }).flatMap {
-          case (Some(r), Some(safeId: SafeId)) => {
-            (persistence.registrations(userId) = data) >>
-              taxEnrolmentConnector.subscribe(
-                safeId,
-                r.formBundleNumber
-              ) >>
-              Future.successful(Ok(Json.toJson(r)))
-          }
-          case _ => Future.successful(NotFound)
-        }
-      })
-    }
+      }) >> emailConnector.sendSubmissionReceivedEmail(
+        data.contact,
+        data.companyReg.company.name,
+        data.ultimateParent
+      ) >> Future.successful(Ok(JsNull))
+    })
   }
 
-  def lookupRegistration(): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(internalId) { case uid =>
-      val userId = uid.getOrElse(
-        throw new java.security.AccessControlException("No internalId available")
-      )
-
-      persistence.registrations.get(userId).map { response => 
-        response match {
-          case Some(r) =>
-            Ok(Json.toJson(r))
-          case None => NotFound
-        }
+  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
+    persistence.registrations.get(request.internalId).map { response =>
+      response match {
+        case Some(r) =>
+          Ok(Json.toJson(r))
+        case None => NotFound
       }
     }
   }
+
 }

@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.backend_data
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 case class ReturnResponse(
   processingDate: String,
   formBundleNumber: String
 )
 
-case object ReturnResponse {
-  implicit val format = Json.format[ReturnResponse]
+object ReturnResponse {
+  implicit val format: OFormat[ReturnResponse] = Json.format[ReturnResponse]
 }

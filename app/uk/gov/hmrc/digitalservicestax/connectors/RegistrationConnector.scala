@@ -19,23 +19,27 @@ package connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Mode}
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId}
+import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId, BackendAndFrontendJson}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import java.time.LocalDateTime
 
 @Singleton
-class RegistrationConnector @Inject()(val http: HttpClient,
+class RegistrationConnector @Inject()(
+  val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
-  appConfig: AppConfig)
-  extends DesHelpers(servicesConfig) {
+  val servicesConfig: ServicesConfig,
+  appConfig: AppConfig,
+  ec: ExecutionContext
+)
+  extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
@@ -47,18 +51,25 @@ class RegistrationConnector @Inject()(val http: HttpClient,
   )(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
-  ): Future[Option[RegistrationResponse]] = {
-    implicit val writes: Writes[Registration] = services.EeittInterface.registrationWriter
+  ): Future[RegistrationResponse] = {
+
+    import services.EeittInterface.registrationWriter
+
     (idType, idNumber) match {
       case (t, Some(i)) => {
-        val result = desPost[JsValue, Option[RegistrationResponse]](s"$desURL/$registerPath/$t/$i", Json.toJson(request))(implicitly, implicitly, addHeaders, implicitly)
+        val result = desPost[JsValue, RegistrationResponse](
+          s"$desURL/$registerPath/$t/$i", Json.toJson(request)
+        )(implicitly, implicitly, addHeaders, implicitly)
+
         if (appConfig.logRegResponse) Logger.debug(
           s"Registration response is ${Await.result(result, 20.seconds)}"
         )
         result
       }
+
       case _ =>
-        throw new IllegalArgumentException(s"Missing idNumber for idType: $idType")
+        Future.failed(new IllegalArgumentException(s"Missing idNumber for idType: $idType"))
     }
   }
+
 }

@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.digitalservicestax.backend_data
 
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 
 object RosmFormats {
 

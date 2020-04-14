@@ -29,16 +29,32 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import java.time.{LocalDate, format}, format.DateTimeParseException
+import java.time.{LocalDate, format}
+import format.DateTimeParseException
+
+import BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
+  val servicesConfig: ServicesConfig,
   appConfig: AppConfig)
-  extends DesHelpers(servicesConfig) {
+  extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
+
+  def getNextPendingPeriod(
+    dstRegNo: DSTRegNumber    
+  )(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Period] =
+    getPeriods(dstRegNo).map{
+      _.collectFirst { case (x, None) => x }
+        .getOrElse(throw new NoSuchElementException)
+    }
 
   def getPeriods(
     dstRegNo: DSTRegNumber    
@@ -46,11 +62,10 @@ class ReturnConnector @Inject()(val http: HttpClient,
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
-
     implicit def basicDateFormat = new Reads[LocalDate] {
       import cats.syntax.either._
       def reads(i: JsValue): JsResult[LocalDate] = i match {
-        case JsString(s) => 
+        case JsString(s) =>
           Either.catchOnly[DateTimeParseException]{
             LocalDate.parse(s)
           }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
@@ -71,17 +86,20 @@ class ReturnConnector @Inject()(val http: HttpClient,
             Period(
               {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
               {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
-              {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],              
+              {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
               {json \ "periodKey"}.as[Period.Key]
             ),
             {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
           )
         })
-        
+
       }
     }
 
-    val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" //"?from={from}&to={to}"
+    val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
+      s"?from=${appConfig.obligationStartDate}" +
+      s"&to=${LocalDate.now.plusYears(1)}"
+
     desGet[List[(Period, Option[LocalDate])]](url)
   }
 
@@ -101,10 +119,12 @@ class ReturnConnector @Inject()(val http: HttpClient,
       isAmend
     )
 
-    val url = s"$desURL/cross-regime/return/DST/eeits/$dstRegNo"
+    JsonSchemaChecker(request,"return-submission")(writes)
+
+    val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
     val result = desPost[JsValue, ReturnResponse](
       url,
-      Json.toJson(request)
+      Json.toJson(request)(writes)
     )
 
     if (appConfig.logRegResponse) Logger.debug(

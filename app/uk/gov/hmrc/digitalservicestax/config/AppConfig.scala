@@ -29,4 +29,6 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 
   val logRegResponse: Boolean = config.getOptional[Boolean]("log.register-response").getOrElse(false)
+
+  val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 }

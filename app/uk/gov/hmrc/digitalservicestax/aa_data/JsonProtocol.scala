@@ -16,9 +16,14 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
+
 import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
+import cats.implicits._
+import uk.gov.hmrc.digitalservicestax.services
 
 trait SimpleJson {
 
@@ -48,12 +53,15 @@ trait SimpleJson {
   implicit val phoneNumberFormat    = validatedStringFormat(PhoneNumber, "phone number")
   implicit val utrFormat            = validatedStringFormat(UTR, "UTR")
   implicit val safeIfFormat         = validatedStringFormat(SafeId, "SafeId")
+  implicit val formBundleNoFormat   = validatedStringFormat(FormBundleNumber, "FormBundleNumber")
+  implicit val internalIdFormat     = validatedStringFormat(InternalId, "internal id")  
   implicit val emailFormat          = validatedStringFormat(Email, "email")
   implicit val countryCodeFormat    = validatedStringFormat(CountryCode, "country code")
   implicit val sortCodeFormat       = validatedStringFormat(SortCode, "sort code")
   implicit val accountNumberFormat  = validatedStringFormat(AccountNumber, "account number")
   implicit val ibanFormat           = validatedStringFormat(IBAN, "IBAN number")
-  implicit val periodKeyFormat      = validatedStringFormat(Period.Key, "Period Key")  
+  implicit val periodKeyFormat      = validatedStringFormat(Period.Key, "Period Key")
+
   implicit val dstRegNoFormat       =
     validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
 
@@ -105,13 +113,12 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val groupCompanyMapFormat: OFormat[Map[GroupCompany, Money]] = new OFormat[Map[GroupCompany, Money]] {
     override def reads(json: JsValue): JsResult[Map[GroupCompany, Money]] = {
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
-
-        val Array(name, utrS) = k.split(":")
-        val utr = utrS match {
-          case "" => None
-          case x => Some(UTR(x))
+        k.split(":") match {
+          case Array(name, utrS) =>
+            GroupCompany(NonEmptyString(name), Some(UTR(utrS))) -> v.value
+          case Array(name) =>
+            GroupCompany(NonEmptyString(name), None) -> v.value
         }
-        GroupCompany(NonEmptyString(name), utr) -> v.value
       })
     }
 
@@ -128,5 +135,106 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val repaymentDetailsFormat: OFormat[RepaymentDetails] = Json.format[RepaymentDetails]
   implicit val returnFormat: OFormat[Return] = Json.format[Return]
 
-  implicit val periodFormat: OFormat[Period] = Json.format[Period]  
+  implicit val periodFormat: OFormat[Period] = Json.format[Period]
+
+  val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      JsSuccess(CompanyRegWrapper (
+        Company(
+          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "address"}.as[Address]
+        ),
+        safeId = SafeId(
+          {json \ "safeId"}.as[String]
+        ).some
+      ))
+    }
+  }
+
+  implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
+    def writes(dt: LocalDate): JsValue = JsString(dt.toString)
+  }
+
+  implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
+    import cats.syntax.either._
+    def reads(i: JsValue): JsResult[LocalDate] = i match {
+      case JsString(s) =>
+        Either.catchOnly[DateTimeParseException]{
+          LocalDate.parse(s)
+        }.fold[JsResult[LocalDate]](e => JsError(e.getLocalizedMessage), JsSuccess(_))
+      case o => JsError(s"expected a JsString(YYYY-MM-DD), got a $o")
+    }
+  }
+
+
+  case class PeriodList(
+    list: List[(Period, Option[LocalDate])]
+  )
+
+  implicit def writePeriods: Writes[List[(Period, Option[LocalDate])]] = new Writes[List[(Period, Option[LocalDate])]] {
+    override def writes(o: List[(Period, Option[LocalDate])]): JsValue = {
+
+      val details = o.map { case (period, mapping) =>
+        JsObject(
+          Seq(
+           "inboundCorrespondenceFromDate" -> Json.toJson(period.start),
+           "inboundCorrespondenceToDate" -> Json.toJson(period.end),
+           "inboundCorrespondenceDueDate" -> Json.toJson(period.returnDue),
+           "periodKey" -> Json.toJson(period.key),
+            "inboundCorrespondenceDateReceived" -> Json.toJson(mapping)
+          )
+        )
+
+      }
+
+      JsObject(Seq(
+        "obligations" -> JsArray(details.map { dt =>
+          JsObject(Seq(
+            "obligationDetails" -> dt
+          ))
+        })
+      ))
+    }
+  }
+
+  implicit def readPeriods: Reads[List[(Period, Option[LocalDate])]] = new Reads[List[(Period, Option[LocalDate])]] {
+    def reads(jsonOuter: JsValue): JsResult[List[(Period, Option[LocalDate])]] = {
+      val JsArray(obligations) = { jsonOuter \ "obligations" }.as[JsArray]
+      
+      val periods = obligations.toList.flatMap { j =>
+        val JsArray(elems) = {j \ "obligationDetails"}.as[JsArray]
+        elems.toList
+      }
+
+      JsSuccess(periods.map { json =>
+        (
+          Period(
+            {json \ "inboundCorrespondenceFromDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceToDate"}.as[LocalDate],
+            {json \ "inboundCorrespondenceDueDate"}.as[LocalDate],
+            {json \ "periodKey"}.as[Period.Key]
+          ),
+          {json \ "inboundCorrespondenceDateReceived"}.asOpt[LocalDate]
+        )
+      })
+    }
+  }
+
+  implicit def optFormat[A](implicit in: Format[A]) = new Format[Option[A]] {
+    def reads(json: JsValue): JsResult[Option[A]] = json match {
+      case JsNull => JsSuccess(None)
+      case x => in.reads(x).map{Some(_)}
+    }
+    def writes(o: Option[A]): JsValue = o.fold(JsNull: JsValue)(in.writes)
+  }
+
+  implicit val unitFormat = new Format[Unit] {
+    def reads(json: JsValue): JsResult[Unit] = json match {
+      case JsNull => JsSuccess(())
+      case e => JsError(s"expected JsNull, encountered $e")
+    }
+
+    def writes(o: Unit): JsValue = JsNull
+  }
+
 }
