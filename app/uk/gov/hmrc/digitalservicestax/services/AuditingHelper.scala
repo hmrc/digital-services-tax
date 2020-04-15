@@ -119,6 +119,7 @@ object AuditingHelper {
       regNo,
       period,
       isAmend,
+      true,
       true
     )
 
@@ -131,6 +132,5 @@ object AuditingHelper {
 
     baseEvent("returnSubmitted").copy(detail = details)
   }
-
 
 }
