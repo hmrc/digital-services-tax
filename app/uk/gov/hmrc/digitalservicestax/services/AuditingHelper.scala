@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.digitalservicestax.services
 
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
 import cats.implicits.{none, _}
+import play.api.libs.json
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
 import uk.gov.hmrc.digitalservicestax.data._
@@ -119,6 +123,7 @@ object AuditingHelper {
       regNo,
       period,
       isAmend,
+      true,
       true
     )
 
