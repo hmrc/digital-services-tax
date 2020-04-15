@@ -136,5 +136,4 @@ object AuditingHelper {
 
     baseEvent("returnSubmitted").copy(detail = details)
   }
-  
 }
