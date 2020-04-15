@@ -123,7 +123,13 @@ object EeittInterface {
      }
   }
 
-  def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false, showReliefAmount: Boolean = false) = new Writes[Return] {
+  def returnRequestWriter(
+    dstRegNo: String,
+    period: Period,
+    isAmend: Boolean = false,
+    showReliefAmount: Boolean = false,
+    forAudit: Boolean = false
+  ) = new Writes[Return] {
     def writes(o: Return): JsValue = {
       import o._
 
@@ -202,15 +208,18 @@ object EeittInterface {
         "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
       ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries ++ reliefAmount
 
-      val regimeSpecificJson = JsArray(
-        regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
-          Json.obj(
-            "paramSequence" -> "01",
-            "paramName" -> key,
-            "paramValue" -> value
-          )
-        }
-      )
+      val regimeSpecificJson =
+        if(forAudit)
+          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2))))
+        else JsArray(
+          regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
+            Json.obj(
+              "paramSequence" -> "01",
+              "paramName" -> key,
+              "paramValue" -> value
+            )
+          }
+        )
 
       Json.obj(
         "receivedAt" -> ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
