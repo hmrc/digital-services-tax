@@ -67,6 +67,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           period       <- returnConnector.getNextPendingPeriod(dstNumber)
           _            <- emailConnector.sendConfirmationEmail(
                             reg.contact,
+                            reg.companyReg.company.name,
                             reg.ultimateParent.fold(NonEmptyString("unknown")){x => x.name},
                             dstNumber,
                             period
