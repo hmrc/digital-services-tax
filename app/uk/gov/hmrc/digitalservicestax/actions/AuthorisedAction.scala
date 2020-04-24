@@ -93,7 +93,7 @@ class LoggedInAction @Inject()(
         val providerId = creds.map(_.providerId)
 
         Future.successful(
-          (id.map(InternalId.of), creds.map(_.providerId)) match {
+          (id.map(InternalId.of), providerId) match {
             case (Some(Some(internalId)), Some(provider)) =>
               Right(LoggedInRequest(internalId, enrolments, provider, request))
             case (_, None) => Left(Forbidden("No provider ID"))

@@ -63,10 +63,6 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
   val returns = new Returns {
     private def V = inner.returns
     def get(reg: Registration): Future[Map[Key, Return]] = f(V.get(reg))
-//
-//    def update(reg: Registration, all: Map[Period.Key,Return]): Future[Unit] =
-//      f(V.update(reg, all))
-
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] =
       f(V.update(reg, period, ret))
 
