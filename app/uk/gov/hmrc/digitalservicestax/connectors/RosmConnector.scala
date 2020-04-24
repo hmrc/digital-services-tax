@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-
+import cats.syntax.option._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -40,6 +40,20 @@ class RosmConnector @Inject()(
   val servicesConfig: ServicesConfig,
   appConfig: AppConfig
 ) extends DesHelpers {
+
+  implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      JsSuccess(CompanyRegWrapper (
+        Company(
+          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "address"}.as[Address]
+        ),
+        safeId = SafeId(
+          {json \ "safeId"}.as[String]
+        ).some
+      ))
+    }
+  }
 
   val desURL: String = servicesConfig.baseUrl("des")
 
