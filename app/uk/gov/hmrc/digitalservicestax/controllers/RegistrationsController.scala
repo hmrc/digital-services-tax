@@ -63,19 +63,19 @@ class RegistrationsController @Inject()(
   val servicesConfig: ServicesConfig
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
 
-  val log = Logger(this.getClass())
+  val log: Logger = Logger(this.getClass)
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
   private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
     rosmConnector.retrieveROSMDetailsWithoutID(
-        RosmRegisterWithoutIDRequest(
-        isAnAgent = false,
-        isAGroup = false,
-        data.companyReg.company,
-        data.contact
-      )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
+      RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      data.companyReg.company,
+      data.contact
+    )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
   def submitRegistrationP(
@@ -124,7 +124,7 @@ class RegistrationsController @Inject()(
               
               reg <- submitRegistrationP("safe", safeId, data, safeId.get, request.internalId, request.providerId)
             } yield (reg, safeId)
-          case (Some(utr), Some(safeId),false) =>
+          case (Some(utr), Some(_), false) =>
             for {
               reg <- submitRegistrationP("utr", utr.some, data, data.companyReg.safeId.get, request.internalId, request.providerId)
             } yield (reg, data.companyReg.safeId)
@@ -141,12 +141,9 @@ class RegistrationsController @Inject()(
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.registrations.get(request.internalId).map { response =>
-      response match {
-        case Some(r) =>
-          Ok(Json.toJson(r))
-        case None => NotFound
-      }
+    persistence.registrations.get(request.internalId).map {
+      case Some(r) => Ok(Json.toJson(r))
+      case None => NotFound
     }
   }
 
