@@ -23,6 +23,8 @@ import cats.kernel.Monoid
 import play.api.i18n.Messages
 import java.time.LocalDate
 
+import fr.marcwrobel.jbanking.iban.Iban
+
 package object data extends SimpleJson {
 
   type UTR = String @@ UTR.Tag
@@ -87,10 +89,11 @@ package object data extends SimpleJson {
   )
 
   type IBAN = String @@ IBAN.Tag
-  object IBAN extends RegexValidatedString(
-    """^[0-9]{8}$""", // TODO
-    _.filter(_.isDigit)
-  )
+  object IBAN extends ValidatedType[String] {
+    override def validateAndTransform(in: String): Option[String] = {
+      Some(in).map(_.replaceAll("\\s+","")).filter(Iban.isValid)
+    }
+  }
 
   type PhoneNumber = String @@ PhoneNumber.Tag
   object PhoneNumber extends RegexValidatedString(

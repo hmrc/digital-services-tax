@@ -18,12 +18,13 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import data._
+
 import scala.concurrent._
 import cats.instances.future._
 import javax.inject._
-import java.time.LocalTime
+
 import akka.actor._
-import scala.concurrent.duration._
+import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
 @Singleton
 class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {
@@ -37,31 +38,37 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
     def get(formBundle: FormBundleNumber) = f(V.get(formBundle))
     def delete(formBundle: FormBundleNumber) = f(V.delete(formBundle))
     def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
+
+    override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
+      f(V.insert(formBundleNumber, internalId))
+    }
   }
 
   val registrations = new Registrations {
     private def V = inner.registrations
 
-    def get(user: InternalId) = f(V.get(user))
+    def get(user: InternalId): Future[Option[Registration]] = f(V.get(user))
 
-    def update(user: InternalId, reg: Registration) =
+    def update(user: InternalId, reg: Registration): Future[Unit] =
       f(V.update(user, reg))      
 
-    override def confirm(user: InternalId, newRegNo: DSTRegNumber) =
+    override def confirm(user: InternalId, newRegNo: DSTRegNumber): Future[Registration] =
       f(V.confirm(user, newRegNo))
 
+    override def insert(user: InternalId, reg: Registration): Future[Unit] = {
+      f(V.insert(user, reg))
+    }
   }
 
   val returns = new Returns {
     private def V = inner.returns
-    def get(reg: Registration) = f(V.get(reg))
-
-    def update(reg: Registration, all: Map[Period.Key,Return]) =
-      f(V.update(reg, all))
-
-    def update(reg: Registration, period: Period.Key, ret: Return) =
+    def get(reg: Registration): Future[Map[Key, Return]] = f(V.get(reg))
+    def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] =
       f(V.update(reg, period, ret))
-    
+
+    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] = {
+      f(V.insert(reg, key, ret))
+    }
   }
 
 }
