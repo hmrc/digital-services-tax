@@ -80,7 +80,7 @@ trait SimpleJson {
       }
     }
 
-    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o))
+    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o.toString))
   }
 }
 
@@ -95,6 +95,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
+  implicit val finTransactFormat: OFormat[FinancialTransaction] = Json.format[FinancialTransaction]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
@@ -105,7 +106,7 @@ object BackendAndFrontendJson extends SimpleJson {
 
     override def writes(o: Map[Activity, Percent]): JsValue = {
       JsObject(o.toSeq.map { case (k, v) =>
-        k.entryName -> JsNumber(BigDecimal(v))
+        k.entryName -> JsNumber(BigDecimal(v.toString))
       })
     }
   }

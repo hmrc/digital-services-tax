@@ -16,4 +16,8 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class FinancialTransaction ()
+case class FinancialTransaction (
+  date: java.time.LocalDate,
+  description: String,
+  amount: BigDecimal
+)

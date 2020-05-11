@@ -19,10 +19,10 @@ package connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Mode}
-import play.api.libs.json.{JsValue, Json, Writes, Reads}
+import play.api.libs.json.{JsValue, Json, Writes, Reads, JsResult}
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FinancialTransaction}
+import backend_data._, DesFinancialTransaction._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -35,12 +35,10 @@ import java.net.URLEncoder.encode
 class FinancialDataConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
+  val servicesConfig: ServicesConfig,
   appConfig: AppConfig,
-  ec: ExecutionContext
-) extends DesHelpers(servicesConfig) { 
-
-  implicit val ec2 = ec
+  implicit val ec: ExecutionContext
+) extends DesHelpers { 
 
   val desURL: String = servicesConfig.baseUrl("des")
 
@@ -78,8 +76,6 @@ class FinancialDataConnector @Inject()(
 
     val uri = s"$desURL/enterprise/financial-data/ZDST/$dstRegNo/DST?" ++
       args.map { encodePair }.mkString("&")
-
-    implicit val readTransactionList: Reads[List[FinancialTransaction]] = ???
 
     http.GET[List[FinancialTransaction]](uri)
   }
