@@ -29,17 +29,17 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
     def reads(json: JsValue): JsResult[Address] = JsSuccess{
       {(json \ "countryCode").as[String]} match {
         case "GB" => UkAddress(
-          {json \ "addressLine1"}.as[NonEmptyString],
-          {json \ "addressLine2"}.asOpt[String].getOrElse(""),
-          {json \ "addressLine3"}.asOpt[String].getOrElse(""),
-          {json \ "addressLine4"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine1"}.as[AddressLine],
+          {json \ "addressLine2"}.asOpt[AddressLine],
+          {json \ "addressLine3"}.asOpt[AddressLine],
+          {json \ "addressLine4"}.asOpt[AddressLine],
           {json \ "postalCode"}.as[Postcode]
         )
         case country => ForeignAddress(
-          {json \ "addressLine1"}.as[NonEmptyString],
-          {json \ "addressLine2"}.asOpt[String].getOrElse(""),
-          {json \ "addressLine3"}.asOpt[String].getOrElse(""),
-          {json \ "addressLine4"}.asOpt[String].getOrElse(""),
+          {json \ "addressLine1"}.as[AddressLine],
+          {json \ "addressLine2"}.asOpt[AddressLine],
+          {json \ "addressLine3"}.asOpt[AddressLine],
+          {json \ "addressLine4"}.asOpt[AddressLine],
           CountryCode(country)
         )
       }
@@ -54,7 +54,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
     JsSuccess(CompanyRegWrapper (
       Company(
-        {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+        {json \ "organisation" \ "organisationName"}.as[CompanyName],
         {json \ "address"}.as[Address]
       ),
       safeId = SafeId(

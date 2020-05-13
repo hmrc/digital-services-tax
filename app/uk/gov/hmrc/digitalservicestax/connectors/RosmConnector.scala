@@ -45,7 +45,7 @@ class RosmConnector @Inject()(
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
       JsSuccess(CompanyRegWrapper (
         Company(
-          {json \ "organisation" \ "organisationName"}.as[NonEmptyString],
+          {json \ "organisation" \ "organisationName"}.as[CompanyName],
           {json \ "address"}.as[Address]
         ),
         safeId = SafeId(

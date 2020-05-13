@@ -18,6 +18,7 @@ package uk.gov.hmrc.digitalservicestax
 package backend_data
 
 import com.outworkers.util.samplers._
+import cats.implicits._
 import play.api.libs.json._
 import data._
 import org.scalacheck.{Arbitrary, Gen}
@@ -97,7 +98,7 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
        |  "isAnASAgent":false,
        |  "isAnIndividual": true,
        |  "organisation": {
-       |    "organisationName": "Trotters Trading (Stepney) Ltd.",
+       |    "organisationName": "Trotters Trading",
        |    "isAGroup": true,
        |    "organisationType": "Not Specified"
        |  },
@@ -121,12 +122,12 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
     RosmJsonReader.reads(json) shouldEqual JsSuccess(
       CompanyRegWrapper(
         Company(
-          NonEmptyString("Trotters Trading (Stepney) Ltd."),
+          CompanyName("Trotters Trading"),
           ForeignAddress(
-            line1 = NonEmptyString("Sky, 33R"),
-            line2 = "605 West 42nd Street",
-            line3 = "New York",
-            line4 = "",
+            line1 = AddressLine("Sky, 33R"),
+            line2 = AddressLine("605 West 42nd Street").some,
+            line3 = AddressLine("New York").some,
+            line4 = None,
             CountryCode("US")
           )
         ),
@@ -146,7 +147,7 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
        |  "isAnASAgent":false,
        |  "isAnIndividual": true,
        |  "organisation": {
-       |    "organisationName": "Trotters Trading (Stepney) Ltd.",
+       |    "organisationName": "Trotters Trading",
        |    "isAGroup": true,
        |    "organisationType": "Not Specified"
        |  },
@@ -171,12 +172,12 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
     RosmJsonReader.reads(json) should be (JsSuccess(
       CompanyRegWrapper(
         Company(
-          NonEmptyString("Trotters Trading (Stepney) Ltd."),
+          CompanyName("Trotters Trading"),
           UkAddress(
-            NonEmptyString("100 SuttonStreet"),
-            "Wokingham",
-            "Surrey",
-            "London",
+            AddressLine("100 SuttonStreet"),
+            AddressLine("Wokingham").some,
+            AddressLine("Surrey").some,
+            AddressLine("London").some,
             Postcode("DH14 1EJ")
           )
         ),
