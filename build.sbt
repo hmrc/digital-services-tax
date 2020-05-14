@@ -22,10 +22,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     majorVersion                     := 0,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test ++ Seq(
-      "com.softwaremill.macwire"  %% "macros"                % "2.3.3" % Test,
-      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.3" % Test,
-      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.3" % Test,
-      "com.softwaremill.macwire"  %% "util"                  % "2.3.3" % Test
+      "com.softwaremill.macwire"  %% "macros"                % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "util"                  % "2.3.4" % Test
     )
   )
   .settings(scoverageSettings)
@@ -35,3 +35,5 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.jcenterRepo)
 
 resolvers += Resolver.bintrayRepo("wolfendale", "maven")
+
+scalaVersion := "2.12.11"
