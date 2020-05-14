@@ -103,7 +103,7 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
        |    "organisationType": "Not Specified"
        |  },
        |  "address": {
-       |    "addressLine1": "Sky, 33R",
+       |    "addressLine1": "Sky 33R",
        |    "addressLine2": "605 West 42nd Street",
        |    "addressLine3": "New York",
        |    "addressLine4": "",
@@ -124,7 +124,7 @@ class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyC
         Company(
           CompanyName("Trotters Trading"),
           ForeignAddress(
-            line1 = AddressLine("Sky, 33R"),
+            line1 = AddressLine("Sky 33R"),
             line2 = AddressLine("605 West 42nd Street").some,
             line3 = AddressLine("New York").some,
             line4 = None,

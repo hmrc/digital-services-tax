@@ -344,7 +344,7 @@ object TestInstances {
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
         Gen.some(arbitrary[DSTRegNumber])
-        ).mapN(Registration.apply)
+      ).mapN(Registration.apply)
     }
   )
 
