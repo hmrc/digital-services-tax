@@ -34,23 +34,6 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
     }
   }
 
-  it should "concatenate lines in a UKAddress value" in {
-
-    val generator = for {
-      nonEmptyLine1 <- Sample.generator[ShortString].map(ss => AddressLine(ss.value))
-      line2 <- Sample.generator[ShortString].map(ss => AddressLine(ss.value).some)
-      line3 <- Sample.generator[ShortString].map(ss => AddressLine(ss.value).some)
-      line4 <- Sample.generator[ShortString].map(ss => AddressLine(ss.value).some)
-    } yield UkAddress(
-      nonEmptyLine1,
-      line2,
-      line3,
-      line4,
-      Postcode("E1N 4WW")
-    )
-
-  }
-
   it should "correctly substract 3 months from a period" in {
     forAll { period: Period =>
       period.paymentDue shouldEqual period.end.minusMonths(3)
