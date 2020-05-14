@@ -61,6 +61,7 @@ object TestInstances {
   def nonEmptyString: Gen[NonEmptyString] =
     arbitrary[String].filter(_.nonEmpty).map{NonEmptyString.apply}
 
+
   implicit class RichRegexValidatedString[A <: RegexValidatedString](val in: A) {
     def gen = RegexpGen.from(in.regex).map{in.apply}
   }
@@ -73,7 +74,7 @@ object TestInstances {
   )
 
   def genGroupCo: Gen[GroupCompany] = (
-    nonEmptyString,
+    CompanyName.gen,
     Gen.option(UTR.gen)
     ).mapN(GroupCompany.apply)
 
@@ -198,6 +199,10 @@ object TestInstances {
     Gen.oneOf(ibanList).map(IBAN.apply)
   }
 
+  implicit val argRestrictedString: Arbitrary[RestrictiveString] = Arbitrary(
+    RestrictiveString.gen
+  )
+
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
@@ -220,9 +225,9 @@ object TestInstances {
 
   def genRepayment: Gen[RepaymentDetails] =
     (
-      nonEmptyString,
+      AccountName.gen,
       genBankAccount
-      ).mapN(RepaymentDetails.apply)
+    ).mapN(RepaymentDetails.apply)
 
   def date(start: LocalDate, end: LocalDate): Gen[LocalDate] =
     Gen.choose(start.toEpochDay, end.toEpochDay).map(LocalDate.ofEpochDay)
@@ -263,6 +268,9 @@ object TestInstances {
   implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
   implicit def safeId: Arbitrary[SafeId] = Arbitrary(SafeId.gen)
+  implicit def arbAddressLine: Arbitrary[AddressLine] = Arbitrary(AddressLine.gen)
+  implicit def arbCompanyName: Arbitrary[CompanyName] = Arbitrary(CompanyName.gen)
+
 
   implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
     import com.outworkers.util.samplers._
@@ -279,21 +287,23 @@ object TestInstances {
 
   implicit def arbAddr: Arbitrary[Address] = Arbitrary {
 
-    val ukGen: Gen[Address] = (
-      neString(40),
-      arbitrary[String].map{_.take(40)},
-      arbitrary[String].map{_.take(40)},
-      arbitrary[String].map{_.take(40)},
-      arbitrary[Postcode]
-      ).mapN(UkAddress.apply)
+    val ukGen: Gen[Address] =
+      (
+        arbitrary[AddressLine],
+        arbitrary[Option[AddressLine]],
+        arbitrary[Option[AddressLine]],
+        arbitrary[Option[AddressLine]],
+        arbitrary[CountryCode]
+      ).mapN(ForeignAddress.apply)
 
-    val foreignGen: Gen[Address] = (
-      neString(40),
-      arbitrary[String].map{_.take(40)},
-      arbitrary[String].map{_.take(40)},
-      arbitrary[String].map{_.take(40)},
-      arbitrary[CountryCode]
-      ).mapN(ForeignAddress)
+    val foreignGen: Gen[Address] =
+      (
+        arbitrary[AddressLine],
+        arbitrary[Option[AddressLine]],
+        arbitrary[Option[AddressLine]],
+        arbitrary[Option[AddressLine]],
+        arbitrary[Postcode]
+      ).mapN(UkAddress.apply)
 
     Gen.oneOf(ukGen, foreignGen)
 
@@ -301,7 +311,7 @@ object TestInstances {
 
   implicit def arbCo: Arbitrary[Company] = Arbitrary(
     (
-      arbitrary[NonEmptyString],
+      arbitrary[CompanyName],
       arbitrary[Address]
       ).mapN(Company.apply)
   )
@@ -317,8 +327,8 @@ object TestInstances {
 
   implicit def arbContact: Arbitrary[ContactDetails] = Arbitrary {
     (
-      neString(40),
-      neString(40),
+      arbitrary[RestrictiveString],
+      arbitrary[RestrictiveString],
       arbitrary[PhoneNumber],
       arbitrary[Email]
       ).mapN(ContactDetails.apply)
@@ -334,7 +344,7 @@ object TestInstances {
         date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
         arbitrary[LocalDate],
         Gen.some(arbitrary[DSTRegNumber])
-        ).mapN(Registration.apply)
+      ).mapN(Registration.apply)
     }
   )
 

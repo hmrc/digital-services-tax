@@ -51,23 +51,25 @@ trait SimpleJson {
     override def writes(o: NonEmptyString): JsValue = JsString(o)
   }
 
-  implicit val postcodeFormat       = validatedStringFormat(Postcode, "postcode")
-  implicit val phoneNumberFormat    = validatedStringFormat(PhoneNumber, "phone number")
-  implicit val utrFormat            = validatedStringFormat(UTR, "UTR")
-  implicit val safeIfFormat         = validatedStringFormat(SafeId, "SafeId")
-  implicit val formBundleNoFormat   = validatedStringFormat(FormBundleNumber, "FormBundleNumber")
-  implicit val internalIdFormat     = validatedStringFormat(InternalId, "internal id")  
-  implicit val emailFormat          = validatedStringFormat(Email, "email")
-  implicit val countryCodeFormat    = validatedStringFormat(CountryCode, "country code")
-  implicit val sortCodeFormat       = validatedStringFormat(SortCode, "sort code")
-  implicit val accountNumberFormat  = validatedStringFormat(AccountNumber, "account number")
-  implicit val ibanFormat           = validatedStringFormat(IBAN, "IBAN number")
-  implicit val periodKeyFormat      = validatedStringFormat(Period.Key, "Period Key")
+  implicit val postcodeFormat             = validatedStringFormat(Postcode, "postcode")
+  implicit val phoneNumberFormat          = validatedStringFormat(PhoneNumber, "phone number")
+  implicit val utrFormat                  = validatedStringFormat(UTR, "UTR")
+  implicit val safeIfFormat               = validatedStringFormat(SafeId, "SafeId")
+  implicit val formBundleNoFormat         = validatedStringFormat(FormBundleNumber, "FormBundleNumber")
+  implicit val internalIdFormat           = validatedStringFormat(InternalId, "internal id")
+  implicit val emailFormat                = validatedStringFormat(Email, "email")
+  implicit val countryCodeFormat          = validatedStringFormat(CountryCode, "country code")
+  implicit val sortCodeFormat             = validatedStringFormat(SortCode, "sort code")
+  implicit val accountNumberFormat        = validatedStringFormat(AccountNumber, "account number")
+  implicit val accountNameFormat          = validatedStringFormat(AccountName, "account name")
+  implicit val ibanFormat                 = validatedStringFormat(IBAN, "IBAN number")
+  implicit val periodKeyFormat            = validatedStringFormat(Period.Key, "Period Key")
+  implicit val restrictiveFormat          = validatedStringFormat(RestrictiveString, "name")
+  implicit val companyNameFormat          = validatedStringFormat(CompanyName, "company name")
+  implicit val mandatoryAddressLineFormat = validatedStringFormat(AddressLine, "address line")
+  implicit val dstRegNoFormat             = validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
 
-  implicit val dstRegNoFormat       =
-    validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
-
-    implicit val percentFormat: Format[Percent] = new Format[Percent] {
+  implicit val percentFormat: Format[Percent] = new Format[Percent] {
     override def reads(json: JsValue): JsResult[Percent] = {
       json match {
         case JsNumber(value) =>
@@ -123,9 +125,9 @@ object BackendAndFrontendJson extends SimpleJson {
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
         k.split(":") match {
           case Array(name, utrS) =>
-            GroupCompany(NonEmptyString(name), Some(UTR(utrS))) -> v.value
+            GroupCompany(CompanyName(name), Some(UTR(utrS))) -> v.value
           case Array(name) =>
-            GroupCompany(NonEmptyString(name), None) -> v.value
+            GroupCompany(CompanyName(name), None) -> v.value
         }
       })
     }

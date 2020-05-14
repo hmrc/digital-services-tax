@@ -29,6 +29,6 @@ case class DomesticBankAccount(
 ) extends BankAccount
 
 case class RepaymentDetails(
-  accountName: NonEmptyString,
+  accountName: AccountName,
   bankAccount: BankAccount
 )
