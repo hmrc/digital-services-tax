@@ -101,6 +101,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val credentialWrites = Json.writes[Credentials]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
+  implicit val finTransactFormat: OFormat[FinancialTransaction] = Json.format[FinancialTransaction]
 
   import Enrolment.idFormat
   implicit val enrolmentWrites = Json.format[Enrolment]
@@ -233,5 +234,4 @@ object BackendAndFrontendJson extends SimpleJson {
 
     def writes(o: Unit): JsValue = JsNull
   }
-
 }

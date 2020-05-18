@@ -18,27 +18,25 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
-import play.api.libs.json.{JsValue, Json, Writes, Reads}
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FinancialTransaction}
+import play.api.Mode
+import play.api.libs.json._
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import java.time.LocalDate
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import java.net.URLEncoder.encode
 
 @Singleton
 class FinancialDataConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
-  servicesConfig: ServicesConfig,
+  val servicesConfig: ServicesConfig,
   appConfig: AppConfig,
   ec: ExecutionContext
-) extends DesHelpers(servicesConfig) { 
+) extends DesHelpers { 
 
   implicit val ec2 = ec
 
@@ -79,7 +77,19 @@ class FinancialDataConnector @Inject()(
     val uri = s"$desURL/enterprise/financial-data/ZDST/$dstRegNo/DST?" ++
       args.map { encodePair }.mkString("&")
 
-    implicit val readTransactionList: Reads[List[FinancialTransaction]] = ???
+    implicit val readTransactionList = new Reads[List[FinancialTransaction]] {
+
+      // dummy testing data until we have a viable sample payload to analyse from ETMP
+      def reads(json: JsValue): JsResult[List[FinancialTransaction]] = JsSuccess(
+        List(
+          FinancialTransaction(LocalDate.of(2020, 4, 1), "Opening balance", 0),
+          FinancialTransaction(LocalDate.of(2021, 4, 7), "Payment received", 513000.40),
+          FinancialTransaction(LocalDate.of(2021, 4, 11), "Late payment fee", -100),
+          FinancialTransaction(LocalDate.of(2021, 7, 31), "Return received", -512000.40),
+          FinancialTransaction(LocalDate.of(2021, 8, 11), "Repayment", 	-900)
+        )
+      )
+    }
 
     http.GET[List[FinancialTransaction]](uri)
   }
