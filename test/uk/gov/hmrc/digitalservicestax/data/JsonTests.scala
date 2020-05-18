@@ -19,17 +19,23 @@ package uk.gov.hmrc.digitalservicestax.data
 import java.time.LocalDate
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
+import org.scalatest.{Assertion, EitherValues, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, JsError, JsPath, JsResult, JsString, Json, JsonValidationError}
+import play.api.libs.json.{Format, JsError, JsNull, JsObject, JsPath, JsResult, JsString, Json, JsonValidationError}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import BackendAndFrontendJson._
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
-import uk.gov.hmrc.digitalservicestax.services.EeittInterface._
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
+import uk.gov.hmrc.digitalservicestax.data
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
+class JsonTests extends FlatSpec
+  with Matchers
+  with ScalaCheckDrivenPropertyChecks
+  with EitherValues
+  with OptionValues {
 
   def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
     forAll { sample: T =>
@@ -54,6 +60,22 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
 
   it should "serialize and de-serialise a Postcode instance" in {
     testJsonRoundtrip[Postcode]
+  }
+
+  it should "purge none and empty values from a map of js values" in {
+    val generated = JsString(gen[ShortString].value)
+    val source = JsObject(Seq(
+      "object_example" -> JsObject(Seq("bla" -> generated)),
+      "null-example" -> JsNull,
+      "empty-string-example" -> JsString(""),
+      "good-example" -> JsString("good")
+    ))
+
+    val res = RosmRegisterWithoutIDRequest.purgeNullAndEmpty(source)
+    res.value should contain theSameElementsAs (JsObject(Seq(
+      "object_example" -> JsObject(Seq("bla" -> generated)),
+      "good-example" -> JsString("good")
+    )).value)
   }
 
   it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
@@ -146,8 +168,31 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip[LocalDate]
   }
 
+  it should "fail to parse an invalid LocalDate" in {
+    val source = JsString(gen[ShortString].value)
+    val expectionSpec = implicitly[Format[LocalDate]].reads(source)
+    val lastError = JsError(expectionSpec.asEither.left.value)
+
+    val jsError = JsError(
+      List(
+        (JsPath, List(JsonValidationError(List(s"Text '${source.value}' could not be parsed at index 0"))))
+      )
+    )
+
+    lastError shouldBe jsError
+  }
+
+  it should "serialize and de-serialise an optional LocalDate" in {
+    testJsonRoundtrip[Option[LocalDate]]
+  }
+
   it should "serialize and de-serialise a Map[Activity, Percent]" in {
     testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
+  }
+
+
+  it should "serialize and de-serialise a CompanyRegFormat" in {
+    testJsonRoundtrip[CompanyRegWrapper]
   }
 
   it should "serialize an enum entry as a string" in {
@@ -166,8 +211,29 @@ class JsonTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChec
     testJsonRoundtrip(generator)
   }
 
-//
-//  it should "serialize and de-serialise a DomesticBankAccount instance" in {
-//    testJsonRoundtrip[DomesticBankAccount]
-//  }
+  it should "test the JSON schema for Company" in {
+    forAll { company: Company =>
+      JsonSchemaChecker[data.Company](company, "rosm-response")
+    }
+  }
+
+
+  it should "serialize a scala.Unit" in {
+    testJsonRoundtrip[Unit](Gen.const(()))
+  }
+
+  it should "fail to parse a scala.Unit from a non JsNull JSON source" in {
+    val jsstr = JsString("abasgjas")
+    unitFormat.reads(jsstr) shouldBe JsError(s"expected JsNull, encountered $jsstr")
+  }
+
+  it should "serialize a random option format" in {
+    testJsonRoundtrip[Option[NonEmptyString]](Gen.option(nonEmptyString))
+  }
+
+  it should "test the JSON schema for registratiom" in {
+    forAll { reg: Registration =>
+      JsonSchemaChecker[data.Registration](reg, "rosm-response")
+    }
+  }
 }

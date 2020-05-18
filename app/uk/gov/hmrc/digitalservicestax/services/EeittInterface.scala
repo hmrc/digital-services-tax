@@ -75,17 +75,13 @@ object EeittInterface {
            "isrScenario" -> "ZDS2",
            "commonDetails" -> Json.obj(
              "legalEntity" -> Json.obj(
- 	      "dateOfApplication" -> LocalDate.now.toString, // should this always be todays date?
- 	      "taxStartDate" -> dateLiable // should this always be todays date?
+               "dateOfApplication" -> LocalDate.now.toString,
+               "taxStartDate" -> dateLiable
              ),
              "customerIdentificationNumber" -> Json.obj(
-               //	      "custIDNumber" -> "???", // what should this be?
- 	      "noIdentifier" -> o.companyReg.useSafeId,  // Expected to always be False for MDTP submissions, except for Rosm without ID route
-//               "title" -> customer.title,
-               "custFirstName" -> contact.forename,
-               "custLastName" -> contact.surname
-//               "custDOB" -> customer.dateOfBirth
- //	      "organisationName" -> customer.organisationName,
+ 	            "noIdentifier" -> o.companyReg.useSafeId,  // Expected to always be False for MDTP submissions, except for Rosm without ID route
+              "custFirstName" -> contact.forename,
+              "custLastName" -> contact.surname
              ),
              "businessContactDetails" -> Json.obj(
                "addressInputModeIndicator" -> "2",
@@ -109,9 +105,9 @@ object EeittInterface {
              "A_DST_PERIOD_END_DATE" -> strDate(accountingPeriodEnd),
              "A_TAX_START_DATE" -> strDate(dateLiable),
              "A_CORR_ADR_LINE_1" -> companyReg.company.address.line1,
-             "A_CORR_ADR_LINE_2" -> companyReg.company.address.line2,
-             "A_CORR_ADR_LINE_3" -> companyReg.company.address.line3,
-             "A_CORR_ADR_LINE_4" -> companyReg.company.address.line4,
+             "A_CORR_ADR_LINE_2" -> companyReg.company.address.line2.getOrElse(""),
+             "A_CORR_ADR_LINE_3" -> companyReg.company.address.line3.getOrElse(""),
+             "A_CORR_ADR_LINE_4" -> companyReg.company.address.line4.getOrElse(""),
              "A_CORR_ADR_POST_CODE" -> companyReg.company.address.postalCode,
              "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
 //             "A_DST_GLOBAL_ID" -> ultimateOwner.reference
@@ -123,7 +119,13 @@ object EeittInterface {
      }
   }
 
-  def returnRequestWriter(dstRegNo: String, period: Period, isAmend: Boolean = false, showReliefAmount: Boolean = false) = new Writes[Return] {
+  def returnRequestWriter(
+    dstRegNo: String,
+    period: Period,
+    isAmend: Boolean = false,
+    showReliefAmount: Boolean = false,
+    forAudit: Boolean = false
+  ) = new Writes[Return] {
     def writes(o: Return): JsValue = {
       import o._
 
@@ -202,15 +204,18 @@ object EeittInterface {
         "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
       ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries ++ reliefAmount
 
-      val regimeSpecificJson = JsArray(
-        regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
-          Json.obj(
-            "paramSequence" -> "01",
-            "paramName" -> key,
-            "paramValue" -> value
-          )
-        }
-      )
+      val regimeSpecificJson =
+        if(forAudit)
+          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2))))
+        else JsArray(
+          regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
+            Json.obj(
+              "paramSequence" -> "01",
+              "paramName" -> key,
+              "paramValue" -> value
+            )
+          }
+        )
 
       Json.obj(
         "receivedAt" -> ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),

@@ -34,7 +34,7 @@ class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPr
   }
 
   "A registration API call" should "conform to the schema" in {
-    forAll { (subRequest: Registration) => 
+    forAll { (subRequest: Registration) =>
       val json = EeittInterface.registrationWriter.writes(subRequest)
       SchemaChecker.EeittSubscribe.request.errorsIn(json) shouldBe (None)
     }

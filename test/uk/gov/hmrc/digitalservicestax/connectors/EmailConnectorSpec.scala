@@ -17,9 +17,10 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{ContactDetails, DSTRegNumber, NonEmptyString, Period}
+import uk.gov.hmrc.digitalservicestax.data.{CompanyName, ContactDetails, DSTRegNumber, Period}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
@@ -33,9 +34,10 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should get no response back if des is not available" in {
+    implicit def arbCompanyName: Arbitrary[CompanyName] = Arbitrary(CompanyName.gen)
     val contactDetails = arbitrary[ContactDetails].sample.value
-    val companyName = arbitrary[NonEmptyString].sample.value
-    val parentRef = arbitrary[NonEmptyString].sample.value
+    val companyName = arbitrary[CompanyName].sample.value
+    val parentRef = arbitrary[CompanyName].sample.value
     val dstNumber = arbitrary[DSTRegNumber].sample.value
     val period = arbitrary[Period].sample.value
 
@@ -44,14 +46,20 @@ class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyCheck
         .willReturn(aResponse()
         .withStatus(200)))
 
-    val response = EmailTestConnector.sendConfirmationEmail(contactDetails, companyName, parentRef, dstNumber, period)
+    val response = EmailTestConnector.sendConfirmationEmail(
+      contactDetails,
+      companyName,
+      parentRef,
+      dstNumber,
+      period)
+
     whenReady(response) { res => }
 
   }
 
   "should send a confirmation email for a submission received" in {
     val contactDetails = arbitrary[ContactDetails].sample.value
-    val companyName = arbitrary[NonEmptyString].sample.value
+    val companyName = arbitrary[CompanyName].sample.value
 
     stubFor(
       post(urlPathEqualTo("/hmrc/email"))

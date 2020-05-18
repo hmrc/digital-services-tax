@@ -17,31 +17,29 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 sealed trait Address {
-  def line1: NonEmptyString
-  def line2: String
-  def line3: String
-  def line4: String
+  def line1: AddressLine
+  def line2: Option[AddressLine]
+  def line3: Option[AddressLine]
+  def line4: Option[AddressLine]
   def countryCode: CountryCode
   def postalCode: String
-  def lines: List[String] =
-    line1 :: line2 :: line3 :: line4 :: postalCode :: countryCode :: Nil
 }
 
 case class UkAddress(
-  line1: NonEmptyString,
-  line2: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line1: AddressLine,
+  line2: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line3: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line4: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
   postalCode: Postcode
 ) extends Address {
   def countryCode = CountryCode("GB")
 }
 
 case class ForeignAddress(
-  line1: NonEmptyString,
-  line2: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: String, // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line1: AddressLine,
+  line2: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line3: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line4: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
   countryCode: CountryCode
 ) extends Address {
   def postalCode: String = ""

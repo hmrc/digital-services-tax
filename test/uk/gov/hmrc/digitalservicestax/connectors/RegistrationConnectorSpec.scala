@@ -26,7 +26,6 @@ import com.outworkers.util.samplers._
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.http.HeaderCarrier
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
