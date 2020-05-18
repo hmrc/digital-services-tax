@@ -35,8 +35,8 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
 
   def sendConfirmationEmail(
     contact: ContactDetails,
-    companyName: NonEmptyString,
-    parentCompanyName: NonEmptyString,
+    companyName: CompanyName,
+    parentCompanyName: CompanyName,
     dstNumber: DSTRegNumber,
     paymentDeadline: Period
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
@@ -57,7 +57,7 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
     http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map { _ => () }
   }
 
-  def sendSubmissionReceivedEmail(contact: ContactDetails, companyName: NonEmptyString, parentCompany: Option[Company])(
+  def sendSubmissionReceivedEmail(contact: ContactDetails, companyName: CompanyName, parentCompany: Option[Company])(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] = {
     val params = Json.obj(

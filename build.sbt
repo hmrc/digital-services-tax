@@ -9,7 +9,7 @@ lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
   Seq(
     // Semicolon-separated list of regexs matching classes to exclude
-    ScoverageKeys.coverageExcludedPackages := "<empty>;.*views.*;.*prod.*;.*test.*;app.routes;testOnlyDoNotUseInAppConf;prod.*;uk.gov.hmrc.digitalservicestax.controllers;uk.gov.hmrc.digitalservicestax.controllers.javascript;uk.gov.hmrc.digitalservicestax.config;",
+    ScoverageKeys.coverageExcludedPackages := "<empty>;.*views.*;.*prod.*;.*test.*;app.routes;testOnlyDoNotUseInAppConf;prod.*;uk.gov.hmrc.digitalservicestax.controllers;uk.gov.hmrc.digitalservicestax.controllers.javascript;ltbs.resilientcalls;",
     ScoverageKeys.coverageExcludedFiles := "<empty>;.*BuildInfo.*;.*Routes.*;testOnlyDoNotUseInAppConf;",
     ScoverageKeys.coverageMinimum := 80,
     ScoverageKeys.coverageFailOnMinimum := false,
@@ -22,10 +22,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     majorVersion                     := 0,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test ++ Seq(
-      "com.softwaremill.macwire"  %% "macros"                % "2.3.3" % "provided",
-      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.3" % "provided",
-      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.3",
-      "com.softwaremill.macwire"  %% "util"                  % "2.3.3"
+      "com.softwaremill.macwire"  %% "macros"                % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.4" % Test,
+      "com.softwaremill.macwire"  %% "util"                  % "2.3.4" % Test
     )
   )
   .settings(scoverageSettings)
@@ -35,3 +35,5 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.jcenterRepo)
 
 resolvers += Resolver.bintrayRepo("wolfendale", "maven")
+
+scalaVersion := "2.12.11"
