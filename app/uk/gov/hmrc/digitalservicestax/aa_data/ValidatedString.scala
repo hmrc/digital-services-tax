@@ -41,23 +41,6 @@ trait ValidatedType[BaseType] {
     validateAndTransform(in) map {
       x => tag[Tag][BaseType](x)
     }
-
-//  def mapTC[TC[_]: cats.Functor](implicit monA: TC[BaseType]): TC[BaseType @@ Tag] =
-//    monA.map(apply)
-
-//  implicit def pathBinder(implicit baseBinder: PathBindable[BaseType]): PathBindable[BaseType @@ Tag] =
-//    new PathBindable[BaseType @@ Tag] {
-//      import cats.syntax.either._
-//
-//      override def bind(key: String, value: String): Either[String, BaseType @@ Tag] =
-//        baseBinder.bind(key, value) flatMap {of(_) match {
-//          case Some(x) => Right(x: BaseType @@ Tag)
-//          case None    => Left(s""""$value" is not a valid ${className.init}""")
-//        }}
-//
-//      override def unbind(key: String, value: BaseType @@ Tag): String =
-//        baseBinder.unbind(key, value)
-//    }
 }
 
 class RegexValidatedString(

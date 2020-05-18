@@ -20,7 +20,6 @@ import shapeless.{:: => _, _}
 import tag._
 import cats.implicits._
 import cats.kernel.Monoid
-import play.api.i18n.Messages
 import java.time.LocalDate
 
 import fr.marcwrobel.jbanking.iban.Iban

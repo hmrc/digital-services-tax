@@ -16,16 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
-
+import cats.implicits._
 import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
-import cats.implicits._
-import uk.gov.hmrc.auth.core.retrieve.Credentials
-import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
-import uk.gov.hmrc.digitalservicestax.services
+import uk.gov.hmrc.auth.core.Enrolment
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 trait SimpleJson {
 
@@ -69,7 +66,7 @@ trait SimpleJson {
   implicit val mandatoryAddressLineFormat = validatedStringFormat(AddressLine, "address line")
   implicit val dstRegNoFormat             = validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
 
-  implicit val percentFormat: Format[Percent] = new Format[Percent] {
+    implicit val percentFormat: Format[Percent] = new Format[Percent] {
     override def reads(json: JsValue): JsResult[Percent] = {
       json match {
         case JsNumber(value) =>
@@ -84,7 +81,7 @@ trait SimpleJson {
       }
     }
 
-    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o))
+    override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o.toString))
   }
 }
 
@@ -96,15 +93,12 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
   implicit val contactDetailsFormat: OFormat[ContactDetails] = Json.format[ContactDetails]
   implicit val companyRegWrapperFormat: OFormat[CompanyRegWrapper] = Json.format[CompanyRegWrapper]
-
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
-  implicit val credentialWrites = Json.writes[Credentials]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
 
   import Enrolment.idFormat
   implicit val enrolmentWrites = Json.format[Enrolment]
-  implicit val enrolmentsFormat = Json.format[Enrolments]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
@@ -115,7 +109,7 @@ object BackendAndFrontendJson extends SimpleJson {
 
     override def writes(o: Map[Activity, Percent]): JsValue = {
       JsObject(o.toSeq.map { case (k, v) =>
-        k.entryName -> JsNumber(BigDecimal(v))
+        k.entryName -> JsNumber(BigDecimal(v.toString))
       })
     }
   }
@@ -147,13 +141,29 @@ object BackendAndFrontendJson extends SimpleJson {
 
   implicit val periodFormat: OFormat[Period] = Json.format[Period]
 
-
-  implicit def basicDateFormatWrites: Writes[LocalDate] = new Writes[LocalDate] {
-    def writes(dt: LocalDate): JsValue = JsString(dt.toString)
+  val readCompanyReg = new Reads[CompanyRegWrapper] {
+    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+      JsSuccess(CompanyRegWrapper(
+        Company(
+          {
+            json \ "organisation" \ "organisationName"
+          }.as[CompanyName], {
+            json \ "address"
+          }.as[Address]
+        ),
+        safeId = SafeId(
+          {
+            json \ "safeId"
+          }.as[String]
+        ).some
+      ))
+    }
   }
 
-  implicit def basicDateFormat: Reads[LocalDate] = new Reads[LocalDate] {
-    import cats.syntax.either._
+  implicit def basicDateFormatWrites: Format[LocalDate] = new Format[LocalDate] {
+
+    def writes(dt: LocalDate): JsValue = JsString(dt.toString)
+
     def reads(i: JsValue): JsResult[LocalDate] = i match {
       case JsString(s) =>
         Either.catchOnly[DateTimeParseException]{
@@ -163,10 +173,6 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-
-  case class PeriodList(
-    list: List[(Period, Option[LocalDate])]
-  )
 
   implicit def writePeriods: Writes[List[(Period, Option[LocalDate])]] = new Writes[List[(Period, Option[LocalDate])]] {
     override def writes(o: List[(Period, Option[LocalDate])]): JsValue = {
@@ -228,6 +234,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val unitFormat = new Format[Unit] {
     def reads(json: JsValue): JsResult[Unit] = json match {
       case JsNull => JsSuccess(())
+      case JsObject(e) if e.isEmpty => JsSuccess(())
       case e => JsError(s"expected JsNull, encountered $e")
     }
 
