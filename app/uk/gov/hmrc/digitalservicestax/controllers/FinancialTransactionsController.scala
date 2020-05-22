@@ -20,15 +20,16 @@ package controllers
 import data._, BackendAndFrontendJson._
 import connectors.FinancialDataConnector
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import scala.concurrent._
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.libs.json._
 import actions._
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class FinancialTransactionsController @Inject()(
@@ -43,10 +44,10 @@ class FinancialTransactionsController @Inject()(
 
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
   implicit val ec: ExecutionContext = cc.executionContext
-
-  def lookup(): Action[JsValue] =
-    loggedIn.andThen(registered).async(parse.json) { implicit request =>
-      val regNo = request.registration.registrationNumber.get
+  implicit val hc: HeaderCarrier = new HeaderCarrier()
+  def lookup(): Action[AnyContent] = 
+    Action.async { 
+      val regNo = DSTRegNumber("AADST0123456789") // "^([A-Z]{2}DST[0-9]{10})$"
       connector.retrieveFinancialData(regNo).map { items =>
         val json = JsArray(items.map{Json.toJson(_)})
         Ok(json)

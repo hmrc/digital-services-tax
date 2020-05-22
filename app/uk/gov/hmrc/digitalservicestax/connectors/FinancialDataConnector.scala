@@ -17,19 +17,18 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
+import config.AppConfig
+import data.{DSTRegNumber, FinancialTransaction}
+
+import java.net.URLEncoder.encode
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
-import play.api.libs.json.{JsValue, Json, Writes, Reads, JsResult}
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FinancialTransaction}
-import backend_data._, DesFinancialTransaction._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import play.api.Mode
+import play.api.libs.json._
+import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import java.time.LocalDate
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
-import java.net.URLEncoder.encode
 
 @Singleton
 class FinancialDataConnector @Inject()(
@@ -76,6 +75,44 @@ class FinancialDataConnector @Inject()(
 
     val uri = s"$desURL/enterprise/financial-data/ZDST/$dstRegNo/DST?" ++
       args.map { encodePair }.mkString("&")
+
+    implicit val readTransactionList = new Reads[List[FinancialTransaction]] {
+      // dummy testing data until we have a viable sample payload to analyse from ETMP
+      def reads(json: JsValue): JsResult[List[FinancialTransaction]] = {
+
+        val JsArray(topLevelElements) = (json \ "financialTransactions").as[JsArray]
+        val items = topLevelElements.flatMap { topLevel =>
+          val JsArray(items) = (topLevel \ "items").as[JsArray]
+
+          val subItems: List[FinancialTransaction] = items.flatMap { s =>
+            (s \ "clearingDate").asOpt[LocalDate] match {
+              case Some(clearingDate) =>
+                val chargeType = (s \ "clearingReason").as[String]
+                val amount = (s \ "amount").as[BigDecimal]
+                List(FinancialTransaction(clearingDate, chargeType, amount))
+              case None => List.empty[FinancialTransaction]
+            }
+          }.toList
+          val chargeType = (topLevel \ "chargeType").as[String]
+
+          val description = {
+          import cats.implicits._            
+            (
+              (topLevel \ "taxPeriodFrom").asOpt[LocalDate],
+              (topLevel \ "taxPeriodTo").asOpt[LocalDate]
+            ).tupled match {
+              case Some((from, to)) => chargeType ++ s"<br />($from - $to)"
+              case None => chargeType
+            }
+          }
+          val originalAmount = (topLevel \ "originalAmount").as[BigDecimal]          
+          val transactionDate = (items.head \ "dueDate").as[LocalDate]
+          FinancialTransaction(transactionDate, description, -originalAmount) :: subItems
+        }
+
+        JsSuccess(items.toList.sortBy(_.date.toEpochDay()))
+      }
+    }
 
     http.GET[List[FinancialTransaction]](uri)
   }
