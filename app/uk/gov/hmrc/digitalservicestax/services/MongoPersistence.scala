@@ -29,7 +29,6 @@ import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.play.json._
 import collection._
 import play.modules.reactivemongo._
-import javax.inject._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
 object MongoPersistence {
@@ -60,8 +59,7 @@ object MongoPersistence {
   )
 }
 
-@Singleton
-class MongoPersistence @Inject()(
+class MongoPersistence(
   mongo: ReactiveMongoApi
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
   import mongo.database

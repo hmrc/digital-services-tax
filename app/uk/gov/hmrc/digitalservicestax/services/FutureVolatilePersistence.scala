@@ -21,13 +21,13 @@ import data._
 
 import scala.concurrent._
 import cats.instances.future._
-import javax.inject._
 
 import akka.actor._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 
-@Singleton
-class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {
+class FutureVolatilePersistence(
+  actorSystem: ActorSystem
+)(implicit ec: ExecutionContext) extends Persistence[Future] {
 
   val inner = new VolatilePersistence {}
 

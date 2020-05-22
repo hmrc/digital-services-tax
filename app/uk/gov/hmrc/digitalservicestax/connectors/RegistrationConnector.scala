@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Mode}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
@@ -31,8 +30,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import java.time.LocalDateTime
 
-@Singleton
-class RegistrationConnector @Inject()(
+class RegistrationConnector(
   val http: HttpClient,
   val mode: Mode,
   val servicesConfig: ServicesConfig,
