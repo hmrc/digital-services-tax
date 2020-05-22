@@ -17,19 +17,23 @@
 package uk.gov.hmrc.digitalservicestax
 
 import _root_.controllers.AssetsComponents
+import com.kenshoo.play.metrics.MetricsController
+import com.kenshoo.play.metrics.{Metrics, MetricsImpl}
 import com.softwaremill.macwire._
-import play.api.ApplicationLoader.Context
-import play.api._
+import play.api._, ApplicationLoader.Context
 import play.api.i18n._
-import play.api.routing.Router
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpAuditing
-import uk.gov.hmrc.play.bootstrap.config._
-import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
-import play.modules.reactivemongo.ReactiveMongoApiFromContext
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import play.api.libs.ws.ahc.AhcWSComponents
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
+import play.api.mvc.BodyParsers
+import play.api.mvc.{MessagesActionBuilder, DefaultMessagesActionBuilderImpl, DefaultMessagesControllerComponents}
+import play.api.routing.Router
+import play.modules.reactivemongo.ReactiveMongoApiFromContext
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
+import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
+import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.play.bootstrap.config._
+import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, DefaultHttpClient, HttpClient}
+import uk.gov.hmrc.play.health.HealthController
 
 /**
  * Application loader that wires up the application dependencies using Macwire
@@ -61,9 +65,9 @@ abstract class BasicComponents(context: Context)
   }
   override implicit lazy val environment: Environment = context.environment
   def httpClient: HttpClient = wire[DefaultHttpClient]
-  lazy val bp = new play.api.mvc.BodyParsers.Default(playBodyParsers)
-  lazy val messagesactionbuilder = wire[play.api.mvc.DefaultMessagesActionBuilderImpl]
-  override lazy val controllerComponents = wire[play.api.mvc.DefaultMessagesControllerComponents]
+  lazy val bp = new BodyParsers.Default(playBodyParsers)
+  lazy val messagesactionbuilder: MessagesActionBuilder = wire[DefaultMessagesActionBuilderImpl]
+  override lazy val controllerComponents = wire[DefaultMessagesControllerComponents]
 
   implicit override def configuration: Configuration = DefaultBase64ConfigDecoder.decodeConfig(
     context.initialConfiguration
@@ -72,19 +76,20 @@ abstract class BasicComponents(context: Context)
   // ----------------------------------------
   // assorted bits of hmrc 
   // ----------------------------------------
+
   val mode = environment.mode
   lazy val runMode = new RunMode(configuration, mode)
   val appName = configuration.get[String]("appName")
   lazy val auditingConfigProvider: AuditingConfigProvider =
     new AuditingConfigProvider(configuration, runMode, appName)
   val auditConnector = new DefaultAuditConnector(auditingConfigProvider.get())
-  lazy val serviceConfig = new uk.gov.hmrc.play.bootstrap.config.ServicesConfig(configuration, runMode)
+  lazy val serviceConfig = new ServicesConfig(configuration, runMode)
 
   val auditing: HttpAuditing = new DefaultHttpAuditing(auditConnector, configuration.get[String]("appName"))
-  lazy val authConnector = wire[uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector]
-  lazy val metrics = wire[com.kenshoo.play.metrics.MetricsImpl]
-  lazy val metricsController = wire[com.kenshoo.play.metrics.MetricsController]
-  lazy val healthController = wire[uk.gov.hmrc.play.health.HealthController]
+  lazy val authConnector: AuthConnector = wire[DefaultAuthConnector]
+  lazy val metrics: Metrics = wire[MetricsImpl]
+  lazy val metricsController = wire[MetricsController]
+  lazy val healthController = wire[HealthController]
 }
 
 class DstComponents(context: Context) extends BasicComponents(context) { 
