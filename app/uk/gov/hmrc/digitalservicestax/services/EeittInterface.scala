@@ -75,17 +75,13 @@ object EeittInterface {
            "isrScenario" -> "ZDS2",
            "commonDetails" -> Json.obj(
              "legalEntity" -> Json.obj(
- 	      "dateOfApplication" -> LocalDate.now.toString, // should this always be todays date?
- 	      "taxStartDate" -> dateLiable // should this always be todays date?
+               "dateOfApplication" -> LocalDate.now.toString,
+               "taxStartDate" -> dateLiable
              ),
              "customerIdentificationNumber" -> Json.obj(
-               //	      "custIDNumber" -> "???", // what should this be?
- 	      "noIdentifier" -> o.companyReg.useSafeId,  // Expected to always be False for MDTP submissions, except for Rosm without ID route
-//               "title" -> customer.title,
-               "custFirstName" -> contact.forename,
-               "custLastName" -> contact.surname
-//               "custDOB" -> customer.dateOfBirth
- //	      "organisationName" -> customer.organisationName,
+ 	            "noIdentifier" -> o.companyReg.useSafeId,  // Expected to always be False for MDTP submissions, except for Rosm without ID route
+              "custFirstName" -> contact.forename,
+              "custLastName" -> contact.surname
              ),
              "businessContactDetails" -> Json.obj(
                "addressInputModeIndicator" -> "2",
