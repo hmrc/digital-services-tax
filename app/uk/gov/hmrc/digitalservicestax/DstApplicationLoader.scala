@@ -34,6 +34,13 @@ import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.config._
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.play.health.HealthController
+import play.api.mvc.EssentialFilter
+import uk.gov.hmrc.play.bootstrap.filters.MDCFilter
+import uk.gov.hmrc.play.bootstrap.filters.microservice.DefaultMicroserviceAuditFilter
+import uk.gov.hmrc.play.bootstrap.filters.CacheControlFilter
+import com.kenshoo.play.metrics.MetricsFilterImpl
+import uk.gov.hmrc.play.bootstrap.filters.CacheControlConfig
+import uk.gov.hmrc.play.bootstrap.filters.DefaultLoggingFilter
 
 /**
  * Application loader that wires up the application dependencies using Macwire
@@ -90,34 +97,47 @@ abstract class BasicComponents(context: Context)
   lazy val metrics: Metrics = wire[MetricsImpl]
   lazy val metricsController = wire[MetricsController]
   lazy val healthController = wire[HealthController]
+
+  // filters
+  lazy val controllerConfigs: ControllerConfigs = wireWith(ControllerConfigs.fromConfig _)
+  lazy val cacheControlConfig: CacheControlConfig = wireWith(CacheControlConfig.fromConfig _)
+  lazy val httpAuditEvent: HttpAuditEvent = wire[DefaultHttpAuditEvent]
+
+  override def httpFilters: Seq[EssentialFilter] = Seq(
+    wire[MetricsFilterImpl],
+    wire[DefaultMicroserviceAuditFilter],
+    wire[DefaultLoggingFilter],
+    wire[CacheControlFilter],
+    wire[MDCFilter]
+  )
+  
 }
 
 class DstComponents(context: Context) extends BasicComponents(context) { 
 
-  private lazy val mongo = wire[services.MongoPersistence]
-  private lazy val loggedInAction = wire[actions.LoggedInAction]
-  private lazy val registeredAction = wire[actions.Registered]
-  private lazy val appConfig = new config.AppConfig(configuration, serviceConfig)
+  lazy val mongo = wire[services.MongoPersistence]
+  lazy val loggedInAction = wire[actions.LoggedInAction]
+  lazy val registeredAction = wire[actions.Registered]
+  lazy val appConfig = new config.AppConfig(configuration, serviceConfig)
 
   // connectors
-  private lazy val retConnector = wire[connectors.ReturnConnector]
-  private lazy val regConnector = wire[connectors.RegistrationConnector]
-  private lazy val testConnector = wire[test.TestConnector]
-  private lazy val emailConnector = wire[connectors.EmailConnector]
-  private lazy val taxEnrolConnector = wire[connectors.TaxEnrolmentConnector]
-  private lazy val rosmConnector = wire[connectors.RosmConnector]
+  lazy val retConnector = wire[connectors.ReturnConnector]
+  lazy val regConnector = wire[connectors.RegistrationConnector]
+  lazy val testConnector = wire[test.TestConnector]
+  lazy val emailConnector = wire[connectors.EmailConnector]
+  lazy val taxEnrolConnector = wire[connectors.TaxEnrolmentConnector]
+  lazy val rosmConnector = wire[connectors.RosmConnector]
 
   // controllers
-  private implicit lazy val returnsController = wire[controllers.ReturnsController]
-  private lazy val regController = wire[controllers.RegistrationsController]
-  private lazy val testController = wire[test.TestController]
-  private lazy val rosmController = wire[controllers.RosmController]
-  private lazy val teC = wire[controllers.TaxEnrolmentCallbackController]
+  implicit lazy val returnsController = wire[controllers.ReturnsController]
+  lazy val regController = wire[controllers.RegistrationsController]
+  lazy val testController = wire[test.TestController]
+  lazy val rosmController = wire[controllers.RosmController]
+  lazy val teC = wire[controllers.TaxEnrolmentCallbackController]
 
   // routing
   def router: Router = {
 
-    val prefix: String = ""
     lazy val appRoutes = wire[app.Routes]
     lazy val healthRoutes = wire[health.Routes]
     lazy val prodRoutes = wire[prod.Routes]
