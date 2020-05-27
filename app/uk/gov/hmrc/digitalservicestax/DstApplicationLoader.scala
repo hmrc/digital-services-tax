@@ -17,6 +17,7 @@
 package uk.gov.hmrc.digitalservicestax
 
 import _root_.controllers.AssetsComponents
+import com.github.ghik.silencer.silent
 import com.kenshoo.play.metrics._
 import com.softwaremill.macwire._
 import config.DstConfig
@@ -31,7 +32,6 @@ import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.CorePost
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
-import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.config._
 import uk.gov.hmrc.play.bootstrap.filters._
 import uk.gov.hmrc.play.bootstrap.filters.microservice.DefaultMicroserviceAuditFilter
@@ -80,8 +80,10 @@ abstract class BasicComponents(context: Context)
     import pureconfig._, generic.ProductHint, generic.auto._
     import pureconfig.configurable._
     import java.time.format.DateTimeFormatter
-    implicit val localDateConvert = localDateConfigConvert(DateTimeFormatter.ISO_DATE)
-    implicit def hint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+    @silent("never used") implicit val localDateConvert =
+      localDateConfigConvert(DateTimeFormatter.ISO_DATE)
+    @silent("never used") implicit def hint[T] =
+      ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
     ConfigSource.fromConfig(configuration.underlying).loadOrThrow[DstConfig]
   }
 
@@ -141,9 +143,9 @@ class DstComponents(context: Context) extends BasicComponents(context) {
 
   // routing
   def router: Router = {
-    lazy val prefix = ""
-    lazy val appRoutes = wire[app.Routes]
-    lazy val healthRoutes = wire[health.Routes]
+    @silent("never used") lazy val prefix = ""
+    @silent("never used") lazy val appRoutes = wire[app.Routes]
+    @silent("never used") lazy val healthRoutes = wire[health.Routes]
     lazy val prodRoutes = wire[prod.Routes]
 
     dstConfig.play.http.router match {

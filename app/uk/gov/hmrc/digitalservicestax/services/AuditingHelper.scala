@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.services
+package uk.gov.hmrc.digitalservicestax
+package services
 
-import cats.implicits.{none, _}
+import controllers.CallbackNotification
+import data._, BackendAndFrontendJson._
+
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
-import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import BackendAndFrontendJson._
 
 object AuditingHelper {
 
@@ -38,7 +37,7 @@ object AuditingHelper {
     formBundleNumber: FormBundleNumber,
     outcome: String,
     dstRegNo: Option[DSTRegNumber] = None
-  )(implicit hc: HeaderCarrier): ExtendedDataEvent = {
+  ): ExtendedDataEvent = {
     val details = Json.obj(
       "subscriptionId" -> formBundleNumber.toString,
       "dstRegistrationNumber" -> dstRegNo,

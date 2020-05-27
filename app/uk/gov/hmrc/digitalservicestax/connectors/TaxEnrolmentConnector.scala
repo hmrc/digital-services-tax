@@ -18,17 +18,16 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
-import play.api.{Logger, Mode}
+import play.api.Logger
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
-  val mode: Mode,
   config: DstConfig,
   testConnector: TestConnector
 ) extends DesHelpers {

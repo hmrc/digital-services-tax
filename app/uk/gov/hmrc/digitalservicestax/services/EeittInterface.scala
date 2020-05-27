@@ -19,11 +19,7 @@ package services
 
 import data._
 import play.api.libs.json._
-import cats.syntax.either._
-import cats.{Id, ~>}
-import cats.data.NonEmptySet
 import java.time.{Period => _, _}, format.DateTimeFormatter
-import enumeratum._, values._
 import scala.collection.immutable.ListMap
 
 object EeittInterface {
@@ -51,10 +47,6 @@ object EeittInterface {
             ))
         }
       )
-  }
-
-  private implicit def enumEntryWrites[A <: EnumEntry] = new Writes[A] {
-    def writes(a: A): JsValue = JsString(a.entryName)
   }
 
   implicit val registrationWriter = new Writes[Registration] {

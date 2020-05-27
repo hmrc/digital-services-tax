@@ -37,3 +37,5 @@ lazy val microservice = Project(appName, file("."))
 resolvers += Resolver.bintrayRepo("wolfendale", "maven")
 
 scalaVersion := "2.12.11"
+
+scalacOptions += "-P:silencer:pathFilters=target/.*" 

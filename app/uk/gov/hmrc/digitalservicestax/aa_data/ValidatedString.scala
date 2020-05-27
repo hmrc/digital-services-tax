@@ -20,7 +20,6 @@ import shapeless._
 import tag._
 import cats.implicits._
 import scala.util.matching.Regex
-import play.api.mvc.PathBindable
 
 trait ValidatedType[BaseType] {
 

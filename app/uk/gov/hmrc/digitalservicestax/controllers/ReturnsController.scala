@@ -17,23 +17,18 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
-import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import play.api.{Configuration, Logger}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import data.{percentFormat => _, _}, BackendAndFrontendJson._
 import actions._
 import services.{AuditingHelper, MongoPersistence}
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-
-import scala.concurrent._
 
 import cats.implicits._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import scala.concurrent._
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 class ReturnsController(
   val authConnector: AuthConnector,

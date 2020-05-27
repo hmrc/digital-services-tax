@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
+import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
@@ -35,7 +35,6 @@ import uk.gov.hmrc.digitalservicestax.config.DstConfig
 @Singleton
 class RosmConnector @Inject()(
   val http: HttpClient,
-  val mode: Mode,
   val config: DstConfig
 ) extends DesHelpers {
 

@@ -18,11 +18,8 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import cats.Id
-import data._
-import java.time.{LocalDate, LocalDateTime}
-
-import cats.implicits._
-import uk.gov.hmrc.digitalservicestax.data.Period.Key
+import data._, Period.Key
+import java.time.LocalDateTime
 
 trait VolatilePersistence extends Persistence[Id] {
 
@@ -57,7 +54,6 @@ trait VolatilePersistence extends Persistence[Id] {
       _data = _data + (user -> ((reg, LocalDateTime.now)))
     }
 
-    val fixedDstNumber = randomDstNumber
     def get(user: InternalId) = {
       _data.get(user) match {
         case Some((r,d)) if r.registrationNumber.isEmpty && d.plusMinutes(1).isBefore(LocalDateTime.now) =>
