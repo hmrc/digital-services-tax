@@ -36,10 +36,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 
 class ReturnsController(
-  val authConnector: AuthConnector,  
-  val runModeConfiguration: Configuration,
-  val runMode: RunMode,
-  appConfig: AppConfig,
+  val authConnector: AuthConnector,
   cc: ControllerComponents,
   persistence: MongoPersistence,
   connector: connectors.ReturnConnector,
@@ -49,8 +46,6 @@ class ReturnsController(
 ) extends BackendController(cc) with AuthorisedFunctions {
 
   val log = Logger(this.getClass())
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
-
   implicit val ec: ExecutionContext = cc.executionContext
 
   def submitReturn(periodKeyString: String): Action[JsValue] =

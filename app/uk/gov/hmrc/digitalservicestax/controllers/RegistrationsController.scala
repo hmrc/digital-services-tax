@@ -24,16 +24,13 @@ import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.data._, BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.actions._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -42,8 +39,6 @@ import scala.concurrent._
 class RegistrationsController(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  val runMode: RunMode,
-  appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
@@ -53,12 +48,10 @@ class RegistrationsController(
   auditing: AuditConnector,
   loggedIn: LoggedInAction,
   registered: RegisteredOrPending,
-  val http: HttpClient,
-  val servicesConfig: ServicesConfig
-) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
+  val http: HttpClient
+) extends BackendController(cc) with AuthorisedFunctions {
 
   val log: Logger = Logger(this.getClass)
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 

@@ -20,14 +20,18 @@ import play.api.Mode
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
-class EmailConnector(http: HttpClient, val mode: Mode, servicesConfig: ServicesConfig) {
+class EmailConnector(
+  http: HttpClient,
+  val mode: Mode,
+  config: DstConfig
+) {
 
-  val emailUrl: String = servicesConfig.baseUrl("email")
+  val emailUrl: String = config.upstreamServices.email.baseUrl
 
   def sendConfirmationEmail(
     contact: ContactDetails,

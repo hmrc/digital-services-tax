@@ -32,17 +32,19 @@ import java.time.LocalDate
 
 import BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
 class ReturnConnector(
   val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig
+  val config: DstConfig
 )
   extends DesHelpers {
 
-  val desURL: String = servicesConfig.baseUrl("des")
+  val desURL: String = config.upstreamServices.des.baseUrl
   val registerPath = "cross-regime/subscription/DST"
+
+  val desConfig = config.upstreamServices.des
 
   def getNextPendingPeriod(
     dstRegNo: DSTRegNumber    
@@ -62,7 +64,7 @@ class ReturnConnector(
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
     val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
-      s"?from=${appConfig.obligationStartDate}" +
+      s"?from=${config.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"
 
     desGet[List[(Period, Option[LocalDate])]](url)
@@ -92,7 +94,7 @@ class ReturnConnector(
       Json.toJson(request)(writes)
     )
 
-    if (appConfig.logRegResponse) Logger.debug(
+    if (config.logging.registerResponse) Logger.debug(
       s"Return response is ${Await.result(result, 20.seconds)}"
     )
 

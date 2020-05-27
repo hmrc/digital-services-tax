@@ -22,7 +22,8 @@ object AppDependencies {
     "com.softwaremill.macwire" %% "macros"                 % "2.3.4"                % Provided,
     "com.softwaremill.macwire" %% "macrosakka"             % "2.3.4"                % Provided,
     "com.softwaremill.macwire" %% "util"                   % "2.3.4",
-    "com.softwaremill.macwire" %% "proxy"                  % "2.3.4"
+    "com.softwaremill.macwire" %% "proxy"                  % "2.3.4",
+    "com.github.pureconfig"   %% "pureconfig"               % "0.12.3"    
   )
 
   val test = Seq(

@@ -19,19 +19,19 @@ package uk.gov.hmrc.digitalservicestax.test
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
 class TestConnector(
   http: HttpClient,
   environment: Environment,
   configuration: Configuration,
-  servicesConfig: ServicesConfig
+  config: DstConfig
 ) {
 
-  private val stubUrl: String = servicesConfig.baseUrl("des")
+  private val stubUrl: String = config.upstreamServices.des.baseUrl
 
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
     http.GET[HttpResponse](s"$stubUrl/$url/$param")

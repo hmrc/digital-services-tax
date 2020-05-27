@@ -19,32 +19,29 @@ package uk.gov.hmrc.digitalservicestax.connectors
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
+import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig,
+  config: DstConfig,
   testConnector: TestConnector
 ) extends DesHelpers {
 
-  val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
-  val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
-  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
-  lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
+  private val teConfig = config.upstreamServices.taxEnrolments
+
+  val desConfig = config.upstreamServices.des
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    if (enabled) {
+    if (teConfig.enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
-          if (appConfig.logRegResponse) Logger.debug(
+          if (config.logging.registerResponse) Logger.debug(
             s"Tax Enrolments response is $Result"
           )
           Result
@@ -57,8 +54,8 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   }
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
-    if (enabled)
-      http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
+    if (teConfig.enabled)
+      http.GET[TaxEnrolmentsSubscription](s"${teConfig.baseUrl}/tax-enrolments/subscriptions/$subscriptionId")
     else {
       testConnector.getSubscription(subscriptionId)
     }
@@ -70,12 +67,12 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   }
 
   def subscribeUrl(subscriptionId: String) =
-    s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId/subscriber"
+    s"${teConfig.baseUrl}taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
   private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
     Json.obj(
-      "serviceName" -> serviceName,
-      "callback" -> s"$callbackUrl$formBundleNumber",
+      "serviceName" -> teConfig.serviceName,
+      "callback" -> s"${teConfig.callback}$formBundleNumber",
       "etmpId" -> safeId
     )
   }

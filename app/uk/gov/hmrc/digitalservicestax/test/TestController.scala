@@ -19,24 +19,24 @@ package uk.gov.hmrc.digitalservicestax.test
 import play.api.mvc.{Action, AnyContent, ControllerComponents, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import cats.implicits._
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-
+import uk.gov.hmrc.digitalservicestax.config._
 import scala.concurrent.{ExecutionContext, Future}
 
 class TestController(
   connector: TestConnector,
   cc: ControllerComponents,
   mcc: MessagesControllerComponents,
-  sc: ServicesConfig
+  config: DstConfig
 )(
   implicit ec: ExecutionContext
 ) extends BackendController(cc) with ExtraActions {
+
+  def desConfig = config.upstreamServices.des
 
   def triggerTaxEnrolmentCallback(seed: String): Action[AnyContent] = Action.async { implicit request =>
     connector.trigger("trigger/callback/te", seed) >>
       Future.successful(Ok("tax enrolment callback triggered "))
   }
 
-  override def servicesConfig: ServicesConfig = sc
   override def messagesControllerComponents: MessagesControllerComponents = mcc
 }

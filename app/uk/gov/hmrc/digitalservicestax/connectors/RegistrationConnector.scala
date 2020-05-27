@@ -20,27 +20,26 @@ package connectors
 import play.api.{Logger, Mode}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId, BackendAndFrontendJson}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import java.time.LocalDateTime
+import uk.gov.hmrc.digitalservicestax.config.DstConfig
 
 class RegistrationConnector(
   val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig,
+  val config: DstConfig,
   ec: ExecutionContext
 )
   extends DesHelpers {
 
-  val desURL: String = servicesConfig.baseUrl("des")
+  val desURL: String = config.upstreamServices.des.baseUrl
   val registerPath = "cross-regime/subscription/DST"
+  val desConfig = config.upstreamServices.des
 
   def send(
     idType: String,
@@ -59,7 +58,7 @@ class RegistrationConnector(
           s"$desURL/$registerPath/$t/$i", Json.toJson(request)
         )(implicitly, implicitly, addHeaders, implicitly)
 
-        if (appConfig.logRegResponse) Logger.debug(
+        if (config.logging.registerResponse) Logger.debug(
           s"Registration response is ${Await.result(result, 20.seconds)}"
         )
         result

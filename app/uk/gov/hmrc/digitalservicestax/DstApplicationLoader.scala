@@ -17,30 +17,26 @@
 package uk.gov.hmrc.digitalservicestax
 
 import _root_.controllers.AssetsComponents
-import com.kenshoo.play.metrics.MetricsController
-import com.kenshoo.play.metrics.{Metrics, MetricsImpl}
+import com.kenshoo.play.metrics._
 import com.softwaremill.macwire._
+import config.DstConfig
 import play.api._, ApplicationLoader.Context
 import play.api.i18n._
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.BodyParsers
-import play.api.mvc.{MessagesActionBuilder, DefaultMessagesActionBuilderImpl, DefaultMessagesControllerComponents}
+import play.api.mvc._
 import play.api.routing.Router
 import play.modules.reactivemongo.ReactiveMongoApiFromContext
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.PlayAuthConnector
+import uk.gov.hmrc.http.CorePost
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.config._
+import uk.gov.hmrc.play.bootstrap.filters._
+import uk.gov.hmrc.play.bootstrap.filters.microservice.DefaultMicroserviceAuditFilter
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.play.health.HealthController
-import play.api.mvc.EssentialFilter
-import uk.gov.hmrc.play.bootstrap.filters.MDCFilter
-import uk.gov.hmrc.play.bootstrap.filters.microservice.DefaultMicroserviceAuditFilter
-import uk.gov.hmrc.play.bootstrap.filters.CacheControlFilter
-import com.kenshoo.play.metrics.MetricsFilterImpl
-import uk.gov.hmrc.play.bootstrap.filters.CacheControlConfig
-import uk.gov.hmrc.play.bootstrap.filters.DefaultLoggingFilter
 
 /**
  * Application loader that wires up the application dependencies using Macwire
@@ -80,37 +76,46 @@ abstract class BasicComponents(context: Context)
     context.initialConfiguration
   )
 
+  val dstConfig: DstConfig = {
+    import pureconfig._, generic.ProductHint, generic.auto._
+    import pureconfig.configurable._
+    import java.time.format.DateTimeFormatter
+    implicit val localDateConvert = localDateConfigConvert(DateTimeFormatter.ISO_DATE)
+    implicit def hint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+    ConfigSource.fromConfig(configuration.underlying).loadOrThrow[DstConfig]
+  }
+
   // ----------------------------------------
   // assorted bits of hmrc 
   // ----------------------------------------
-
   val mode = environment.mode
   lazy val runMode = new RunMode(configuration, mode)
-  val appName = configuration.get[String]("appName")
   lazy val auditingConfigProvider: AuditingConfigProvider =
-    new AuditingConfigProvider(configuration, runMode, appName)
+    new AuditingConfigProvider(configuration, runMode, dstConfig.appName)
   val auditConnector = new DefaultAuditConnector(auditingConfigProvider.get())
-  lazy val serviceConfig = new ServicesConfig(configuration, runMode)
 
-  val auditing: HttpAuditing = new DefaultHttpAuditing(auditConnector, configuration.get[String]("appName"))
-  lazy val authConnector: AuthConnector = wire[DefaultAuthConnector]
+  val auditing: HttpAuditing = new DefaultHttpAuditing(auditConnector, dstConfig.appName)
+  
+  lazy val authConnector: AuthConnector = new PlayAuthConnector {
+    override val serviceUrl: String = dstConfig.upstreamServices.auth.baseUrl
+    override val http: CorePost = httpClient
+  }
+
   lazy val metrics: Metrics = wire[MetricsImpl]
-  lazy val metricsController = wire[MetricsController]
-  lazy val healthController = wire[HealthController]
+  lazy val metricsController = new MetricsController(metrics, controllerComponents)
+  lazy val healthController = new HealthController(configuration, environment, controllerComponents)
 
   // filters
   lazy val controllerConfigs: ControllerConfigs = wireWith(ControllerConfigs.fromConfig _)
-  lazy val cacheControlConfig: CacheControlConfig = wireWith(CacheControlConfig.fromConfig _)
-  lazy val httpAuditEvent: HttpAuditEvent = wire[DefaultHttpAuditEvent]
+  lazy val httpAuditEvent: HttpAuditEvent = new DefaultHttpAuditEvent(dstConfig.appName)
 
   override def httpFilters: Seq[EssentialFilter] = Seq(
-    wire[MetricsFilterImpl],
+    new MetricsFilterImpl(metrics),
     wire[DefaultMicroserviceAuditFilter],
-    wire[DefaultLoggingFilter],
-    wire[CacheControlFilter],
-    wire[MDCFilter]
-  )
-  
+    new DefaultLoggingFilter(controllerConfigs),
+    new CacheControlFilter(wireWith(CacheControlConfig.fromConfig _), materializer),
+    new MDCFilter(materializer, configuration, dstConfig.appName)
+  )  
 }
 
 class DstComponents(context: Context) extends BasicComponents(context) { 
@@ -118,7 +123,6 @@ class DstComponents(context: Context) extends BasicComponents(context) {
   lazy val mongo = wire[services.MongoPersistence]
   lazy val loggedInAction = wire[actions.LoggedInAction]
   lazy val registeredAction = wire[actions.Registered]
-  lazy val appConfig = new config.AppConfig(configuration, serviceConfig)
 
   // connectors
   lazy val retConnector = wire[connectors.ReturnConnector]
@@ -137,21 +141,14 @@ class DstComponents(context: Context) extends BasicComponents(context) {
 
   // routing
   def router: Router = {
-
+    lazy val prefix = ""
     lazy val appRoutes = wire[app.Routes]
     lazy val healthRoutes = wire[health.Routes]
     lazy val prodRoutes = wire[prod.Routes]
-    lazy val testOnlyDoNotUseInAppConfRoutes = wire[testOnlyDoNotUseInAppConf.Routes]
 
-    if (configuration.underlying.hasPath("play.http.router")) {
-      configuration.getOptional[String]("play.http.router") match {
-        case Some("testOnlyDoNotUseInAppConf.Routes") => testOnlyDoNotUseInAppConfRoutes
-        case Some("prod.Routes")                      => prodRoutes
-        case Some(other)                              => Logger.warn(s"Unrecognised router $other; using prod.Routes"); prodRoutes
-        case _                                        => prodRoutes
-      }
-    } else {
-      prodRoutes
+    dstConfig.play.http.router match {
+      case Some("testOnlyDoNotUseInAppConf.Routes") => wire[testOnlyDoNotUseInAppConf.Routes]
+      case _                                        => prodRoutes
     }
   }
 }

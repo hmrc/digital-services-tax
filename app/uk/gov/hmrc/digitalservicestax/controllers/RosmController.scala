@@ -34,13 +34,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class RosmController(
   val authConnector: AuthConnector,
   rosmConnector: RosmConnector,
-  val runModeConfiguration: Configuration,
-  val runMode: RunMode,
-  appConfig: AppConfig,
   cc: ControllerComponents
 ) extends BackendController(cc) with AuthorisedFunctions {
   val log = Logger(this.getClass())
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
 
