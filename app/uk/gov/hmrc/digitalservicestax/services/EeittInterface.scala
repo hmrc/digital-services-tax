@@ -168,7 +168,7 @@ object EeittInterface {
 //              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
               "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
               "A_BANK_ACC_NO" -> acctNo // Account number CHAR8
-            ) ++ Some(bsNo).filter(_.nonEmpty).map { a => 
+            ) ++ bsNo.filter(_.nonEmpty).map { a =>
               "A_BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
             }.toSeq
 

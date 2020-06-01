@@ -38,10 +38,8 @@ object TestInstances {
     Gen.alphaNumStr.map{_.take(255)}
     //    RegexpGen.from("""^[0-9a-zA-Z{À-˿’}\\- &`'^._|]{1,255}$""")
   )
-
-  // what range of values is acceptable? pennies? fractional pennies?
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0L, Long.MaxValue).map{BigDecimal.apply}
+    Gen.choose(0, 999999999999999L).map(b => Money(BigDecimal(b).setScale(2)))
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
@@ -203,6 +201,8 @@ object TestInstances {
     RestrictiveString.gen
   )
 
+  def gencomapOpt = Gen.option(gencomap)
+
   def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
     (
       genGroupCo,
@@ -215,11 +215,11 @@ object TestInstances {
     val genDomestic: Gen[DomesticBankAccount] = (
       SortCode.gen,
       AccountNumber.gen,
-      arbitrary[String]
+      Gen.option(BuildingSocietyRollNumber.gen)
       ).mapN(DomesticBankAccount.apply)
 
     val genForeign: Gen[ForeignBankAccount] =
-      arbIban.arbitrary.map{ForeignBankAccount.apply}
+      arbitrary[IBAN].map{ForeignBankAccount.apply}
     Gen.oneOf(genDomestic, genForeign)
   }
 
@@ -235,7 +235,7 @@ object TestInstances {
   implicit def returnGen: Arbitrary[Return] = Arbitrary((
     genActivityPercentMap,
     arbitrary[Money],
-    gencomap,
+    gencomapOpt,
     arbitrary[Money],
     arbitrary[Money],
     Gen.option(genRepayment)
