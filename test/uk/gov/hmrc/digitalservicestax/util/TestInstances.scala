@@ -38,8 +38,9 @@ object TestInstances {
     Gen.alphaNumStr.map{_.take(255)}
     //    RegexpGen.from("""^[0-9a-zA-Z{À-˿’}\\- &`'^._|]{1,255}$""")
   )
+
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0, 999999999999999L).map(b => Money(BigDecimal(b).setScale(2)))
+    Gen.choose(0, 1000000000000L).map(b => Money(BigDecimal(b).setScale(2)))
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
@@ -68,7 +69,7 @@ object TestInstances {
     (
       arbitrary[Activity],
       Gen.choose(0,100).map{x => Percent.apply(x.asInstanceOf[Byte])}
-      ).tupled
+    ).tupled
   )
 
   def genGroupCo: Gen[GroupCompany] = (
