@@ -17,18 +17,16 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import play.api.{Logger, Mode}
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
+import play.api.{Logger, Mode}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
+import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.{Registration, SafeId, BackendAndFrontendJson}
+import uk.gov.hmrc.digitalservicestax.data.Registration
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
-import java.time.LocalDateTime
 
 class RegistrationConnector(
   val http: HttpClient,

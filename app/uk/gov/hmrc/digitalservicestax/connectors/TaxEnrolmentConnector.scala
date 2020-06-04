@@ -24,8 +24,7 @@ import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
