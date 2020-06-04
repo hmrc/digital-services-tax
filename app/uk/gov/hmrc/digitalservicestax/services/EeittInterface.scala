@@ -168,7 +168,7 @@ object EeittInterface {
 //              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
               "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
               "A_BANK_ACC_NO" -> acctNo // Account number CHAR8
-            ) ++ Some(bsNo).filter(_.nonEmpty).map { a => 
+            ) ++ bsNo.filter(_.nonEmpty).map { a =>
               "A_BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
             }.toSeq
 
@@ -178,13 +178,15 @@ object EeittInterface {
           )
         }
 
-      val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
-        Seq(
-          "A_DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
-          "A_DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
-        ) ++ company.utr.map { u => 
-          ("A_DST_GROUP_MEM_ID" -> u)
-        }.toList
+      val breakdownEntries: Seq[(String, String)] = companiesAmount.fold(List.empty[(String, String)]){ x =>
+        x.toList flatMap { case (company, amt) =>
+          Seq(
+            "A_DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
+            "A_DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
+          ) ++ company.utr.map { u =>
+            "A_DST_GROUP_MEM_ID" -> u
+          }.toList
+        }
       }
 
       // N.B. not required for ETMP (yet) but needed for auditing
