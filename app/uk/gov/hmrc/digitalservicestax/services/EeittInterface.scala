@@ -178,8 +178,7 @@ object EeittInterface {
           )
         }
 
-      val breakdownEntries: Seq[(String, String)] = companiesAmount.fold(List.empty[(String, String)]){ x =>
-        x.toList flatMap { case (company, amt) =>
+      val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
           Seq(
             "A_DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
             "A_DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
@@ -187,7 +186,6 @@ object EeittInterface {
             "A_DST_GROUP_MEM_ID" -> u
           }.toList
         }
-      }
 
       // N.B. not required for ETMP (yet) but needed for auditing
       val reliefAmount: Seq[(String, String)] =
