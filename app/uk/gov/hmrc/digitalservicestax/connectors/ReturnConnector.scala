@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Mode}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
@@ -29,17 +28,17 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import java.time.{LocalDate, format}
-import format.DateTimeParseException
+import java.time.LocalDate
 
 import BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 
-@Singleton
-class ReturnConnector @Inject()(val http: HttpClient,
+class ReturnConnector(
+  val http: HttpClient,
   val mode: Mode,
   val servicesConfig: ServicesConfig,
-  appConfig: AppConfig)
+  appConfig: AppConfig
+)
   extends DesHelpers {
 
   val desURL: String = servicesConfig.baseUrl("des")

@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import java.time.LocalDate
-
-import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.data._
@@ -28,8 +25,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig: ServicesConfig) {
+class EmailConnector(http: HttpClient, val mode: Mode, servicesConfig: ServicesConfig) {
 
   val emailUrl: String = servicesConfig.baseUrl("email")
 

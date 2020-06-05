@@ -18,7 +18,11 @@ object AppDependencies {
     "commons-validator"      % "commons-validator"         % "1.6",
     "fr.marcwrobel"          % "jbanking"                  % "2.0.0",
     compilerPlugin("com.github.ghik" %% "silencer-plugin"  % "1.4.2"),
-    "com.github.ghik"        %% "silencer-lib"             % "1.4.2" % Provided
+    "com.github.ghik"        %% "silencer-lib"             % "1.4.2"                % Provided, 
+    "com.softwaremill.macwire" %% "macros"                 % "2.3.4"                % Provided,
+    "com.softwaremill.macwire" %% "macrosakka"             % "2.3.4"                % Provided,
+    "com.softwaremill.macwire" %% "util"                   % "2.3.4",
+    "com.softwaremill.macwire" %% "proxy"                  % "2.3.4"
   )
 
   val test = Seq(

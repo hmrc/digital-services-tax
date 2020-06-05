@@ -17,12 +17,11 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
@@ -32,8 +31,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton()
-class RosmController @Inject()(
+class RosmController(
   val authConnector: AuthConnector,
   rosmConnector: RosmConnector,
   val runModeConfiguration: Configuration,
