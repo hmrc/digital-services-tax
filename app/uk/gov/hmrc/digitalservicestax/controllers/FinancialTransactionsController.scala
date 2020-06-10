@@ -45,11 +45,16 @@ class FinancialTransactionsController @Inject()(
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
   implicit val ec: ExecutionContext = cc.executionContext
   implicit val hc: HeaderCarrier = new HeaderCarrier()
-  def lookup(): Action[AnyContent] = 
-    Action.async { 
-      val regNo = DSTRegNumber("AADST0123456789") // "^([A-Z]{2}DST[0-9]{10})$"
+  def lookup(): Action[AnyContent] =
+    loggedIn.andThen(registered).async { implicit request =>
+      val regNo = request.registration.registrationNumber.get      
       connector.retrieveFinancialData(regNo).map { items =>
-        val json = JsArray(items.map{Json.toJson(_)})
+        val opening = FinancialTransaction(
+          request.registration.dateLiable,
+          "Opening balance",
+          0
+        )
+        val json = JsArray({opening :: items}.map{Json.toJson(_)})
         Ok(json)
       }
     }
