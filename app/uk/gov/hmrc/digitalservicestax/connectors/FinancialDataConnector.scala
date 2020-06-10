@@ -94,20 +94,9 @@ class FinancialDataConnector @Inject()(
             }
           }.toList
           val chargeType = (topLevel \ "chargeType").as[String]
-
-          val description = {
-          import cats.implicits._            
-            (
-              (topLevel \ "taxPeriodFrom").asOpt[LocalDate],
-              (topLevel \ "taxPeriodTo").asOpt[LocalDate]
-            ).tupled match {
-              case Some((from, to)) => chargeType ++ s"<br />($from - $to)"
-              case None => chargeType
-            }
-          }
           val originalAmount = (topLevel \ "originalAmount").as[BigDecimal]          
           val transactionDate = (items.head \ "dueDate").as[LocalDate]
-          FinancialTransaction(transactionDate, description, -originalAmount) :: subItems
+          FinancialTransaction(transactionDate, chargeType, -originalAmount) :: subItems
         }
 
         JsSuccess(items.toList.sortBy(_.date.toEpochDay()))
