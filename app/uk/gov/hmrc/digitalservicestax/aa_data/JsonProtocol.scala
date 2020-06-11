@@ -115,6 +115,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
+  implicit val finTransactFormat: OFormat[FinancialTransaction] = Json.format[FinancialTransaction]
 
   import Enrolment.idFormat
   implicit val enrolmentWrites = Json.format[Enrolment]

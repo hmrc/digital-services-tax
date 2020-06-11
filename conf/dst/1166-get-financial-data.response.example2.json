@@ -1,0 +1,252 @@
+{
+    "idType": "ZDST",
+    "idNumber": "XZDST0000000235",
+    "regimeType": "DST",
+    "processingDate": "2020-05-21T10:40:45Z",
+    "financialTransactions": [
+	{
+            "chargeType": "DST Repayment Interest",
+            "mainType": "DST Repayment Interest",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "001830005550",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "0000003320007585",
+            "mainTransaction": "5925",
+            "subTransaction": "2925",
+            "originalAmount": -61143.84,
+            "clearedAmount": -61143.84,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-31",
+                    "amount": -61143.84,
+                    "clearingDate": "2019-01-01",
+                    "clearingReason": "Outgoing payment - Paid",
+                    "outgoingPaymentMethod": "BACS Payment out",
+                    "clearingSAPDocument": "002160001253"
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Return Charge",
+            "mainType": "DST Return Charge",
+            "taxPeriodFrom": "2019-12-10",
+            "taxPeriodTo": "2020-01-31",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "002750001319",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XK005000008819",
+            "mainTransaction": "5910",
+            "subTransaction": "1550",
+            "originalAmount": 50.21,
+            "outstandingAmount": 50.21,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-01",
+                    "amount": 50.21
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Return Charge",
+            "mainType": "DST Return Charge",
+            "taxPeriodFrom": "2019-01-01",
+            "taxPeriodTo": "2020-01-01",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "002970006355",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XM002750007937",
+            "mainTransaction": "5910",
+            "subTransaction": "1550",
+            "originalAmount": 11200000.21,
+            "clearedAmount": 11200000.21,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-01",
+                    "amount": 11200000.21,
+                    "clearingDate": "2019-01-01",
+                    "clearingReason": "Cleared by Payment",
+                    "clearingSAPDocument": "003000005160"
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Return Charge",
+            "mainType": "DST Return Charge",
+            "taxPeriodFrom": "2018-12-01",
+            "taxPeriodTo": "2019-11-30",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "003130006779",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XQ002750007956",
+            "mainTransaction": "5910",
+            "subTransaction": "1550",
+            "originalAmount": 22500000.51,
+            "outstandingAmount": 22500000.51,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-01",
+                    "amount": 22500000.51
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Determination",
+            "mainType": "DST Determination",
+            "taxPeriodFrom": "2020-01-01",
+            "taxPeriodTo": "2020-04-29",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "003140007608",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XV004100008115",
+            "mainTransaction": "5930",
+            "subTransaction": "1550",
+            "originalAmount": 100.0,
+            "outstandingAmount": 100.0,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-03-11",
+                    "amount": 1.0
+		},
+                {
+		    "subItem": "001",
+		    "dueDate": "2020-03-11",
+		    "amount": 99.0,
+		    "dunningLock": "Stand over order"
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Return Charge",
+            "mainType": "DST Return Charge",
+            "taxPeriodFrom": "2019-10-01",
+            "taxPeriodTo": "2019-10-30",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "003300005053",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XH002750007568",
+            "mainTransaction": "5910",
+            "subTransaction": "1550",
+            "originalAmount": 10000.21,
+            "clearedAmount": 10000.21,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-01",
+                    "amount": 10000.21,
+                    "clearingDate": "2019-11-01",
+                    "clearingReason": "Cleared by Payment",
+                    "paymentReference": "XZDST0000000235",
+                    "paymentAmount": 1000000.0,
+                    "paymentMethod": "BILLPAY/OLPG/GIROBANK",
+                    "paymentLot": "PS770001027",
+                    "paymentLotItem": "000001",
+                    "clearingSAPDocument": "003040006228"
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Repayment Interest",
+            "mainType": "DST Repayment Interest",
+            "taxPeriodFrom": "2019-01-01",
+            "taxPeriodTo": "2019-12-31",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "sapDocumentNumber": "003320007506",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XN005000007776",
+            "mainTransaction": "5925",
+            "subTransaction": "2925",
+            "originalAmount": -700.0,
+            "clearedAmount": -700.0,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-01-20",
+                    "amount": -700.0,
+                    "clearingDate": "2020-01-30",
+                    "clearingReason": "Outgoing payment - Paid",
+                    "outgoingPaymentMethod": "BACS Payment out",
+                    "clearingSAPDocument": "002300000516"
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Return Charge",
+            "mainType": "DST Return Charge",
+            "taxPeriodFrom": "2019-12-01",
+            "taxPeriodTo": "2020-11-30",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "contractObjectType": "DST",
+            "contractObject": "00000000000560001716",
+            "sapDocumentNumber": "003330005489",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XS002750007957",
+            "mainTransaction": "5910",
+            "subTransaction": "1550",
+            "originalAmount": 22500000.21,
+            "outstandingAmount": 22500000.21,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2019-01-01",
+                    "amount": 22500000.21
+		}
+	    ]
+        },
+        {
+            "chargeType": "DST Late Filing Penalty",
+            "mainType": "DST Late Filing Penalty",
+            "taxPeriodFrom": "2020-02-17",
+            "taxPeriodTo": "2020-02-29",
+            "businessPartner": "0100073529",
+            "contractAccountCategory": "44",
+            "contractAccount": "001300000636",
+            "sapDocumentNumber": "003370005213",
+            "sapDocumentNumberItem": "0001",
+            "chargeReference": "XF004100008306",
+            "mainTransaction": "5940",
+            "subTransaction": "1090",
+            "originalAmount": 100.0,
+            "outstandingAmount": 100.0,
+            "items": [
+		{
+                    "subItem": "000",
+                    "dueDate": "2020-03-19",
+                    "amount": 100.0
+		}
+	    ]
+        }
+   ]
+}
