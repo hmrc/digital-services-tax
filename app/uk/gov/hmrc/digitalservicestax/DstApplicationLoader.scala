@@ -137,7 +137,7 @@ class DstComponents(context: Context) extends BasicComponents(context) {
 
   // routing
   def router: Router = {
-
+    lazy val prefix = ""
     lazy val appRoutes = wire[app.Routes]
     lazy val healthRoutes = wire[health.Routes]
     lazy val prodRoutes = wire[prod.Routes]
