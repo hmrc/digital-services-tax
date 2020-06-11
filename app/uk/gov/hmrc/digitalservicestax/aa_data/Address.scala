@@ -27,9 +27,9 @@ sealed trait Address {
 
 case class UkAddress(
   line1: AddressLine,
-  line2: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line2: Option[AddressLine],
+  line3: Option[AddressLine],
+  line4: Option[AddressLine],
   postalCode: Postcode
 ) extends Address {
   def countryCode = CountryCode("GB")
@@ -37,9 +37,9 @@ case class UkAddress(
 
 case class ForeignAddress(
   line1: AddressLine,
-  line2: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line3: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
-  line4: Option[AddressLine], // "^[A-Za-z0-9 \\-,.&']{1,35}$"
+  line2: Option[AddressLine],
+  line3: Option[AddressLine],
+  line4: Option[AddressLine],
   countryCode: CountryCode
 ) extends Address {
   def postalCode: String = ""

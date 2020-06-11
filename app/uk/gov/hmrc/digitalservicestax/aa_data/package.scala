@@ -20,7 +20,6 @@ import shapeless.{:: => _, _}
 import tag._
 import cats.implicits._
 import cats.kernel.Monoid
-import play.api.i18n.Messages
 import java.time.LocalDate
 
 import fr.marcwrobel.jbanking.iban.Iban
@@ -53,7 +52,18 @@ package object data extends SimpleJson {
     _.toUpperCase
   )
 
-  type Money = BigDecimal
+  type Money = BigDecimal @@ Money.Tag
+  object Money extends ValidatedType[BigDecimal] {
+    def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
+      Some(in).filter(_.scale == 2)
+    }
+
+    implicit def mon: Monoid[Money] = new Monoid[Money] {
+      val base: Monoid[BigDecimal] = implicitly[Monoid[BigDecimal]]
+      override def combine(a: Money, b: Money): Money = Money(base.combine(a, b))
+      override def empty: Money = Money(base.empty)
+    }
+  }
 
   type NonEmptyString = String @@ NonEmptyString.Tag
   object NonEmptyString extends ValidatedType[String]{
@@ -101,6 +111,11 @@ package object data extends SimpleJson {
   object AccountNumber extends RegexValidatedString(
     """^[0-9]{8}$""",
     _.filter(_.isDigit)
+  )
+
+  type BuildingSocietyRollNumber = String @@ BuildingSocietyRollNumber.Tag
+  object BuildingSocietyRollNumber extends RegexValidatedString(
+    """^[A-Za-z0-9 -]{1,18}$"""
   )
 
   type AccountName = String @@ AccountName.Tag

@@ -19,7 +19,6 @@ package data
 
 import java.time.LocalDate
 
-
 case class Registration (
   companyReg: CompanyRegWrapper,
   alternativeContact: Option[Address],

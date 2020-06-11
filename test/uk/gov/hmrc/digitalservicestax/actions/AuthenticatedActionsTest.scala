@@ -69,6 +69,8 @@ class AuthenticatedActionsTest extends FakeApplicationSpec
     val enrolments = arbitrary[Enrolments].sample.value
     val credentialRole = arbitrary[Credentials].sample.value
 
+    implicit val credentialWrites = Json.writes[Credentials]
+
     val jsonResponse = JsObject(Seq(
       Retrievals.allEnrolments.propertyNames.head -> JsArray(enrolments.enrolments.toSeq.map(Json.toJson(_))),
       Retrievals.internalId.propertyNames.head -> JsString(internal),
