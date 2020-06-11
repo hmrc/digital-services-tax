@@ -32,7 +32,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  private[this] val period = Period.Key.of("0220").value
+  private[this] val period: Period.Key = Period.Key.of("0220").value
 
   "it fail to retrieve a non existing return with a NoSuchElementException" in {
     forAll { reg: Registration =>

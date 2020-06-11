@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-// TODO: add in validated string instances for iban, sort code, accountNo, etc
 
 sealed trait BankAccount
 
@@ -25,7 +24,7 @@ case class ForeignBankAccount(iban: IBAN) extends BankAccount
 case class DomesticBankAccount(
   sortCode: SortCode,
   accountNo: AccountNumber,
-  buildingSocietyNumber: String
+  buildingSocietyNumber: Option[BuildingSocietyRollNumber]
 ) extends BankAccount
 
 case class RepaymentDetails(
