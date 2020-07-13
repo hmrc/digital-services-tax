@@ -103,7 +103,7 @@ class FinancialDataConnector @Inject()(
       }
     }
 
-    http.GET[List[FinancialTransaction]](uri)
+    desGet[List[FinancialTransaction]](uri)
   }
 
 }
