@@ -58,8 +58,7 @@ object AuditingHelper {
       "subscriptionId" -> formBundleNumber,
       "outcome" -> outcome,
       "authProviderType" -> "GovernmentGateway",
-      "authProviderId" -> providerId,
-      "deviceId" -> hc.deviceID
+      "authProviderId" -> providerId
     ).++(registrationJson(data))
 
     baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail =details)
