@@ -95,4 +95,13 @@ class ReturnsController @Inject()(
           a.collect { case (p, None) => Json.toJson(p) }
         )) }
     }
+
+  def lookupSubmittedReturns(): Action[AnyContent] =
+    loggedIn.andThen(registered).async { implicit request =>
+      val regNo = request.registration.registrationNumber.get
+      connector.getPeriods(regNo).map { a => Ok(JsArray(
+        a.collect { case (p, Some(_)) => Json.toJson(p) }
+      )) }
+    }
+
 }
