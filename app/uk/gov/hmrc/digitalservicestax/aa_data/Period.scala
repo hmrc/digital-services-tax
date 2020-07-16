@@ -18,22 +18,45 @@ package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
 import shapeless.tag.@@
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.data.validation.Constraints._
+
 
 case class Period(
-  start: LocalDate,
-  end: LocalDate,
-  returnDue: LocalDate,
-  key: Period.Key) {
-    def paymentDue: LocalDate = end.minusMonths(3)
-  }
+                   start: LocalDate,
+                   end: LocalDate,
+                   returnDue: LocalDate,
+                   key: Period.Key) {
+  def paymentDue: LocalDate = end.minusMonths(3)
+}
 
 
 object Period {
 
   type Key = String @@ Key.Tag
-  object Key extends ValidatedType[String]{
-    def validateAndTransform(in: String): Option[String] = 
-      Some(in).filter{x => x.nonEmpty && x.size <= 4}
+
+  object Key extends ValidatedType[String] {
+    def validateAndTransform(in: String): Option[String] =
+      Some(in).filter { x => x.nonEmpty && x.size <= 4 }
   }
+
+  def apply(
+             start: LocalDate,
+             end: LocalDate,
+             returnDue: LocalDate,
+             key: String): Period = new Period(start, end, returnDue, Period.Key(key))
+
+  def unapply(arg: Period): Option[(LocalDate, LocalDate, LocalDate, Key)] = Option((arg.start, arg.end, arg.returnDue, arg.key))
+
+  val periodForm: Form[Period] = Form(
+    mapping(
+      "start" -> localDate,
+      "end" -> localDate,
+      "returnDue" -> localDate,
+      "key" -> nonEmptyText
+    )(Period.apply)(Period.unapply)
+  )
+
 
 }
