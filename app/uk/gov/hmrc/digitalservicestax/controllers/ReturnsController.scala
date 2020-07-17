@@ -41,7 +41,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 @Singleton()
 class ReturnsController @Inject()(
-  val authConnector: AuthConnector,  
+  val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
   val runMode: RunMode,
   appConfig: AppConfig,
@@ -65,7 +65,9 @@ class ReturnsController @Inject()(
       withJsonBody[Return](data => {
         for {
           allPeriods <- connector.getPeriods(regNo)
-          (period, previous) = allPeriods.find{_._1.key == periodKey}.getOrElse {
+          (period, previous) = allPeriods.find {
+            _._1.key == periodKey
+          }.getOrElse {
             throw new NoSuchElementException(s"no period found for $periodKey")
           }
           _ <- connector.send(regNo, period, data, previous.isDefined)
@@ -86,22 +88,38 @@ class ReturnsController @Inject()(
             throw e
           }
       }
-  }
+    }
 
   def lookupOutstandingReturns(): Action[AnyContent] =
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
-      connector.getPeriods(regNo).map { a => Ok(JsArray(
+      connector.getPeriods(regNo).map { a =>
+        Ok(JsArray(
           a.collect { case (p, None) => Json.toJson(p) }
-        )) }
+        ))
+      }
+    }
+
+  def lookupAllReturns(): Action[AnyContent] =
+    loggedIn.andThen(registered).async { implicit request =>
+      val regNo = request.registration.registrationNumber.get
+      connector.getPeriods(regNo).map { a =>
+        Ok(JsArray(
+          a.collect { case (p, _) => Json.toJson(p) }
+        ))
+      }
     }
 
   def lookupSubmittedReturns(): Action[AnyContent] =
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
-      connector.getPeriods(regNo).map { a => Ok(JsArray(
-        a.collect { case (p, Some(_)) => Json.toJson(p) }
-      )) }
+      connector.getPeriods(regNo).map { a =>
+        a.dropWhile(u => u._1.end <= LocalDate.now().minusYears(2))
+      }.map { a =>
+        Ok(JsArray(
+          a.collect { case (p, Some(_)) => Json.toJson(p) }
+        ))
+      }
     }
 
 }
