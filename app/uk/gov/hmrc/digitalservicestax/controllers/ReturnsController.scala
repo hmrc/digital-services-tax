@@ -113,9 +113,14 @@ class ReturnsController @Inject()(
   def lookupSubmittedReturns(): Action[AnyContent] =
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
-      connector.getPeriods(regNo).map { a =>
+      val currentAccountingPeriodEnd: LocalDate =
+        request.registration.accountingPeriodEnd.withYear(LocalDate.now.getYear)
+
+      connector.getPeriods(regNo).map
+      { a =>
         a.dropWhile(u => u._1.end <= LocalDate.now().minusYears(2))
-      }.map { a =>
+      }.map
+      { a =>
         Ok(JsArray(
           a.collect { case (p, Some(_)) => Json.toJson(p) }
         ))
