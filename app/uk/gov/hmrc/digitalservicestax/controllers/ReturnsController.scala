@@ -110,19 +110,18 @@ class ReturnsController @Inject()(
       }
     }
 
-  def lookupSubmittedReturns(): Action[AnyContent] =
+  def lookupAmendableReturns(): Action[AnyContent] =
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
-      val currentAccountingPeriodEnd: LocalDate =
-        request.registration.accountingPeriodEnd.withYear(LocalDate.now.getYear)
 
-      connector.getPeriods(regNo).map
-      { a =>
-        a.dropWhile(u => u._1.end <= LocalDate.now().minusYears(2))
-      }.map
-      { a =>
+      connector.getPeriods(regNo).map { a =>
         Ok(JsArray(
-          a.collect { case (p, Some(_)) => Json.toJson(p) }
+          a.collect {
+            case (p, Some(submissionDate))
+                if submissionDate.isAfter(LocalDate.now().minusYears(1)) &&
+                  submissionDate.isBefore(LocalDate.now()) =>
+              Json.toJson(p)
+          }
         ))
       }
     }
