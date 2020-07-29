@@ -48,17 +48,14 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
 
   "Amendable Returns" must {
     val startValid1 = LocalDate.now().minusYears(2).minusWeeks(1)
-    val endValid1 = LocalDate.now().minusYears(1).minusWeeks(1)
-    val dueValid1 = LocalDate.now().minusWeeks(1)
-    val submittedValid1 = LocalDate.now().minusWeeks(50)
+    val endValid1 = startValid1.plusYears(1)
+    val dueValid1 = endValid1.plusYears(1).minusWeeks(1)
+
     val startFailed = LocalDate.now().minusYears(4).minusWeeks(1)
     val endFailed = startFailed.plusYears(1)
     val dueFailed = endFailed.plusYears(1)
-    val submittedFailed = LocalDate.now().minusYears(1)
-
 
     "return 200 with 1 period within time frame" in {
-
 
       val periods: Future[List[(Period, Option[LocalDate])]] =
         Future.successful(List(Period(
@@ -66,15 +63,12 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
           endValid1,
           dueValid1,
           Period.Key("001")) ->
-          Some(submittedValid1)))
+          Some(dueValid1.minusDays(5))))
 
       when(mockConnector.getPeriods(any())(any(), any())) thenReturn periods
 
       val result: Future[Result] = TestReturnsController.lookupAmendableReturns().apply(FakeRequest())
-
-
       val resultStatus = status(result)
-
 
       resultStatus mustBe 200
       contentAsString(result) mustBe s"""[{"start":"$startValid1","end":"$endValid1","returnDue":"$dueValid1","key":"001"}]"""
@@ -83,22 +77,18 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
 
     "return 200 with no periods within time frame" in {
 
-
       val periods: Future[List[(Period, Option[LocalDate])]] =
         Future.successful(List(Period(
           startFailed,
           endFailed,
           dueFailed,
           Period.Key("001")) ->
-          Some(submittedFailed)))
+          Some(dueFailed.minusDays(5))))
 
       when(mockConnector.getPeriods(any())(any(), any())) thenReturn periods
 
       val result: Future[Result] = TestReturnsController.lookupAmendableReturns().apply(FakeRequest())
-
-
       val resultStatus = status(result)
-
 
       resultStatus mustBe 200
       contentAsString(result) mustBe s"""[]"""
@@ -107,16 +97,14 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
 
     "return 200 with 2 periods within time frame" in {
 
-      val startValid2 = LocalDate.now().minusYears(3).minusWeeks(1)
+      val startValid2 = LocalDate.now().minusYears(3)
       val endValid2 = startValid2.plusYears(1)
-      val dueValid2 = endValid2.plusYears(1)
-      val submittedValid2 = LocalDate.now().minusWeeks(1)
+      val dueValid2 = endValid2.plusYears(1).plusDays(1)
 
       val periodList: List[(Period, Option[LocalDate])] = List(
-        Period(startValid1, endValid1, dueValid1, Period.Key("001")) -> Some(submittedValid1),
-        Period(startFailed, endFailed, dueFailed, Period.Key("002")) -> Some(submittedFailed),
-        Period(startValid2, endValid2, dueValid2, Period.Key("003")) -> Some(submittedValid2))
-
+        Period(startValid1, endValid1, dueValid1, Period.Key("001")) -> Some(dueValid1.minusDays(5)),
+        Period(startFailed, endFailed, dueFailed, Period.Key("002")) -> Some(dueFailed.minusDays(5)),
+        Period(startValid2, endValid2, dueValid2, Period.Key("003")) -> Some(dueValid2.minusDays(5)))
 
       val periods: Future[List[(Period, Option[LocalDate])]] =
         Future.successful(periodList)
@@ -124,10 +112,7 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
       when(mockConnector.getPeriods(any())(any(), any())) thenReturn periods
 
       val result: Future[Result] = TestReturnsController.lookupAmendableReturns().apply(FakeRequest())
-
-
       val resultStatus = status(result)
-
 
       resultStatus mustBe 200
       contentAsString(result) mustBe s"""[{"start":"$startValid1","end":"$endValid1","returnDue":"$dueValid1","key":"001"},{"start":"$startValid2","end":"$endValid2","returnDue":"$dueValid2","key":"003"}]"""
