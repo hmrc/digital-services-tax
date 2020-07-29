@@ -28,6 +28,7 @@ import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, EmptyRetrieval}
 import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, Registered, RegisteredRequest}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
@@ -57,39 +58,34 @@ class ReturnsControllerSpec extends PlaySpec with MockitoSugar with Results {
 
   val regObj: Registration = Registration(mockCompanyReg, None, None, mockContact, LocalDate.now().minusWeeks(1),LocalDate.now().plusMonths(3), Some(DSTRegNumber("ASDST1010101010")))
 
-  def loginReq[A]: LoggedInRequest[A] = mock[LoggedInRequest[A]]
+  def loginReq[A]: LoggedInRequest[A] = new LoggedInRequest[A](null, null, null, FakeRequest().withBody(AnyContent().asInstanceOf[A]))
 
   val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
       Future.successful(Right(loginReq[A]))
 
     override def parser: BodyParser[AnyContent] = stubBodyParser()
-
   }
 
   val mockRegistered: Registered = new Registered(mockPersistence) {
-
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
-
   }
 
+  implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   object TestReturnsController extends ReturnsController(
     authConnector = mockAuthConnector,
     runModeConfiguration = mockRunModeConfiguration,
     runMode = mockRunMode,
     appConfig = mockAppConfig,
-    cc = mockCc,
+    cc = stubControllerComponents(),
     persistence = mockPersistence,
     connector = mockConnector,
     auditing = mockAuditing,
     registered = mockRegistered,
     loggedIn = loginReturn
   )
-
-  implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  implicit val hc: HeaderCarrier = HeaderCarrier()
 
 
   "Amendable Returns" must {
@@ -99,7 +95,7 @@ class ReturnsControllerSpec extends PlaySpec with MockitoSugar with Results {
           LocalDate.now().minusYears(2).minusWeeks(1),
           LocalDate.now().minusYears(1).minusWeeks(1),
           LocalDate.now().minusWeeks(1),
-          Key("001")) ->
+          Period.Key("001")) ->
           Some(LocalDate.now().minusWeeks(1))))
 
       when(mockConnector.getPeriods(any())(any(), any())) thenReturn periods
