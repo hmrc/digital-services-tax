@@ -117,9 +117,8 @@ class ReturnsController @Inject()(
       connector.getPeriods(regNo).map { a =>
         Ok(JsArray(
           a.collect {
-            case (p, Some(submissionDate))
-                if submissionDate.isAfter(LocalDate.now().minusYears(1)) &&
-                  submissionDate.isBefore(LocalDate.now()) =>
+            case (p, Some(_))
+                if p.returnDue.isAfter(LocalDate.now.minusYears(1)) =>
               Json.toJson(p)
           }
         ))
