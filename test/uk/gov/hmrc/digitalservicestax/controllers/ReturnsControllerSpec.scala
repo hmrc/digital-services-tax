@@ -32,7 +32,7 @@ import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, Period, Registration}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -50,12 +50,16 @@ class ReturnsControllerSpec extends PlaySpec with MockitoSugar with Results {
   private val mockPersistence = mock[MongoPersistence]
   private val mockConnector = mock[connectors.ReturnConnector]
   private val mockAuditing = mock[AuditConnector]
+  private val mockCompanyReg = mock[CompanyRegWrapper]
+  private val mockContact = mock[ContactDetails]
+  private val mockMcc = mock[MessagesControllerComponents]
 
-  val regObj: Registration = Registration(null, None, None, null, null, null, Some(DSTRegNumber("ASDST1010101010")))
+
+  val regObj: Registration = Registration(mockCompanyReg, None, None, mockContact, LocalDate.now().minusWeeks(1),LocalDate.now().plusMonths(3), Some(DSTRegNumber("ASDST1010101010")))
 
   def loginReq[A]: LoggedInRequest[A] = mock[LoggedInRequest[A]]
 
-  val loginReturn: LoggedInAction = new LoggedInAction(null, mockAuthConnector) {
+  val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
       Future.successful(Right(loginReq[A]))
 
@@ -63,7 +67,7 @@ class ReturnsControllerSpec extends PlaySpec with MockitoSugar with Results {
 
   }
 
-  val mockRegistered: Registered = new Registered(null) {
+  val mockRegistered: Registered = new Registered(mockPersistence) {
 
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
@@ -91,7 +95,7 @@ class ReturnsControllerSpec extends PlaySpec with MockitoSugar with Results {
   "Amendable Returns" must {
     "return none" in {
       val periods: Future[List[(Period, Option[LocalDate])]] =
-        Future.successful(List(new Period(
+        Future.successful(List(Period(
           LocalDate.now().minusYears(2).minusWeeks(1),
           LocalDate.now().minusYears(1).minusWeeks(1),
           LocalDate.now().minusWeeks(1),
