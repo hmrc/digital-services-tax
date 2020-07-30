@@ -12,7 +12,8 @@ POST /tax-enrolment-callback/:subscriptionId              uk.gov.hmrc.digitalser
 
 POST /returns/:periodKey            		              uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.submitReturn(periodKey: String)
 GET  /returns/outstanding                                 uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupOutstandingReturns()
-GET  /returns/submitted                                   uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAmendableReturns()
+GET  /returns/amendable                                   uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAmendableReturns()
+GET  /returns/all                                         uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAllReturns()
 
 GET  /financial-transactions                              uk.gov.hmrc.digitalservicestax.controllers.FinancialTransactionsController.lookup
 
