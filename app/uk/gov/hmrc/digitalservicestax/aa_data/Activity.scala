@@ -18,6 +18,7 @@ package uk.gov.hmrc.digitalservicestax.data
 
 import enumeratum._
 
+
 sealed trait Activity extends EnumEntry
 object Activity extends Enum[Activity] {
   def values = findValues
