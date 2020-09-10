@@ -73,7 +73,7 @@ class RosmController @Inject()(
       rosmConnector.retrieveROSMDetails(
         utr
       ).map {
-        case Some(r) if r.company.address.postalCode == postcode =>
+        case Some(r) if r.company.address.postalCode.replaceAll(" ", "") == postcode.replaceAll(" ", "") =>
 
           import data.BackendAndFrontendJson._
           JsonSchemaChecker[data.Company](r.company, "rosm-response")
