@@ -31,6 +31,7 @@ abstract class Persistence[F[_]: cats.Monad] {
     def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): F[Unit]
 
     def get(formBundle: FormBundleNumber): F[Option[InternalId]]
+    def reverseLookup(id: InternalId): F[Option[FormBundleNumber]]
     def delete(formBundle: FormBundleNumber): F[Unit]    
     def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
     def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] = 

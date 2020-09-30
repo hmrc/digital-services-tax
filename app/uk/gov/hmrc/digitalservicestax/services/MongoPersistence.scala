@@ -99,6 +99,14 @@ class MongoPersistence @Inject()(
       ).map{_.map{_.internalId}}
     }
 
+    def reverseLookup(internalId: InternalId): Future[Option[FormBundleNumber]] = {
+      val selector = Json.obj("internalId" -> internalId.toString)
+      collection.flatMap(
+        _.find(selector)
+          .one[CallbackWrapper]
+      ).map{_.map{_.formBundle}}
+    }
+
     def delete(formBundle: FormBundleNumber): Future[Unit] =  {
       val selector = Json.obj("formBundle" -> formBundle.toString)
       collection.flatMap(_.delete.one(selector)).map{_ => ()}

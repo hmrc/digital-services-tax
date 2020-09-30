@@ -33,7 +33,8 @@ trait VolatilePersistence extends Persistence[Id] {
     def delete(formBundle: FormBundleNumber) = _data = _data - formBundle
     def update(formBundle: FormBundleNumber, internalId: InternalId) =
       _data = _data + (formBundle -> internalId)
-
+    def reverseLookup(id: InternalId): Option[FormBundleNumber] =
+      _data.collectFirst{ case (k, v) if v == id => k }
     override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Id[Unit] = {
       _data = _data + (formBundleNumber -> internalId)
     }

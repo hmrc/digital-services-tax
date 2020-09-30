@@ -62,7 +62,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
       if (body.state == "SUCCEEDED") {
         (for {
           dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
-                            getDSTNumber(_).getOrElse(throw CallbackProcessingException)}
+                            _.getDSTNumber.getOrElse(throw CallbackProcessingException)}
           reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
           period       <- returnConnector.getNextPendingPeriod(dstNumber)
           _            <- emailConnector.sendConfirmationEmail(
@@ -105,11 +105,6 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
     }
   }
 
-  private def getDSTNumber(taxEnrolmentsSubscription: TaxEnrolmentsSubscription): Option[DSTRegNumber] = {
-    taxEnrolmentsSubscription.identifiers.getOrElse(Nil).collectFirst {
-      case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
-    }
-  }
 }
 
 case class CallbackNotification(state: String, errorResponse: Option[String])
