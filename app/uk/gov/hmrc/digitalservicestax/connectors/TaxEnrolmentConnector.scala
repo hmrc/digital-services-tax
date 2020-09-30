@@ -26,6 +26,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{Await, ExecutionContext, Future}
+import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
@@ -86,7 +87,14 @@ case class TaxEnrolmentsSubscription(
   identifiers: Option[Seq[Identifier]],
   etmpId: String, state: String,
   errorResponse: Option[String]
-)
+) {
+  def getDSTNumber: Option[DSTRegNumber] = {
+    identifiers.getOrElse(Nil).collectFirst {
+      case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
+    }
+  }
+
+}
 
 object TaxEnrolmentsSubscription {
   implicit val format: Format[TaxEnrolmentsSubscription] = Json.format[TaxEnrolmentsSubscription]

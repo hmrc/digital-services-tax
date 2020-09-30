@@ -38,7 +38,7 @@ class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec:
     def get(formBundle: FormBundleNumber) = f(V.get(formBundle))
     def delete(formBundle: FormBundleNumber) = f(V.delete(formBundle))
     def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
-
+    def reverseLookup(id: InternalId) = f(V.reverseLookup(id))
     override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
       f(V.insert(formBundleNumber, internalId))
     }

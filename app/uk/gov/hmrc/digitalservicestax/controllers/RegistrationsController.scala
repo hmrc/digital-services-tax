@@ -78,6 +78,7 @@ class RegistrationsController @Inject()(
     )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
+
   def submitRegistrationP(
     idType: String,
     idNumber: Option[String],
@@ -121,7 +122,7 @@ class RegistrationsController @Inject()(
         case (_, _, true) =>
             for {
               safeId <- getSafeId(data)
-              
+
               reg <- submitRegistrationP("safe", safeId, data, safeId.get, request.internalId, request.providerId)
             } yield (reg, safeId)
           case (Some(utr), Some(_), false) =>
@@ -141,9 +142,23 @@ class RegistrationsController @Inject()(
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.registrations.get(request.internalId).map {
-      case Some(r) => Ok(Json.toJson(r))
-      case None => NotFound
+    persistence.registrations.get(request.internalId).flatMap {
+      case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
+      case Some(r) =>
+        // the registration may not have completed yet, or the callback was unable to return
+        // check to see if there is a enrolment record. 
+        for {
+          formBundle <- persistence.pendingCallbacks.reverseLookup(request.internalId)
+          r2 <- formBundle match {
+            case Some(fb) => for {
+              subscription <- taxEnrolmentConnector.getSubscription(fb)
+              updatedR = r.copy(registrationNumber = subscription.getDSTNumber)
+              _ <- persistence.registrations(request.internalId) = updatedR
+            } yield updatedR
+            case None => r.pure[Future]
+          }
+        } yield Ok(Json.toJson(r2))
+      case None => NotFound.pure[Future]
     }
   }
 
