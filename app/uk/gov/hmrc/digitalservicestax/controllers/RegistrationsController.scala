@@ -154,6 +154,9 @@ class RegistrationsController @Inject()(
               subscription <- taxEnrolmentConnector.getSubscription(fb)
               updatedR = r.copy(registrationNumber = subscription.getDSTNumber)
               _ <- persistence.registrations(request.internalId) = updatedR
+              _ <- emailConnector.sendSubmissionReceivedEmail(updatedR.contact, updatedR.companyReg.company.name, updatedR.ultimateParent)
+              //Add in error string to show we're manually sending the callback audit?
+              _ <- auditing.sendExtendedEvent(AuditingHelper.buildCallbackAudit(CallbackNotification("SUCCEEDED", None), request.uri, fb, "SUCCESS", updatedR.registrationNumber))
             } yield updatedR
             case None => r.pure[Future]
           }
