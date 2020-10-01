@@ -85,7 +85,8 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
 case class TaxEnrolmentsSubscription(
   identifiers: Option[Seq[Identifier]],
-  etmpId: String, state: String,
+  etmpId: String,
+  state: String,
   errorResponse: Option[String]
 ) {
   def getDSTNumber: Option[DSTRegNumber] = {
