@@ -159,18 +159,17 @@ class RegistrationsController @Inject()(
               dstNum   <- OptionT.fromOption[Future](s.getDSTNumber)
               updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
               period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
-              parent   <- OptionT.fromOption[Future](updatedR.ultimateParent)
-              _        <- OptionT.liftF(
+              emailRestult        <- OptionT.liftF(
                             emailConnector
                               .sendConfirmationEmail(
                                 updatedR.contact,
                                 updatedR.companyReg.company.name,
-                                parent.name,
+                                updatedR.ultimateParent.fold(CompanyName("unknown")){x => x.name},
                                 dstNum,
                                 period
                               )
                           )
-              _        <- OptionT.liftF(
+              audit        <- OptionT.liftF(
                             auditing
                               .sendExtendedEvent(
                                 AuditingHelper.buildCallbackAudit(
@@ -181,7 +180,13 @@ class RegistrationsController @Inject()(
                                   dstNum.some)
                               )
                           )
-            } yield updatedR
+            } yield {
+              Logger.debug(s"period is $period")
+              Logger.debug(s"email result is $emailRestult")
+              Logger.debug(s"audit is $audit")
+
+              updatedR
+            }
             case _ => OptionT.some[Future](r)
           }
         } yield processedRegistration).fold(NotFound(JsNull))(y => Ok(Json.toJson(y)))
