@@ -159,7 +159,7 @@ class RegistrationsController @Inject()(
               dstNum   <- OptionT.fromOption[Future](s.getDSTNumber)
               updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
               period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
-              emailRestult        <- OptionT.liftF(
+              _        <- OptionT.liftF(
                             emailConnector
                               .sendConfirmationEmail(
                                 updatedR.contact,
@@ -169,7 +169,7 @@ class RegistrationsController @Inject()(
                                 period
                               )
                           )
-              audit        <- OptionT.liftF(
+              _        <- OptionT.liftF(
                             auditing
                               .sendExtendedEvent(
                                 AuditingHelper.buildCallbackAudit(
@@ -180,13 +180,7 @@ class RegistrationsController @Inject()(
                                   dstNum.some)
                               )
                           )
-            } yield {
-              Logger.debug(s"period is $period")
-              Logger.debug(s"email result is $emailRestult")
-              Logger.debug(s"audit is $audit")
-
-              updatedR
-            }
+            } yield updatedR
             case _ => OptionT.some[Future](r)
           }
         } yield processedRegistration).fold(NotFound(JsNull))(y => Ok(Json.toJson(y)))
