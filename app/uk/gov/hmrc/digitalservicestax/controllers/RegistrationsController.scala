@@ -20,17 +20,18 @@ package controllers
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.data._, BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data._
+import BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RegistrationResponse}
+import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmRegisterWithoutIDRequest}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
@@ -41,6 +42,8 @@ import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import java.time.LocalDateTime
+
+import cats.data.OptionT
 
 import scala.concurrent._
 
@@ -59,6 +62,7 @@ class RegistrationsController @Inject()(
   auditing: AuditConnector,
   loggedIn: LoggedInAction,
   registered: RegisteredOrPending,
+  returnConnector: ReturnConnector,
   val http: HttpClient,
   val servicesConfig: ServicesConfig
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
@@ -146,18 +150,41 @@ class RegistrationsController @Inject()(
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
       case Some(r) =>
         // the registration may not have completed yet, or the callback was unable to return
-        // check to see if there is a enrolment record. 
-        for {
-          formBundle <- persistence.pendingCallbacks.reverseLookup(request.internalId)
-          r2 <- formBundle match {
-            case Some(fb) => for {
-              subscription <- taxEnrolmentConnector.getSubscription(fb)
-              updatedR = r.copy(registrationNumber = subscription.getDSTNumber)
-              _ <- persistence.registrations(request.internalId) = updatedR
+        // check to see if there is a enrolment record.
+        (for {
+          formBundle            <- OptionT(persistence.pendingCallbacks.reverseLookup(request.internalId))
+          subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
+          processedRegistration <- subscription match {
+            case s@TaxEnrolmentsSubscription(Some(_), _, "SUCCEEDED", _) => for {
+              dstNum   <- OptionT.fromOption[Future](s.getDSTNumber)
+              updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
+              period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
+              parent   <- OptionT.fromOption[Future](updatedR.ultimateParent)
+              _        <- OptionT.liftF(
+                            emailConnector
+                              .sendConfirmationEmail(
+                                updatedR.contact,
+                                updatedR.companyReg.company.name,
+                                parent.name,
+                                dstNum,
+                                period
+                              )
+                          )
+              _        <- OptionT.liftF(
+                            auditing
+                              .sendExtendedEvent(
+                                AuditingHelper.buildCallbackAudit(
+                                  CallbackNotification("SUCCEEDED", None),
+                                  request.uri,
+                                  formBundle,
+                                  "SUCCESS",
+                                  dstNum.some)
+                              )
+                          )
             } yield updatedR
-            case None => r.pure[Future]
+            case _ => OptionT.some[Future](r)
           }
-        } yield Ok(Json.toJson(r2))
+        } yield processedRegistration).fold(NotFound(JsNull))(y => Ok(Json.toJson(y)))
       case None => NotFound.pure[Future]
     }
   }
