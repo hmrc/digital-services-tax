@@ -159,13 +159,12 @@ class RegistrationsController @Inject()(
               dstNum   <- OptionT.fromOption[Future](s.getDSTNumber)
               updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
               period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
-              parent   <- OptionT.fromOption[Future](updatedR.ultimateParent)
               _        <- OptionT.liftF(
                             emailConnector
                               .sendConfirmationEmail(
                                 updatedR.contact,
                                 updatedR.companyReg.company.name,
-                                parent.name,
+                                updatedR.ultimateParent.fold(CompanyName("unknown")){x => x.name},
                                 dstNum,
                                 period
                               )
