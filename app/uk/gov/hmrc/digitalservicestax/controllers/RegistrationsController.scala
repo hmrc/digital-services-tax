@@ -63,7 +63,6 @@ class RegistrationsController @Inject()(
   loggedIn: LoggedInAction,
   registered: RegisteredOrPending,
   returnConnector: ReturnConnector,
-//  taxEnrolmentCallbackController: TaxEnrolmentCallbackController,
   val http: HttpClient,
   val servicesConfig: ServicesConfig
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
