@@ -149,7 +149,7 @@ class RegistrationsController @Inject()(
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
     persistence.registrations.get(request.internalId).flatMap {
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
-      case Some(_) =>
+      case Some(r) =>
         // the registration may not have completed yet, or the callback was unable to return
         // check to see if there is a enrolment record.
         (for {
@@ -183,8 +183,10 @@ class RegistrationsController @Inject()(
                               )
                           )
             } yield updatedR
+            case _ => OptionT.some[Future](r)
           }
         } yield processedRegistration).fold(NotFound(JsNull))(y => Ok(Json.toJson(y)))
+      case None => NotFound.pure[Future]
     }
   }
 
