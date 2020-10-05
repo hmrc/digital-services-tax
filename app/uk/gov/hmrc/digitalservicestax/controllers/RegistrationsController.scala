@@ -17,23 +17,18 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
+import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
-import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.retrieve._
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.data._
-import BackendAndFrontendJson._
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmRegisterWithoutIDRequest}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector, _}
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -41,9 +36,6 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import java.time.LocalDateTime
-
-import cats.data.OptionT
 
 import scala.concurrent._
 
@@ -82,7 +74,6 @@ class RegistrationsController @Inject()(
     )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
   }
 
-
   def submitRegistrationP(
     idType: String,
     idNumber: Option[String],
@@ -91,32 +82,50 @@ class RegistrationsController @Inject()(
     internalId: InternalId,
     providerId: String
   )(implicit hc: HeaderCarrier): Future[Unit] = {
-
       registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
-        {
-          {persistence.pendingCallbacks(r.formBundleNumber) = internalId} >>
-          taxEnrolmentConnector.subscribe(
-            safeId,
-            r.formBundleNumber
-          ) >>
-          auditing.sendExtendedEvent(
-            AuditingHelper.buildRegistrationAudit(
-              data, providerId, r.formBundleNumber.some, "SUCCESS"
-            )
-          ) >> ().pure[Future]
-        } recoverWith {
-          case e =>
-            auditing.sendExtendedEvent(
-              AuditingHelper.buildRegistrationAudit(
-                data, providerId, None, "ERROR"
-              )
-            ) map {
-              Logger.warn(s"Error with DST Registration ${e.getMessage}")
-              throw e
-            }
-        }
+        persistSubscribeAndAuditPendingRegistration(
+          persistence.pendingCallbacks.update,
+          data,
+          safeId,
+          r.formBundleNumber,
+          providerId,internalId
+        )
       }
   }
+
+  private def persistSubscribeAndAuditPendingRegistration(
+    f: (FormBundleNumber, InternalId) => Future[Unit],
+    data: Registration,
+    safeId: SafeId,
+    formBundleNumber: FormBundleNumber,
+    providerId: String,
+    internalId: InternalId
+  )(
+    implicit headerCarrier: HeaderCarrier
+  ):Future[Unit] = {
+    {
+      {f(formBundleNumber,internalId)} >>
+        taxEnrolmentConnector.subscribe(
+          safeId,
+          formBundleNumber
+        ) >>
+          auditing.sendExtendedEvent(
+            AuditingHelper.buildRegistrationAudit(
+              data, providerId, formBundleNumber.some, "SUCCESS"
+            )) >> ().pure[Future]
+
+    } recoverWith {
+      case e =>
+        auditing.sendExtendedEvent(
+          AuditingHelper.buildRegistrationAudit(
+            data, providerId, None, "ERROR"
+          )
+        ) map {
+          Logger.warn(s"Error with DST Registration ${e.getMessage}")
+          throw e
+        }
+    }}
+
 
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
     withJsonBody[Registration](data => {
@@ -181,10 +190,40 @@ class RegistrationsController @Inject()(
                               )
                           )
             } yield updatedR
+            case TaxEnrolmentsSubscription(identifiers, _, state, errors) =>
+              // we have a state other than SUCCEEDED
+              Logger.warn(
+                s"state: $state, " +
+                s"errors: ${errors.getOrElse("none reported")}, " +
+                s"identifiers: ${identifiers.fold("none")(_=> "some")}")
+              Logger.warn("attempting TE subscribe again")
+              // attempt to subscribe again
+              (r.companyReg.safeId match {
+                case None => getSafeId(r)
+                case fo => Future.successful(fo)
+              }) map { x: Option[data.SafeId] =>
+                x.map {
+                  persistSubscribeAndAuditPendingRegistration(
+                    { (_, _) => ().pure[Future] },
+                    r,
+                    _,
+                    formBundle,
+                    request.providerId,
+                    request.internalId
+                  )
+                }
+              }
+              OptionT.some[Future](r)
             case _ => OptionT.some[Future](r)
           }
-        } yield processedRegistration).fold(NotFound(JsNull))(y => Ok(Json.toJson(y)))
-      case None => NotFound.pure[Future]
+        } yield processedRegistration).fold {
+          Logger.info("unable to get processed registration")
+          NotFound(JsNull)
+        }(y => Ok(Json.toJson(y)))
+      case None => {
+        Logger.warn("no pending registration")
+        NotFound.pure[Future]
+      }
     }
   }
 
