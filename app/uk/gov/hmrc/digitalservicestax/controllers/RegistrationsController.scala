@@ -25,13 +25,11 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{RegistrationConnector, RosmConnector, TaxEnrolmentConnector, _}
+import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -51,107 +49,46 @@ class RegistrationsController @Inject()(
   taxEnrolmentConnector: TaxEnrolmentConnector,
   emailConnector: EmailConnector,
   persistence: MongoPersistence,
-  auditing: AuditConnector,
+  val auditing: AuditConnector,
   loggedIn: LoggedInAction,
   registered: RegisteredOrPending,
   returnConnector: ReturnConnector,
   val http: HttpClient,
   val servicesConfig: ServicesConfig
-) extends BackendController(cc) with AuthorisedFunctions with DesHelpers {
+) extends BackendController(cc) with AuthorisedFunctions with DesHelpers with AuditWrapper{
 
   val log: Logger = Logger(this.getClass)
   val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
 
   implicit val ec: ExecutionContext = cc.executionContext
-
-  private def getSafeId(data: Registration)(implicit hc:HeaderCarrier): Future[Option[SafeId]] = {
-    rosmConnector.retrieveROSMDetailsWithoutID(
-      RosmRegisterWithoutIDRequest(
-      isAnAgent = false,
-      isAGroup = false,
-      data.companyReg.company,
-      data.contact
-    )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
-  }
-
-  def submitRegistrationP(
-    idType: String,
-    idNumber: Option[String],
-    data: Registration,
-    safeId: SafeId,
-    internalId: InternalId,
-    providerId: String
-  )(implicit hc: HeaderCarrier): Future[Unit] = {
-      registrationConnector.send(idType, idNumber, data)(hc, ec) >>= { r =>
-        persistSubscribeAndAuditPendingRegistration(
-          persistence.pendingCallbacks.update,
-          data,
-          safeId,
-          r.formBundleNumber,
-          providerId,internalId
-        )
-      }
-  }
-
-  private def persistSubscribeAndAuditPendingRegistration(
-    f: (FormBundleNumber, InternalId) => Future[Unit],
-    data: Registration,
-    safeId: SafeId,
-    formBundleNumber: FormBundleNumber,
-    providerId: String,
-    internalId: InternalId
-  )(
-    implicit headerCarrier: HeaderCarrier
-  ):Future[Unit] = {
-    {
-      {f(formBundleNumber,internalId)} >>
-        taxEnrolmentConnector.subscribe(
-          safeId,
-          formBundleNumber
-        ) >>
-          auditing.sendExtendedEvent(
-            AuditingHelper.buildRegistrationAudit(
-              data, providerId, formBundleNumber.some, "SUCCESS"
-            )) >> ().pure[Future]
-
-    } recoverWith {
-      case e =>
-        auditing.sendExtendedEvent(
-          AuditingHelper.buildRegistrationAudit(
-            data, providerId, None, "ERROR"
-          )
-        ) map {
-          Logger.warn(s"Error with DST Registration ${e.getMessage}")
-          throw e
-        }
-    }}
-
-
+     
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
-    withJsonBody[Registration](data => {
-      {persistence.registrations(request.internalId) = data} >>
-      ((data.companyReg.utr, data.companyReg.safeId, data.companyReg.useSafeId) match {
-
-        case (_, _, true) =>
-            for {
-              safeId <- getSafeId(data)
-
-              reg <- submitRegistrationP("safe", safeId, data, safeId.get, request.internalId, request.providerId)
-            } yield (reg, safeId)
-          case (Some(utr), Some(_), false) =>
-            for {
-              reg <- submitRegistrationP("utr", utr.some, data, data.companyReg.safeId.get, request.internalId, request.providerId)
-            } yield (reg, data.companyReg.safeId)
-          case _ =>
-            for {
-              reg <- submitRegistrationP("utr", getUtrFromAuth(request.enrolments), data, data.companyReg.safeId.get, request.internalId, request.providerId)
-            } yield (reg, data.companyReg.safeId)
-      }) >> emailConnector.sendSubmissionReceivedEmail(
+    withJsonBody[Registration](data => for {
+      _      <- persistence.registrations(request.internalId) = data
+      safeId <- data.companyReg.safeId.fold(rosmConnector.getSafeId(data).map{_.get})(_.pure[Future])
+      reg    <- (
+        // these steps are combined for auditing purposes
+        for {
+          r  <- registrationConnector.send(
+            idType   = if (data.companyReg.useSafeId) "safe" else "utr",
+            idNumber = if (data.companyReg.useSafeId) {safeId} else {
+              data.companyReg.utr.getOrElse(getUtrFromAuth(request.enrolments).get)
+            },
+            data,
+            request.providerId
+          )
+          _  <- persistence.pendingCallbacks.update(r.formBundleNumber, request.internalId)
+          _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
+        } yield r
+      ).auditError  (_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
+       .auditSuccess(r => AuditingHelper.buildRegistrationAudit(data, request.providerId, Some(r.formBundleNumber), "SUCCESS"))
+      _      <- emailConnector.sendSubmissionReceivedEmail(
         data.contact,
         data.companyReg.company.name,
         data.ultimateParent
-      ) >> Future.successful(Ok(JsNull))
-    })
+      )
+    } yield (Ok(JsNull))
+    )
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
@@ -190,6 +127,7 @@ class RegistrationsController @Inject()(
                               )
                           )
             } yield updatedR
+
             case TaxEnrolmentsSubscription(identifiers, _, state, errors) =>
               // we have a state other than SUCCEEDED
               Logger.warn(
@@ -199,21 +137,22 @@ class RegistrationsController @Inject()(
               Logger.warn("attempting TE subscribe again")
               // attempt to subscribe again
               (r.companyReg.safeId match {
-                case None => getSafeId(r)
+                case None => rosmConnector.getSafeId(r)
                 case fo => Future.successful(fo)
               }) map { x: Option[data.SafeId] =>
-                x.map {
-                  persistSubscribeAndAuditPendingRegistration(
-                    { (_, _) => ().pure[Future] },
-                    r,
-                    _,
-                    formBundle,
-                    request.providerId,
-                    request.internalId
-                  )
+                x.map { safeId => 
+                  taxEnrolmentConnector.subscribe(
+                    safeId,
+                    formBundle
+                  ).auditError(_ => AuditingHelper.buildRegistrationAudit(
+                    r, request.providerId, None, "ERROR"
+                  )).auditSuccess(_ => AuditingHelper.buildRegistrationAudit(
+                    r, request.providerId, formBundle.some, "SUCCESS"
+                  )).map(_ => ())
                 }
               }
               OptionT.some[Future](r)
+
             case _ => OptionT.some[Future](r)
           }
         } yield processedRegistration).fold {
