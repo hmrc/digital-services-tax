@@ -103,7 +103,7 @@ class RegistrationsController @Inject()(
       subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
       processedRegistration <- subscription match {
             case s@TaxEnrolmentsSubscription(_, _, "SUCCEEDED", _) =>
-              Logger.warn("fetched a SUCCEEDED subscription. About to process and audit.")
+              Logger.info("fetched a SUCCEEDED subscription. About to process and audit.")
               for {
                 dstNum <- OptionT.fromOption[Future](s.getDSTNumber)
                 updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
