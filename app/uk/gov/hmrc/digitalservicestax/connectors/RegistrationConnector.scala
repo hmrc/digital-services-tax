@@ -30,7 +30,6 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.digitalservicestax.services.AuditingHelper
 
 @Singleton
 class RegistrationConnector @Inject()(
