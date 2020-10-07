@@ -36,6 +36,7 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent._
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class RegistrationsController @Inject()(
@@ -77,7 +78,7 @@ class RegistrationsController @Inject()(
             data,
             request.providerId
           )
-          _  <- persistence.pendingCallbacks.update(r.formBundleNumber, request.internalId)
+          _  <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
           _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
         } yield r
       ).auditError  (_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
@@ -91,56 +92,44 @@ class RegistrationsController @Inject()(
     )
   }
 
-  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.registrations.get(request.internalId).flatMap {
-      case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
-      case Some(r) =>
-        // the registration may not have completed yet, or the callback was unable to return
-        // check to see if there is a enrolment record.
-        (for {
-          formBundle            <- OptionT(persistence.pendingCallbacks.reverseLookup(request.internalId))
-          subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
-          processedRegistration <- subscription match {
-            case s@TaxEnrolmentsSubscription(Some(_), _, "SUCCEEDED", _) => for {
-              dstNum   <- OptionT.fromOption[Future](s.getDSTNumber)
-              updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
-              period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
-              _        <- OptionT.liftF(
-                            emailConnector
-                              .sendConfirmationEmail(
-                                updatedR.contact,
-                                updatedR.companyReg.company.name,
-                                updatedR.ultimateParent.fold(CompanyName("unknown")){x => x.name},
-                                dstNum,
-                                period
-                              )
-                          )
-              _        <- OptionT.liftF(
-                            auditing
-                              .sendExtendedEvent(
-                                AuditingHelper.buildCallbackAudit(
-                                  CallbackNotification("SUCCEEDED", None),
-                                  request.uri,
-                                  formBundle,
-                                  "SUCCESS",
-                                  dstNum.some)
-                              )
-                          )
-            } yield updatedR
-
+  /** The registration may not have completed yet, or the callback was unable to return.
+    * Check to see if there is a enrolment record. 
+    */
+  def attemptRegistrationFix(r: Registration)(implicit request: LoggedInRequest[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Registration]] =
+  {
+    (for {
+      formBundle            <- OptionT(persistence.pendingCallbacks.reverseLookup(request.internalId))
+      subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
+      processedRegistration <- subscription match {
+            case s@TaxEnrolmentsSubscription(_, _, "SUCCEEDED", _) =>
+              for {
+                dstNum <- OptionT.fromOption[Future](s.getDSTNumber)
+                updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
+                period   <- OptionT.liftF(returnConnector.getNextPendingPeriod(dstNum))
+                _        <- OptionT.liftF(emailConnector.sendConfirmationEmail(
+                  updatedR.contact,
+                  updatedR.companyReg.company.name,
+                  updatedR.ultimateParent.fold(CompanyName("unknown")){x => x.name},
+                  dstNum,
+                  period
+                ).auditSuccess(_ => AuditingHelper.buildCallbackAudit(
+                  CallbackNotification("SUCCEEDED", None),
+                  request.uri,
+                  formBundle,
+                  "SUCCESS",
+                  s.getDSTNumber)))
+              } yield updatedR
+              
             case TaxEnrolmentsSubscription(identifiers, _, state, errors) =>
               // we have a state other than SUCCEEDED
               Logger.warn(
                 s"state: $state, " +
                 s"errors: ${errors.getOrElse("none reported")}, " +
-                s"identifiers: ${identifiers.fold("none")(_=> "some")}")
+                s"identifiers: ${if (identifiers.isEmpty) "none" else "some"}")
               Logger.warn("attempting TE subscribe again")
               // attempt to subscribe again
-              (r.companyReg.safeId match {
-                case None => rosmConnector.getSafeId(r)
-                case fo => Future.successful(fo)
-              }) map { x: Option[data.SafeId] =>
-                x.map { safeId => 
+              r.companyReg.safeId.fold(rosmConnector.getSafeId(r))(_.some.pure[Future]).map {
+                _.map { safeId =>
                   taxEnrolmentConnector.subscribe(
                     safeId,
                     formBundle
@@ -152,13 +141,17 @@ class RegistrationsController @Inject()(
                 }
               }
               OptionT.some[Future](r)
-
-            case _ => OptionT.some[Future](r)
           }
         } yield processedRegistration).fold {
           Logger.info("unable to get processed registration")
-          NotFound(JsNull)
-        }(y => Ok(Json.toJson(y)))
+          none[Registration]
+        }(_.some)
+  }
+
+  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
+    persistence.registrations.get(request.internalId).flatMap {
+      case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
+      case Some(r) => attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
       case None => {
         Logger.warn("no pending registration")
         NotFound.pure[Future]
