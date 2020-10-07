@@ -88,7 +88,7 @@ class RegistrationsController @Inject()(
         data.companyReg.company.name,
         data.ultimateParent
       )
-    } yield (Ok(JsNull))
+    } yield Ok(JsNull)
     )
   }
 
@@ -103,7 +103,7 @@ class RegistrationsController @Inject()(
       subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
       processedRegistration <- subscription match {
             case s@TaxEnrolmentsSubscription(_, _, "SUCCEEDED", _) =>
-              Logger.info("fetched a SUCCEEDED subscription. About to process and audit.")
+              Logger.warn("fetched a SUCCEEDED subscription. About to process and audit.")
               for {
                 dstNum <- OptionT.fromOption[Future](s.getDSTNumber)
                 updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
@@ -145,7 +145,7 @@ class RegistrationsController @Inject()(
               OptionT.some[Future](r)
           }
         } yield processedRegistration).fold {
-          Logger.info("unable to get processed registration")
+          Logger.warn("unable to get processed registration")
           none[Registration]
         }(_.some)
   }
@@ -153,7 +153,9 @@ class RegistrationsController @Inject()(
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
     persistence.registrations.get(request.internalId).flatMap {
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
-      case Some(r) => attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
+      case Some(r) =>
+        Logger.warn("DST Number not found, attempting registration fix")
+        attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
       case None => {
         Logger.warn("no pending registration")
         NotFound.pure[Future]
