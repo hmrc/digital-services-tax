@@ -97,11 +97,13 @@ class RegistrationsController @Inject()(
     */
   def attemptRegistrationFix(r: Registration)(implicit request: LoggedInRequest[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Registration]] =
   {
+    Logger.warn(s"Enrolments from Auth: ${request.enrolments.enrolments.map(_.key).mkString(", ")}")
     (for {
       formBundle            <- OptionT(persistence.pendingCallbacks.reverseLookup(request.internalId))
       subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
       processedRegistration <- subscription match {
             case s@TaxEnrolmentsSubscription(_, _, "SUCCEEDED", _) =>
+              Logger.info("fetched a SUCCEEDED subscription. About to process and audit.")
               for {
                 dstNum <- OptionT.fromOption[Future](s.getDSTNumber)
                 updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))

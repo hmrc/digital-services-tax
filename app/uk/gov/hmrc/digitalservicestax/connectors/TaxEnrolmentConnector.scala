@@ -45,7 +45,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
-          if (appConfig.logRegResponse) Logger.debug(
+          Logger.debug(
             s"Tax Enrolments response is $Result"
           )
           Result
@@ -84,13 +84,14 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 }
 
 case class TaxEnrolmentsSubscription(
-  identifiers: Seq[Identifier],
+  identifiers: Option[Seq[Identifier]],
   etmpId: String,
   state: String,
   errorResponse: Option[String]
 ) {
   def getDSTNumber: Option[DSTRegNumber] = {
-    identifiers.collectFirst {
+
+    identifiers.getOrElse(Nil).collectFirst {
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
   }
