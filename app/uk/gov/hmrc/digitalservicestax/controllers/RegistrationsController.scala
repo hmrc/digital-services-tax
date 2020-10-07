@@ -153,9 +153,13 @@ class RegistrationsController @Inject()(
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
     persistence.registrations.get(request.internalId).flatMap {
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
-      case Some(r) =>
+      case Some(r) => if (appConfig.fixFailedCallback) {
         Logger.warn("DST Number not found, attempting registration fix")
         attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
+      } else {
+        Logger.info(s"pending registration for ${request.internalId}")
+        Future.successful(Ok(Json.toJson(r)))
+      }
       case None => {
         Logger.warn("no pending registration")
         NotFound.pure[Future]

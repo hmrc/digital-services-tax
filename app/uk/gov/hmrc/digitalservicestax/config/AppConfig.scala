@@ -31,4 +31,6 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val logRegResponse: Boolean = config.getOptional[Boolean]("log.register-response").getOrElse(false)
 
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
+
+  val fixFailedCallback: Boolean = config.getOptional[Boolean]("fix.callback-failure.enabled").getOrElse(false)
 }
