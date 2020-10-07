@@ -26,10 +26,13 @@ import com.outworkers.util.samplers._
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.http.HeaderCarrier
+import org.scalatestplus.mockito._
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
-class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
+class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks with MockitoSugar {
 
-  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, appConfig, implicitly) {
+  val auditing: AuditConnector = mock[AuditConnector]
+  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, auditing, appConfig, implicitly) {
     override val desURL: String = mockServerUrl
   }
 
@@ -51,20 +54,10 @@ class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
         .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
 
 
-    val response = RegTestConnector.send(idType, Some(idNumber), reg)
+    val response = RegTestConnector.send(idType, idNumber, reg, "provider")
     whenReady(response) { res =>
       res
     }
-  }
-
-  "should throw an error if no FormBundleNumber id Number" in {
-    val idType = gen[ShortString].value
-    val reg = arbitrary[Registration].sample.value
-
-    whenReady(RegTestConnector.send(idType, None, reg).failed) { ex =>
-      ex.getMessage mustEqual s"Missing idNumber for idType: $idType"
-    }
-
   }
 
 }

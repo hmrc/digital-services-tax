@@ -86,5 +86,15 @@ class RosmConnector @Inject()(
       case NotAnOrganisationException => None
     }
   }
-  
+
+  def getSafeId(data: Registration)(implicit hc:HeaderCarrier, ec: ExecutionContext): Future[Option[SafeId]] = {
+    retrieveROSMDetailsWithoutID(
+      RosmRegisterWithoutIDRequest(
+        isAnAgent = false,
+        isAGroup = false,
+        data.companyReg.company,
+        data.contact
+      )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
+  }
+
 }
