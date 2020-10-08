@@ -79,7 +79,6 @@ class RegistrationsController @Inject()(
             request.providerId
           )
           _  <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
-          _  =  Logger.info(s"submitRegistration: TE put contains safeId: $safeId and formBundleNumber: ${r.formBundleNumber}")
           _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
         } yield r
       ).auditError  (_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
@@ -133,7 +132,6 @@ class RegistrationsController @Inject()(
               // attempt to subscribe again
               r.companyReg.safeId.fold(rosmConnector.getSafeId(r))(_.some.pure[Future]).map {
                 _.map { safeId =>
-                  Logger.info(s"attemptRegistrationFix: TE put contains safeId: $safeId and formBundleNumber: $formBundle")
                   taxEnrolmentConnector.subscribe(
                     safeId,
                     formBundle
