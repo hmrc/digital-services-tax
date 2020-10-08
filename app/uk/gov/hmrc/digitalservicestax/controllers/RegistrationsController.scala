@@ -79,7 +79,6 @@ class RegistrationsController @Inject()(
             request.providerId
           )
           _  <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
-          _  =  Logger.info(s"submitRegistration: TE put contains safeId: $safeId and formBundleNumber: ${r.formBundleNumber}")
           _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
         } yield r
       ).auditError  (_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
@@ -156,7 +155,6 @@ class RegistrationsController @Inject()(
     persistence.registrations.get(request.internalId).flatMap {
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
       case Some(r) => if (appConfig.fixFailedCallback) {
-        Logger.warn("DST Number not found, attempting registration fix")
         attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
       } else {
         Logger.info(s"pending registration for ${request.internalId}")
