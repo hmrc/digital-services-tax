@@ -132,7 +132,6 @@ class RegistrationsController @Inject()(
               // attempt to subscribe again
               r.companyReg.safeId.fold(rosmConnector.getSafeId(r))(_.some.pure[Future]).map {
                 _.map { safeId =>
-                  Logger.info(s"attemptRegistrationFix: TE put contains safeId: $safeId and formBundleNumber: $formBundle")
                   taxEnrolmentConnector.subscribe(
                     safeId,
                     formBundle
