@@ -42,7 +42,6 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    Logger.info(s"TE put contains safeId: $safeId and formBundleNumber: $formBundleNumber")
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
