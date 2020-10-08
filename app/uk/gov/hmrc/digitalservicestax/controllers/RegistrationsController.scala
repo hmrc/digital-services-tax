@@ -154,6 +154,7 @@ class RegistrationsController @Inject()(
     persistence.registrations.get(request.internalId).flatMap {
       case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
       case Some(r) => if (appConfig.fixFailedCallback) {
+        Logger.warn("DST Number not found, attempting registration fix")
         attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
       } else {
         Logger.info(s"pending registration for ${request.internalId}")
