@@ -125,4 +125,11 @@ class ReturnsController @Inject()(
       }
     }
 
+  def doDebug() = Action.async {
+    implicit val hc = new uk.gov.hmrc.http.HeaderCarrier()
+    connector.doDebug().map { _ => 
+      Ok("done")
+    }
+  }
+
 }

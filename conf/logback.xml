@@ -47,6 +47,8 @@
 
     <logger name="uk.gov" level="WARN"/>
 
+    <logger name="uk.gov.hmrc.digitalservicestax.connectors.ReturnConnector" level="DEBUG"/>    
+
     <logger name="application" level="WARN"/>
 
     <logger name="connector" level="ERROR">

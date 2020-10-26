@@ -42,6 +42,8 @@ class ReturnConnector @Inject()(val http: HttpClient,
   appConfig: AppConfig)
   extends DesHelpers {
 
+  val log = play.api.Logger(this.getClass())
+
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
@@ -52,7 +54,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
     ec: ExecutionContext
   ): Future[Period] =
     getPeriods(dstRegNo).map{
-      _.collectFirst { case (x, None) => x }
+      _.sortBy(_._1.start.toEpochDay).collectFirst { case (x, None) => x }
         .getOrElse(throw new NoSuchElementException)
     }
 
@@ -66,7 +68,14 @@ class ReturnConnector @Inject()(val http: HttpClient,
       s"?from=${appConfig.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"
 
-    desGet[List[(Period, Option[LocalDate])]](url)
+    val ret = desGet[List[(Period, Option[LocalDate])]](url)
+    ret.onComplete {
+      case scala.util.Success(x) => x.foreach { case (p, r) =>
+        log.debug(s"$p => $r")
+      }
+      case _ => ()
+    }
+    ret
   }
 
   def send(
@@ -99,4 +108,23 @@ class ReturnConnector @Inject()(val http: HttpClient,
 
     result
   }
+
+  def doDebug()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+    appConfig.debugRegNo match {
+      case Some(dstRegNo) => 
+        val originalCall: LocalDate = LocalDate.of(2020, 10, 9)
+          val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
+          s"?from=${appConfig.obligationStartDate}" +
+          s"&to=${originalCall.plusYears(1)}"
+          val ret = desGet[JsValue](url)
+
+        ret.map { json =>
+          log.debug(s"JSON payload: $json")
+        }
+      case None =>
+        Future.successful(())
+    }
+  }
+
 }
+
