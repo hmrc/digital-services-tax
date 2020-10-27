@@ -52,7 +52,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
     ec: ExecutionContext
   ): Future[Period] =
     getPeriods(dstRegNo).map{
-      _.collectFirst { case (x, None) => x }
+      _.sortBy(_._1.start.toEpochDay).collectFirst { case (x, None) => x }      
         .getOrElse(throw new NoSuchElementException)
     }
 
