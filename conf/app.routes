@@ -17,3 +17,5 @@ GET  /returns/all                                         uk.gov.hmrc.digitalser
 
 GET  /financial-transactions                              uk.gov.hmrc.digitalservicestax.controllers.FinancialTransactionsController.lookup
 
+GET  /do-debug                              uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.doDebug
+
