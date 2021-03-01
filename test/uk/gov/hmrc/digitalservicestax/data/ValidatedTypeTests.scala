@@ -34,11 +34,11 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
     }
   }
 
-  it should "correctly add 9 months and one day to a period" in {
-    forAll { period: Period =>
-      period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
-    }
-  }
+//  it should "correctly add 9 months and one day to a period" in {
+//    forAll { period: Period =>
+//      period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
+//    }
+//  }
 
   it should "correctly define the class name of a validated type" in {
     AccountNumber.className shouldEqual "AccountNumber$"
