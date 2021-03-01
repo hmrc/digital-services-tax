@@ -24,7 +24,12 @@ case class Period(
   end: LocalDate,
   returnDue: LocalDate,
   key: Period.Key) {
-    def paymentDue: LocalDate = end.plusMonths(9).plusDays(1)
+    def paymentDue: LocalDate = {
+      end match {
+        case e if e.getDayOfMonth == e.lengthOfMonth() => end.plusMonths(10).withDayOfMonth(1)
+        case _ => end.plusMonths(9).plusDays(1)
+      }
+    }
   }
 
 
