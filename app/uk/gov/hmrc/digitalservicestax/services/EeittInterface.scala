@@ -205,7 +205,8 @@ object EeittInterface {
 
       val regimeSpecificJson =
         if(forAudit)
-          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2))))
+          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2)))) ++
+            JsObject(breakdownEntries.map(x => (x._1, JsString(x._2))))
         else
           JsArray(
             regimeSpecificDetails.map { case (key, value) =>
@@ -215,12 +216,10 @@ object EeittInterface {
                 "paramValue" -> value
               )
             }
-          ) ++
-          JsArray(
+           ++ 
             breakdownEntries.zipWithIndex.map { case ((key, value), i) =>
-              val octalIterator = if(i < 10) "%02d".format(i + 1) else s"${i + 1}"
               Json.obj(
-                "paramSequence" -> octalIterator, //iterator needs to ascend from 01
+                "paramSequence" -> "%02d".format(i + 1), //iterator needs to ascend from 01
                 "paramName" -> key,
                 "paramValue" -> value
               )
