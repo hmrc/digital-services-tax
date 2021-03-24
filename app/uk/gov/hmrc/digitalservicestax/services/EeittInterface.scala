@@ -181,10 +181,9 @@ object EeittInterface {
       val breakdownEntries: Seq[(String, String)] = companiesAmount.toList flatMap { case (company, amt) =>
           Seq(
             "A_DST_GROUP_MEMBER" -> company.name, // Group Member Company Name CHAR40
-            "A_DST_GROUP_MEM_LIABILITY" -> amt.toString // DST liability amount per group member BETRW_KK
-          ) ++ company.utr.map { u =>
-            "A_DST_GROUP_MEM_ID" -> u
-          }.toList
+            "A_DST_GROUP_MEM_LIABILITY" -> amt.toString, // DST liability amount per group member BETRW_KK
+            "A_DST_GROUP_MEM_ID" -> company.utr.getOrElse("NA") //UTR is optional for user but required in api
+          )
         }
 
       // N.B. not required for ETMP (yet) but needed for auditing
@@ -202,20 +201,30 @@ object EeittInterface {
         "A_DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
         "A_DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
         "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
-      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ breakdownEntries ++ reliefAmount
+      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ reliefAmount
 
       val regimeSpecificJson =
         if(forAudit)
-          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2))))
-        else JsArray(
-          regimeSpecificDetails.zipWithIndex map { case ((key, value), i) =>
-            Json.obj(
-              "paramSequence" -> "01",
-              "paramName" -> key,
-              "paramValue" -> value
-            )
-          }
-        )
+          JsObject(regimeSpecificDetails.map(x => (x._1, JsString(x._2)))) ++
+            JsObject(breakdownEntries.map(x => (x._1, JsString(x._2))))
+        else
+          JsArray(
+            regimeSpecificDetails.map { case (key, value) =>
+              Json.obj(
+                "paramSequence" -> "01",
+                "paramName" -> key,
+                "paramValue" -> value
+              )
+            }
+           ++ 
+            breakdownEntries.zipWithIndex.map { case ((key, value), i) =>
+              Json.obj(
+                "paramSequence" -> "%02d".format(i + 1), //iterator needs to ascend from 01
+                "paramName" -> key,
+                "paramValue" -> value
+              )
+            }
+          )
 
       Json.obj(
         "receivedAt" -> ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
