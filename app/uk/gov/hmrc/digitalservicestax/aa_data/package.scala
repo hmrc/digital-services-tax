@@ -73,7 +73,7 @@ package object data extends SimpleJson {
 
   type CompanyName = String @@ CompanyName.Tag
   object CompanyName extends RegexValidatedString(
-    regex = """^[a-zA-Z0-9 '&.-]{1,105}$"""
+    regex = """^[a-zA-Z0-9 '&-]{1,105}$"""
   )
 
   type AddressLine = String @@ AddressLine.Tag
