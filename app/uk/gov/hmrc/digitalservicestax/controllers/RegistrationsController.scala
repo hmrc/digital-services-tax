@@ -164,7 +164,7 @@ class RegistrationsController @Inject()(
       case (Some(r), p) if p.nonEmpty =>
         Logger.info(s"pending registration for ${request.internalId}")
         Ok(Json.toJson(r))
-      case (None, _) =>
+      case _ =>
         Logger.warn("no pending registration")
         NotFound
     }
