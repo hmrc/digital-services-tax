@@ -65,7 +65,7 @@ class RegistrationsController @Inject()(
      
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
     withJsonBody[Registration](data => for {
-      _      <- persistence.registrations(request.internalId) = data
+      _      <- persistence.registrations.update(request.internalId, data)
       safeId <- data.companyReg.safeId.fold(rosmConnector.getSafeId(data).map{_.get})(_.pure[Future])
       reg    <- (
         // these steps are combined for auditing purposes
@@ -155,19 +155,18 @@ class RegistrationsController @Inject()(
   }
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
-    persistence.registrations.get(request.internalId).flatMap {
-      case Some(r) if r.registrationNumber.isDefined => Ok(Json.toJson(r)).pure[Future]
-      case Some(r) => if (appConfig.fixFailedCallback) {
-        Logger.warn("DST Number not found, attempting registration fix")
-        attemptRegistrationFix(r).map(x => Ok(Json.toJson(x)))
-      } else {
+    for {
+      a <- persistence.registrations.get(request.internalId)
+      b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
+    } yield (a, b) match {
+      case (Some(r), _) if r.registrationNumber.isDefined =>
+        Ok(Json.toJson(r))
+      case (Some(r), p) if p.nonEmpty =>
         Logger.info(s"pending registration for ${request.internalId}")
-        Future.successful(Ok(Json.toJson(r)))
-      }
-      case None => {
+        Ok(Json.toJson(r))
+      case (None, _) =>
         Logger.warn("no pending registration")
-        NotFound.pure[Future]
-      }
+        NotFound
     }
   }
 
