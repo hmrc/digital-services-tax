@@ -48,8 +48,8 @@ package object data extends SimpleJson {
 
   type Postcode = String @@ Postcode.Tag
   object Postcode extends RegexValidatedString(
-    """^(GIR 0A{2})|((([A-Z][0-9]{1,2})|(([A-Z][A-HJ-Y][0-9]{1,2})|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z]))))[ ]?[0-9][A-Z]{2})$""",
-    _.toUpperCase
+    """^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$""",
+    _.trim.replaceAll("[ \\t]+", " ").toUpperCase
   )
 
   type Money = BigDecimal @@ Money.Tag
