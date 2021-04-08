@@ -24,6 +24,7 @@ import uk.gov.hmrc.digitalservicestax.data._
 object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
   object NotAnOrganisationException extends NoSuchElementException("Not an organisation")
+  object InvalidCompanyNameException extends RuntimeException("Invalid company name")
 
   implicit val jaddress: Reads[Address] = new Reads[Address] {
     def reads(json: JsValue): JsResult[Address] = JsSuccess{
@@ -50,6 +51,12 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
     if ({json \ "organisation"}.isEmpty) {
       throw NotAnOrganisationException
+    }
+
+    try {
+      {json \ "organisation" \ "organisationName"}.as[CompanyName]
+    } catch {
+      case e: JsResultException => throw InvalidCompanyNameException
     }
 
     JsSuccess(CompanyRegWrapper (

@@ -21,7 +21,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Mode}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.{InvalidCompanyNameException, NotAnOrganisationException}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -31,6 +31,7 @@ import BackendAndFrontendJson.addressFormat
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import cats.syntax.option._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -84,6 +85,9 @@ class RosmConnector @Inject()(
       request
     ).recover {
       case NotAnOrganisationException => None
+      case InvalidCompanyNameException =>
+        Logger.info("Invalid company name retrieved from ROSM")
+        None
     }
   }
 
