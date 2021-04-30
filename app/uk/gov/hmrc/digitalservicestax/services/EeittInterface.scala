@@ -57,13 +57,14 @@ object EeittInterface {
     def writes(a: A): JsValue = JsString(a.entryName)
   }
 
+  def strDate(d: LocalDate): String =
+    d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
+
   implicit val registrationWriter = new Writes[Registration] {
      implicit val trueFalseIndicatorType = new Writes[Boolean] {
        def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
      }
 
-     def strDate(d: LocalDate): String =
-       d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
 
      def writes(o: Registration): JsValue = {
        import o._
@@ -187,8 +188,8 @@ object EeittInterface {
 
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
         "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
-        "A_PERIOD_FROM" -> period.start.toString, // MANDATORY Period From  DATS
-        "A_PERIOD_TO" -> period.start.toString, // MANDATORY Period To  DATS
+        "A_PERIOD_FROM" -> strDate(period.start), // MANDATORY Period From  DATS
+        "A_PERIOD_TO" -> strDate(period.end), // MANDATORY Period To  DATS
         "A_DST_FIRST_RETURN" -> bool(!isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
         "A_DST_RELIEF" -> bool(crossBorderReliefAmount > 0), // Are you claiming relief for relevant cross-border transactions? CHAR1
         "A_DST_TAX_ALLOWANCE" -> allowanceAmount.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
