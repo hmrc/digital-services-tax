@@ -231,11 +231,18 @@ object TestInstances {
   def date(start: LocalDate, end: LocalDate): Gen[LocalDate] =
     Gen.choose(start.toEpochDay, end.toEpochDay).map(LocalDate.ofEpochDay)
 
+
+  def genAllowanceAmount(g: Gen[Map[Activity, Percent]]): Gen[Option[Money]] =
+    g.map {
+      case x if x.forall{ case (_,v) => v > 0 } => Gen.some(arbitrary[Money])
+      case _ => Gen.const(None)
+    }.flatten
+
   implicit def returnGen: Arbitrary[Return] = Arbitrary((
     genActivityPercentMap,
     arbitrary[Money],
+    genAllowanceAmount(genActivityPercentMap),
     gencomap,
-    arbitrary[Money],
     arbitrary[Money],
     Gen.option(genRepayment)
     ).mapN(Return.apply))

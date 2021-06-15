@@ -186,17 +186,20 @@ object EeittInterface {
         if (showReliefAmount) Seq("A_DST_RELIEF_AMOUNT" -> crossBorderReliefAmount.toString)
         else Seq.empty[(String,String)]
 
+      val dstTaxAllowance: Seq[(String, String)] = allowanceAmount.map { x =>
+        Seq("A_DST_TAX_ALLOWANCE" -> x.toString) // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
+      }.getOrElse(Seq.empty[(String, String)])
+
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
         "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
         "A_PERIOD_FROM" -> strDate(period.start), // MANDATORY Period From  DATS
         "A_PERIOD_TO" -> strDate(period.end), // MANDATORY Period To  DATS
         "A_DST_FIRST_RETURN" -> bool(!isAmend), // Is this the first return you have submitted for this company and this accounting period? CHAR1
         "A_DST_RELIEF" -> bool(crossBorderReliefAmount > 0), // Are you claiming relief for relevant cross-border transactions? CHAR1
-        "A_DST_TAX_ALLOWANCE" -> allowanceAmount.toString, // What tax-free allowance is being claimed against taxable revenues? BETRW_KK
         "A_DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
         "A_DST_REPAYMENT_REQ" -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
         "A_DATA_ORIGIN" -> "1" // MANDATORY Data origin CHAR2
-      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ reliefAmount
+      ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ reliefAmount ++ dstTaxAllowance
 
       def groupMemberFields(company: GroupCompany, amt: Money) : Seq[(String, String)] = {
         Seq(
