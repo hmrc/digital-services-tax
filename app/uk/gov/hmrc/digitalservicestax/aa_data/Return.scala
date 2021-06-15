@@ -19,8 +19,8 @@ package uk.gov.hmrc.digitalservicestax.data
 case class Return (
   alternateCharge: Map[Activity, Percent],
   crossBorderReliefAmount: Money,
+  allowanceAmount: Option[Money],
   companiesAmount: Map[GroupCompany, Money],
-  allowanceAmount: Money,
   totalLiability: Money,
   repayment: Option[RepaymentDetails]
 )
