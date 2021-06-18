@@ -97,14 +97,8 @@ package object data extends SimpleJson {
 
   type SortCode = String @@ SortCode.Tag
   object SortCode extends RegexValidatedString(
-    """^([0-9]{2}-){2}[0-9]{2}$""",
-    {in =>
-      val digitsOnly: String = in.filter(_.isDigit)
-      digitsOnly.toList match {
-        case aa :: ab :: ba :: bb :: ca :: cb :: Nil => s"$aa$ab-$ba$bb-$ca$cb"
-        case _ => "bad"
-      }
-    }
+    """^[0-9]{6}$""",
+    _.filter(_.isDigit)
   )
 
   type AccountNumber = String @@ AccountNumber.Tag
