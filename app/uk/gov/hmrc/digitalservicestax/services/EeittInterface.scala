@@ -157,7 +157,7 @@ object EeittInterface {
             case OnlineMarketplace => "MARKETPLACE"
           }
 
-          (s"A_DST_SUBJECT_${key}" -> bool(alternateCharge.isDefinedAt(activityType)))
+          (s"A_DST_SUBJECT_${key}" -> bool(reportedActivities.contains(activityType)))
         }
 
       val repaymentInfo: Seq[(String, String)] =
