@@ -238,7 +238,12 @@ object TestInstances {
       case _ => Gen.const(None)
     }.flatten
 
+  def genActivitySet: Gen[Set[Activity]] = Gen.oneOf(1,2,3).map { x =>
+    Gen.listOfN(x, arbitrary[Activity])
+  }.flatten.retryUntil(x => x.distinct.size == x.size, 100).map(_.toSet)
+
   implicit def returnGen: Arbitrary[Return] = Arbitrary((
+    genActivitySet,
     genActivityPercentMap,
     arbitrary[Money],
     genAllowanceAmount(genActivityPercentMap),
