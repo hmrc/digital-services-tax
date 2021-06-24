@@ -213,13 +213,15 @@ object EeittInterface {
         groupMemberFields(company, amt)
       }
 
-      val auditBreakdownEntries = companiesAmount.toList.flatMap { case (company, amt) =>
-        groupMemberFields(company, amt)
-      }
-
       val regimeSpecificJson =
         if(forAudit) {
-          JsObject((regimeSpecificDetails ++ auditBreakdownEntries).map(x => (x._1, JsString(x._2))))
+          JsArray(
+            (regimeSpecificDetails ++ breakdownEntries.flatten).map { case (key, value) =>
+              Json.obj(
+                key -> value,
+              )
+            }
+          )
         } else {
           JsArray(
             regimeSpecificDetails.map { case (key, value) =>
