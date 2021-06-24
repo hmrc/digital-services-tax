@@ -24,8 +24,6 @@ import cats.kernel.Monoid
 import java.time.LocalDate
 import fr.marcwrobel.jbanking.iban.Iban
 
-import scala.util.Try
-
 package object data extends SimpleJson {
 
   type UTR = String @@ UTR.Tag
