@@ -216,9 +216,13 @@ object EeittInterface {
       val regimeSpecificJson =
         if(forAudit) {
           JsArray(
-            (regimeSpecificDetails ++ breakdownEntries.flatten).map { case (key, value) =>
+            (regimeSpecificDetails).map { case (key, value) =>
               Json.obj(
                 key -> value,
+              )
+            } ++ breakdownEntries.map { xs =>
+              JsObject(
+                xs.map { case(k,v) => k -> JsString(v) }
               )
             }
           )

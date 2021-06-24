@@ -20,9 +20,11 @@ import shapeless.{:: => _, _}
 import tag._
 import cats.implicits._
 import cats.kernel.Monoid
-import java.time.LocalDate
 
+import java.time.LocalDate
 import fr.marcwrobel.jbanking.iban.Iban
+
+import scala.util.Try
 
 package object data extends SimpleJson {
 
@@ -57,7 +59,10 @@ package object data extends SimpleJson {
     def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
       Some(in).filter(_.scale == 2)
     }
-
+    // TODO use below
+//    def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
+//      Either.catchOnly[ArithmeticException](in.setScale(2)).toOption
+//    }
     implicit def mon: Monoid[Money] = new Monoid[Money] {
       val base: Monoid[BigDecimal] = implicitly[Monoid[BigDecimal]]
       override def combine(a: Money, b: Money): Money = Money(base.combine(a, b))
