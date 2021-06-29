@@ -25,24 +25,29 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
   object NotAnOrganisationException extends NoSuchElementException("Not an organisation")
   object InvalidCompanyNameException extends RuntimeException("Invalid company name")
+  object InvalidAddressException extends RuntimeException("Invalid address")
 
   implicit val jaddress: Reads[Address] = new Reads[Address] {
     def reads(json: JsValue): JsResult[Address] = JsSuccess{
-      {(json \ "countryCode").as[String]} match {
-        case "GB" => UkAddress(
-          {json \ "addressLine1"}.as[AddressLine],
-          {json \ "addressLine2"}.asOpt[AddressLine],
-          {json \ "addressLine3"}.asOpt[AddressLine],
-          {json \ "addressLine4"}.asOpt[AddressLine],
-          {json \ "postalCode"}.as[Postcode]
-        )
-        case country => ForeignAddress(
-          {json \ "addressLine1"}.as[AddressLine],
-          {json \ "addressLine2"}.asOpt[AddressLine],
-          {json \ "addressLine3"}.asOpt[AddressLine],
-          {json \ "addressLine4"}.asOpt[AddressLine],
-          CountryCode(country)
-        )
+      try{
+        {(json \ "countryCode").as[String]} match {
+          case "GB" => UkAddress(
+            {json \ "addressLine1"}.as[AddressLine],
+            {json \ "addressLine2"}.asOpt[AddressLine],
+            {json \ "addressLine3"}.asOpt[AddressLine],
+            {json \ "addressLine4"}.asOpt[AddressLine],
+            {json \ "postalCode"}.as[Postcode]
+          )
+          case country => ForeignAddress(
+            {json \ "addressLine1"}.as[AddressLine],
+            {json \ "addressLine2"}.asOpt[AddressLine],
+            {json \ "addressLine3"}.asOpt[AddressLine],
+            {json \ "addressLine4"}.asOpt[AddressLine],
+            CountryCode(country)
+          )
+        }
+      } catch {
+        case e: JsResultException => throw InvalidAddressException
       }
     }
   }
