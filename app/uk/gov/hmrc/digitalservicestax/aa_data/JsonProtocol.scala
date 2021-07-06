@@ -21,8 +21,11 @@ import enumeratum.EnumFormats
 import play.api.libs.json._
 import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.Enrolment
+
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
+import scala.collection.immutable.ListMap
+import play.api.libs.json.Json.fromJson
 
 trait SimpleJson {
 
@@ -102,6 +105,7 @@ trait SimpleJson {
 
     override def writes(o: Percent): JsValue = JsNumber(BigDecimal(o.toString))
   }
+
 }
 
 object BackendAndFrontendJson extends SimpleJson {
@@ -134,9 +138,32 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-  implicit val groupCompanyMapFormat: OFormat[Map[GroupCompany, Money]] = new OFormat[Map[GroupCompany, Money]] {
-    override def reads(json: JsValue): JsResult[Map[GroupCompany, Money]] = {
-      JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
+  implicit def listMapReads[V](implicit formatV: Reads[V]): Reads[ListMap[String, V]] = new Reads[ListMap[String, V]] {
+    def reads(json: JsValue) = json match {
+      case JsObject(m) =>
+        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+
+        def locate(e: Errors, key: String): Seq[(JsPath, Seq[JsonValidationError])] = e.map {
+          case (path, validationError) => (JsPath \ key) ++ path -> validationError
+        }
+
+        m.foldLeft(Right(ListMap.empty): Either[Errors, ListMap[String, V]]) {
+          case (acc, (key, value)) => (acc, fromJson[V](value)(formatV)) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
+            case (Right(_), JsError(e)) => Left(locate(e, key))
+            case (Left(e), _: JsSuccess[_]) => Left(e)
+            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+          }
+        }.fold(JsError.apply, res => JsSuccess(res))
+
+      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
+    }
+  }
+
+
+  implicit val groupCompanyMapFormat: OFormat[ListMap[GroupCompany, Money]] = new OFormat[ListMap[GroupCompany, Money]] {
+    override def reads(json: JsValue): JsResult[ListMap[GroupCompany, Money]] = {
+      JsSuccess(json.as[ListMap[String, JsNumber]].map { case (k, v) =>
         k.split(":") match {
           case Array(name, utrS) =>
             GroupCompany(CompanyName(name), Some(UTR(utrS))) -> Money.apply(v.value.setScale(2))
@@ -146,7 +173,7 @@ object BackendAndFrontendJson extends SimpleJson {
       })
     }
 
-    override def writes(o: Map[GroupCompany, Money]): JsObject = {
+    override def writes(o: ListMap[GroupCompany, Money]): JsObject = {
       JsObject(o.toSeq.map { case (k, v) =>
         s"${k.name}:${k.utr.getOrElse("")}" -> JsNumber(v)
       })

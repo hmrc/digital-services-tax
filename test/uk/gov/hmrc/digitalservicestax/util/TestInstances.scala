@@ -18,11 +18,11 @@ package uk.gov.hmrc.digitalservicestax
 package util
 
 import java.time.LocalDate
-
 import enumeratum.scalacheck._
 import cats.implicits.{none, _}
 import com.outworkers.util.samplers.Sample
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
+import org.scalacheck.Gen.buildableOf
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen, _}
 import uk.gov.hmrc.auth.core.retrieve.Credentials
@@ -30,6 +30,8 @@ import uk.gov.hmrc.auth.core.{Admin, AffinityGroup, Assistant, CredentialRole, E
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
 import wolfendale.scalacheck.regexp.RegexpGen
+
+import scala.collection.immutable.ListMap
 
 object TestInstances {
 
@@ -202,7 +204,7 @@ object TestInstances {
     RestrictiveString.gen
   )
 
-  def gencomap: Gen[Map[GroupCompany, Money]] = Gen.mapOf(
+  def gencomap: Gen[ListMap[GroupCompany, Money]] = buildableOf[ListMap[GroupCompany,Money],(GroupCompany,Money)](
     (
       genGroupCo,
       arbitrary[Money]

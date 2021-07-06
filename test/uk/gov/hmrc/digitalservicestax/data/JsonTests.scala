@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
-
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, EitherValues, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -30,6 +29,8 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+
+import scala.collection.immutable.ListMap
 
 class JsonTests extends FlatSpec
   with Matchers
@@ -161,7 +162,7 @@ class JsonTests extends FlatSpec
   }
 
   it should "serialize and de-serialise a Map[GroupCompany, Money]" in {
-    testJsonRoundtrip[Map[GroupCompany, Money]](gencomap)
+    testJsonRoundtrip[ListMap[GroupCompany, Money]](gencomap)
   }
 
   it should "serialize and de-serialise a LocalDate" in {

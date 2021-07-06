@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import scala.collection.immutable.ListMap
+
 case class Return (
   reportedActivities: Set[Activity],
   alternateCharge: Map[Activity, Percent],
   crossBorderReliefAmount: Money,
   allowanceAmount: Option[Money],
-  companiesAmount: Map[GroupCompany, Money],
+  companiesAmount: ListMap[GroupCompany, Money],
   totalLiability: Money,
   repayment: Option[RepaymentDetails]
 )
