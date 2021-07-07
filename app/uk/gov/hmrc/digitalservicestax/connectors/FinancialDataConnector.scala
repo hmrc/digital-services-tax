@@ -23,10 +23,11 @@ import data.{DSTRegNumber, FinancialTransaction}
 import java.net.URLEncoder.encode
 import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
-import play.api.Mode
+import play.api.{Logger, Mode}
 import play.api.libs.json._
+
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -40,6 +41,7 @@ class FinancialDataConnector @Inject()(
 ) extends DesHelpers { 
 
   val desURL: String = servicesConfig.baseUrl("des")
+  val logger = Logger(this.getClass)
 
   /** Calls API#1166: Get Financial Data.
     *
@@ -104,6 +106,11 @@ class FinancialDataConnector @Inject()(
     }
 
     desGet[List[FinancialTransaction]](uri)
+      .recoverWith{
+      case e: NotFoundException =>
+        logger.info(s"${e.getMessage} - No FinancialTransactions returned")
+        Future.successful(List.empty[FinancialTransaction])
+    }
   }
 
 }
