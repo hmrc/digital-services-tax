@@ -17,30 +17,17 @@
 package uk.gov.hmrc.digitalservicestax.util
 
 
-import java.io.File
-import java.time.Clock
-
 import com.softwaremill.macwire._
 import play.api.{Configuration, Environment}
-import play.modules.reactivemongo.ReactiveMongoApi
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
-import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.config.AuditingConfig
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
-import uk.gov.hmrc.play.bootstrap.config.{AuditingConfigProvider, RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpAuditing
+import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
+
+import java.io.File
+import java.time.Clock
 
 trait TestWiring {
   val appName: String = configuration.get[String]("appName")
 
-  lazy val auditingConfigProvider: AuditingConfigProvider = wire[AuditingConfigProvider]
-
-  val auditingconfig: AuditingConfig = auditingConfigProvider.get()
-
-  lazy val auditConnector: AuditConnector = wire[DefaultAuditConnector]
-  lazy val httpAuditing: HttpAuditing = wire[DefaultHttpAuditing]
   lazy val configuration: Configuration = Configuration.load(environment, Map("auditing.enabled" -> "false"))
   lazy val runMode: RunMode = wire[RunMode]
   lazy val environment: Environment = Environment.simple(new File("."))

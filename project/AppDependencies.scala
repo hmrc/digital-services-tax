@@ -11,7 +11,7 @@ object AppDependencies {
     // simple-reactivemongo held back because of platform issue
     "uk.gov.hmrc"            %% "simple-reactivemongo"     % "7.20.0-play-26",
     "org.reactivemongo"      %% "play2-reactivemongo"      % "0.18.6-play26",
-    "uk.gov.hmrc"            %% "bootstrap-play-26"        % "1.7.0",
+    "uk.gov.hmrc"            %% "bootstrap-play-26"        % "4.0.0",
     "com.beachape"           %% "enumeratum"               % "1.6.0",
     "com.beachape"           %% "enumeratum-play-json"     % "1.6.0",
     "com.chuusai"            %% "shapeless"                % "2.3.3",
@@ -30,7 +30,7 @@ object AppDependencies {
     "com.github.fge"          % "json-schema-validator"    % "2.2.6"                 % Test,
     "org.scalacheck"         %% "scalacheck"               % "1.14.3"                % Test,
     "io.chrisdavenport"      %% "cats-scalacheck"          % "0.2.0"                 % Test,
-    "com.beachape"           %% "enumeratum-scalacheck"    % "1.6.0"                % Test,
+    "com.beachape"           %% "enumeratum-scalacheck"    % "1.6.0"                 % Test,
     "wolfendale"             %% "scalacheck-gen-regexp"    % "0.1.2"                 % Test,
     "com.github.tomakehurst" %  "wiremock-jre8"            % "2.26.3"                % Test,
     "com.outworkers"         %% "util-samplers"            % "0.57.0"                % Test,

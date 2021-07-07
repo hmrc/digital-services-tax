@@ -34,6 +34,7 @@ import reactivemongo.api.MongoConnection
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,6 +59,7 @@ trait FakeApplicationSpec extends PlaySpec
 
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
+  lazy val httpAuditing: HttpAuditing = app.injector.instanceOf[HttpAuditing]
   lazy val httpClient: HttpClient = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
   lazy val mcc = app.injector.instanceOf[MessagesControllerComponents]
 
