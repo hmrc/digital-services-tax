@@ -15,5 +15,3 @@ GET  /returns/outstanding                                 uk.gov.hmrc.digitalser
 GET  /returns/amendable                                   uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAmendableReturns()
 GET  /returns/all                                         uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAllReturns()
 
-GET  /financial-transactions                              uk.gov.hmrc.digitalservicestax.controllers.FinancialTransactionsController.lookup
-
