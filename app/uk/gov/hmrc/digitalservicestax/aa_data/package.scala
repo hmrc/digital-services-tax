@@ -150,14 +150,16 @@ package object data extends SimpleJson {
     }
   }
 
-  type Percent = Byte @@ Percent.Tag
-  object Percent extends ValidatedType[Byte] {
-    def validateAndTransform(in: Byte): Option[Byte] = {
-      Some(in).filter { x => x >= 0 && x <= 100 }
+  type Percent = Float @@ Percent.Tag
+  object Percent extends ValidatedType[Float] {
+    def validateAndTransform(in: Float): Option[Float] = {
+      Some(in).filter { x =>
+        (x >= 0 && x <= 100) && (BigDecimal(x.toString).scale <= 3)
+      }
     }
 
     implicit def mon: Monoid[Percent] = new Monoid[Percent] {
-      val base: Monoid[Byte] = implicitly[Monoid[Byte]]
+      val base: Monoid[Float] = implicitly[Monoid[Float]]
       override def combine(a: Percent, b: Percent): Percent = Percent(base.combine(a, b))
       override def empty: Percent = Percent(base.empty)
     }
