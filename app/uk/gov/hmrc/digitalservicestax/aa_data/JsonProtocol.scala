@@ -126,7 +126,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
-        Activity.values.find(_.entryName == k).get -> Percent.apply(v.value.toByte)
+        Activity.values.find(_.entryName == k).get -> Percent.apply(v.value.toFloat)
       })
     }
 
