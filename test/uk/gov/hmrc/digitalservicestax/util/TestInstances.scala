@@ -18,15 +18,16 @@ package uk.gov.hmrc.digitalservicestax
 package util
 
 import java.time.LocalDate
-import enumeratum.scalacheck._
+
 import cats.implicits.{none, _}
 import com.outworkers.util.samplers.Sample
+import enumeratum.scalacheck._
 import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
 import org.scalacheck.Gen.buildableOf
 import org.scalacheck.cats.implicits._
-import org.scalacheck.{Arbitrary, Gen, _}
+import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.auth.core.retrieve.Credentials
-import uk.gov.hmrc.auth.core.{Admin, AffinityGroup, Assistant, CredentialRole, Enrolment, EnrolmentIdentifier, Enrolments, User}
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -46,7 +47,7 @@ object TestInstances {
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
-    Gen.oneOf(List(User, Admin, Assistant))
+    Gen.oneOf(List(User, Assistant))
   }
 
   implicit def arbAffinityGroup: Arbitrary[AffinityGroup] = Arbitrary {

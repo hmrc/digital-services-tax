@@ -17,14 +17,13 @@
 package uk.gov.hmrc.digitalservicestax
 package backend_data
 
-import com.outworkers.util.samplers._
 import cats.implicits._
-import play.api.libs.json._
-import data._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {

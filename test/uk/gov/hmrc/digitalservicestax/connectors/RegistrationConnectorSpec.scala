@@ -17,16 +17,16 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration}
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
-import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import com.outworkers.util.samplers._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalatestplus.mockito._
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration}
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import org.scalatestplus.mockito._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks with MockitoSugar {

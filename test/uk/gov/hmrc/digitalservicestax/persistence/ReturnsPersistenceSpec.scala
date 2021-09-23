@@ -95,19 +95,4 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
     }
   }
 
-  "it should update a return by registration and period" ignore {
-    forAll { (reg: Registration, ret: Return, updatedReturn: Return) =>
-      val chain = for {
-        _ <- mongoPersistence.returns.insert(reg, period, ret)
-        dbReg <- mongoPersistence.returns.get(reg, period)
-        _ <- mongoPersistence.returns.update(reg, period, updatedReturn)
-        postUpdate <- mongoPersistence.returns.get(reg, period)
-      } yield dbReg -> postUpdate
-
-      whenReady(chain) { case (dbRes, postUpdate) =>
-        dbRes.value mustEqual ret
-        //postUpdate.value mustEqual updatedReturn
-      }
-    }
-  }
 }

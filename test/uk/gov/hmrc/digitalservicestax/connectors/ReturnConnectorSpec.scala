@@ -18,18 +18,18 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import java.time.LocalDate
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.domain.ShortString
+import com.outworkers.util.samplers._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import com.outworkers.util.samplers._
-import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 
 class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 

@@ -17,13 +17,13 @@
 package uk.gov.hmrc.digitalservicestax.util
 
 
+import java.io.File
+import java.time.Clock
+
 import com.softwaremill.macwire._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-
-import java.io.File
-import java.time.Clock
 
 trait TestWiring {
   val appName: String = configuration.get[String]("appName")

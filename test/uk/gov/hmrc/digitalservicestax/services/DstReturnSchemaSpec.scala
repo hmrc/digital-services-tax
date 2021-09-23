@@ -17,11 +17,10 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import data._
+import org.scalacheck.Arbitrary.{arbBigDecimal => _}
 import org.scalatest.{FlatSpec, Matchers}
-
 import org.scalatestplus.scalacheck._
-import org.scalacheck._, Arbitrary.{arbBigDecimal => _, _}
+import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {

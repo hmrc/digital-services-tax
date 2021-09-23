@@ -18,8 +18,6 @@ package uk.gov.hmrc.digitalservicestax.Helpers
 
 import java.time.LocalDate
 
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
 import org.scalatestplus.mockito._
 import org.scalatestplus.play._
 import play.api.Configuration
@@ -31,7 +29,7 @@ import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors.ReturnConnector
-import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Period, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.RunMode
