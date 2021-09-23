@@ -129,17 +129,8 @@ package object data extends SimpleJson {
 
   type PhoneNumber = String @@ PhoneNumber.Tag
   object PhoneNumber extends RegexValidatedString(
-  // TODO: check phone number regex
   //Regex which fits both eeitt_subscribe
     "^[A-Z0-9 \\-]{1,30}$"
-  //eeitt_subscribe/phoneNumberType
-    // "^[A-Z0-9 )/(*#-]+{1,30}$"
-  //eeitt_subscribe/regimeSpecificDetailsType/paramValue
-    // "^[0-9a-zA-Z{À-˿'}\\- &`'^._@]{1,255}$"
-  //tested regex on QA reg submission
-    // "^[A-Z0-9)/(\\-*#+]{1,24}$"
-  //Strict previous regex
-    // "^[0-9 ]{6,30}$"
   )
 
   type Email = String @@ Email.Tag

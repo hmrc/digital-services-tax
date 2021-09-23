@@ -75,28 +75,6 @@ class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks
     }
   }
 
-  "should get a response back if des available" ignore {
-    val resp = arbitrary[CompanyRegWrapper].sample.value
-
-    stubFor(
-      post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(
-              /// Json.toJson(resp).toString()
-              """"""
-            )
-        )
-    )
-
-    val future = RosmTestConnector.retrieveROSMDetails("1234567890")
-    whenReady(future) { x =>
-      x mustBe empty
-    }
-  }
-
-
  "retrieve ROSM details without ID" in {
 
    import RosmTestConnector._

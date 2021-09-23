@@ -201,7 +201,7 @@ class JsonTests extends FlatSpec
     jsValue shouldEqual JsString("SocialMedia")
   }
 
-  ignore should "serialize a list of periods and local dates" in {
+  it should "serialize a list of periods and local dates" in {
     val generator = for {
       num <- Gen.chooseNum(2, 15)
       periods <- Gen.listOfN(num, periodArb.arbitrary).map { list =>
