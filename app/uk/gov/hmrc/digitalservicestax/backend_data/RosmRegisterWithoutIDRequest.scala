@@ -17,8 +17,7 @@
 package uk.gov.hmrc.digitalservicestax.backend_data
 
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
-import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails, _}
 
 case class RosmRegisterWithoutIDRequest(
   isAnAgent: Boolean = false,

@@ -17,20 +17,20 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
+import cats.syntax.option._
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
 import play.api.libs.json._
+import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.{InvalidAddressException, InvalidCompanyNameException, NotAnOrganisationException}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.addressFormat
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import BackendAndFrontendJson.addressFormat
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-import cats.syntax.option._
 
 import scala.concurrent.{ExecutionContext, Future}
 

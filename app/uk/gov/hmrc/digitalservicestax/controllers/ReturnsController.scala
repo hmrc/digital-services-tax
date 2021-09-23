@@ -17,27 +17,24 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import data.{percentFormat => _, _}
-import BackendAndFrontendJson._
+import java.time.LocalDate
+
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
+import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import actions._
-import services.{AuditingHelper, JsonSchemaChecker, MongoPersistence}
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.retrieve._
-import v2.Retrievals._
 
 import scala.concurrent._
-import java.time.LocalDate
-
-import cats.implicits._
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 @Singleton()
 class ReturnsController @Inject()(

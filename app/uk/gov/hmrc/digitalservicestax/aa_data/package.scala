@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax
 
-import shapeless.{:: => _, _}
-import tag._
+import java.time.LocalDate
+
 import cats.implicits._
 import cats.kernel.Monoid
-
-import java.time.LocalDate
 import fr.marcwrobel.jbanking.iban.Iban
+import shapeless.tag._
+import shapeless.{:: => _}
 
 package object data extends SimpleJson {
 

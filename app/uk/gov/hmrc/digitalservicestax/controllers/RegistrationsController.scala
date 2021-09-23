@@ -30,13 +30,13 @@ import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent._
-import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class RegistrationsController @Inject()(

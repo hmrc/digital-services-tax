@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import java.time.LocalDate
-
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json.{JsValue, Json}

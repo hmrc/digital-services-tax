@@ -18,18 +18,18 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
 import play.api.libs.json._
+import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.Registration
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 @Singleton
 class RegistrationConnector @Inject()(

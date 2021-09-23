@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
+
 import cats.implicits._
 import enumeratum.EnumFormats
+import play.api.libs.json.Json.fromJson
 import play.api.libs.json._
 import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.Enrolment
+import Enrolment.idFormat
 
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
 import scala.collection.immutable.ListMap
-import play.api.libs.json.Json.fromJson
 
 trait SimpleJson {
 
@@ -119,8 +121,6 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
-
-  import Enrolment.idFormat
   implicit val enrolmentWrites = Json.format[Enrolment]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {

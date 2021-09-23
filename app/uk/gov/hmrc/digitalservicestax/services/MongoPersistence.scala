@@ -17,20 +17,21 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import scala.concurrent._
 import java.time.LocalDateTime
 
-import data._
-import BackendAndFrontendJson._
-import reactivemongo.api.indexes.{Index, IndexType}
-import play.api.libs.json._
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import cats.instances.future._
+import javax.inject._
+import play.api.libs.json._
+import play.modules.reactivemongo._
+import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.play.json._
-import collection._
-import play.modules.reactivemongo._
-import javax.inject._
+import reactivemongo.play.json.collection._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
+import uk.gov.hmrc.digitalservicestax.data._
+
+import scala.concurrent._
 
 object MongoPersistence {
 
@@ -64,8 +65,8 @@ object MongoPersistence {
 class MongoPersistence @Inject()(
   mongo: ReactiveMongoApi
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
-  import mongo.database
   import MongoPersistence._
+  import mongo.database
 
   val pendingCallbacks: PendingCallbacks = new PendingCallbacks {
 

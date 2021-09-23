@@ -18,8 +18,8 @@ package uk.gov.hmrc.digitalservicestax.test
 
 import play.api.Logger
 import play.api.http.HeaderNames
-import play.api.mvc._
 import play.api.mvc.Results.Unauthorized
+import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}

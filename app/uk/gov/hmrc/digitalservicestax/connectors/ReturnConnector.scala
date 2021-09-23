@@ -17,23 +17,22 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
+import java.time.LocalDate
+
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, Mode}
 import play.api.libs.json._
+import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import java.time.{LocalDate, format}
-import format.DateTimeParseException
-
-import BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,

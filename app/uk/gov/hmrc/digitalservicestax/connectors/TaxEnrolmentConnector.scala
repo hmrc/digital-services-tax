@@ -20,13 +20,13 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,

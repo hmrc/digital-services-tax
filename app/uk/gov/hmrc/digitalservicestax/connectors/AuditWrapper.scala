@@ -17,9 +17,10 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import scala.concurrent._
-import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+
+import scala.concurrent._
 
 trait AuditWrapper {
   def auditing: AuditConnector

@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax.services
 
-import cats.implicits.{none, _}
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import BackendAndFrontendJson._
 
 object AuditingHelper {
 
@@ -38,7 +37,7 @@ object AuditingHelper {
     formBundleNumber: FormBundleNumber,
     outcome: String,
     dstRegNo: Option[DSTRegNumber] = None
-  )(implicit hc: HeaderCarrier): ExtendedDataEvent = {
+  ): ExtendedDataEvent = {
     val details = Json.obj(
       "subscriptionId" -> formBundleNumber.toString,
       "dstRegistrationNumber" -> dstRegNo,
@@ -52,7 +51,7 @@ object AuditingHelper {
     data: Registration,
     providerId: String,
     formBundleNumber: Option[FormBundleNumber],
-    outcome: String)(implicit hc: HeaderCarrier): ExtendedDataEvent = {
+    outcome: String): ExtendedDataEvent = {
 
     val details = Json.obj(
       "subscriptionId" -> formBundleNumber,
