@@ -57,10 +57,7 @@ package object data extends SimpleJson {
     def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
       Some(in).filter(_.scale == 2)
     }
-    // TODO use below
-//    def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
-//      Either.catchOnly[ArithmeticException](in.setScale(2)).toOption
-//    }
+
     implicit def mon: Monoid[Money] = new Monoid[Money] {
       val base: Monoid[BigDecimal] = implicitly[Monoid[BigDecimal]]
       override def combine(a: Money, b: Money): Money = Money(base.combine(a, b))
