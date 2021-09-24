@@ -19,7 +19,6 @@ package uk.gov.hmrc.digitalservicestax.test
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, MessagesControllerComponents}
-import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 

@@ -42,6 +42,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+    import uk.gov.hmrc.http.HttpReads.Implicits._
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
@@ -54,12 +55,16 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
         case e: UnauthorizedException => handleError(e, formBundleNumber)
         case e: BadRequestException => handleError(e, formBundleNumber)
       }
-    } else Future.successful[HttpResponse](HttpResponse.apply(418))
+    } else Future.successful[HttpResponse](HttpResponse(418, ""))
   }
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+    import uk.gov.hmrc.http.HttpReads.Implicits._
     if (enabled)
-      http.GET[TaxEnrolmentsSubscription](s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId")
+      http.GET[TaxEnrolmentsSubscription](
+        s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId"
+      )
+//    (readRaw[TaxEnrolmentsSubscription], implicitly, implicitly)
     else {
       testConnector.getSubscription(subscriptionId)
     }
@@ -67,7 +72,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
     Logger.error(s"Tax enrolment returned $e for ${subscribeUrl(formBundleNumber)}")
-    HttpResponse(e.responseCode, Some(Json.toJson(e.message)))
+    HttpResponse(status = e.responseCode, json = Json.toJson(e.message), headers = Map.empty)
   }
 
   def subscribeUrl(subscriptionId: String) =

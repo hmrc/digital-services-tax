@@ -23,7 +23,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.Logger
 import play.api.libs.json.{Json, Writes}
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 
 object JsonSchemaChecker {
 
