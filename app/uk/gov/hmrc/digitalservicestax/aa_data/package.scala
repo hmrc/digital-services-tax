@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.digitalservicestax
 
-import shapeless.{:: => _, _}
-import tag._
+import java.time.LocalDate
+
 import cats.implicits._
 import cats.kernel.Monoid
-
-import java.time.LocalDate
 import fr.marcwrobel.jbanking.iban.Iban
+import shapeless.tag._
+import shapeless.{:: => _}
 
 package object data extends SimpleJson {
 
@@ -57,10 +57,7 @@ package object data extends SimpleJson {
     def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
       Some(in).filter(_.scale == 2)
     }
-    // TODO use below
-//    def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
-//      Either.catchOnly[ArithmeticException](in.setScale(2)).toOption
-//    }
+
     implicit def mon: Monoid[Money] = new Monoid[Money] {
       val base: Monoid[BigDecimal] = implicitly[Monoid[BigDecimal]]
       override def combine(a: Money, b: Money): Money = Money(base.combine(a, b))
@@ -129,17 +126,8 @@ package object data extends SimpleJson {
 
   type PhoneNumber = String @@ PhoneNumber.Tag
   object PhoneNumber extends RegexValidatedString(
-  // TODO: check phone number regex
   //Regex which fits both eeitt_subscribe
     "^[A-Z0-9 \\-]{1,30}$"
-  //eeitt_subscribe/phoneNumberType
-    // "^[A-Z0-9 )/(*#-]+{1,30}$"
-  //eeitt_subscribe/regimeSpecificDetailsType/paramValue
-    // "^[0-9a-zA-Z{À-˿'}\\- &`'^._@]{1,255}$"
-  //tested regex on QA reg submission
-    // "^[A-Z0-9)/(\\-*#+]{1,24}$"
-  //Strict previous regex
-    // "^[0-9 ]{6,30}$"
   )
 
   type Email = String @@ Email.Tag

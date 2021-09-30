@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import java.time.LocalDate
-
 import javax.inject.{Inject, Singleton}
 import play.api.Mode
 import play.api.libs.json.{JsValue, Json}
@@ -25,6 +23,7 @@ import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

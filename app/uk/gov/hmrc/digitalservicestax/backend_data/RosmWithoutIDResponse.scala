@@ -18,7 +18,7 @@ package uk.gov.hmrc.digitalservicestax.backend_data
 
 case class RosmWithoutIDResponse(
   processingDate: String,
-  sapNumber: String, // TODO remove if unneeded
+  sapNumber: String,
   safeId: String,
   agentReferenceNumber: Option[String]
 )

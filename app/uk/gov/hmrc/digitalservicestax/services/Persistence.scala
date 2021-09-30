@@ -17,9 +17,10 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import scala.language.higherKinds
 import cats.implicits._
-import data._
+import uk.gov.hmrc.digitalservicestax.data._
+
+import scala.language.higherKinds
 
 abstract class Persistence[F[_]: cats.Monad] {
 

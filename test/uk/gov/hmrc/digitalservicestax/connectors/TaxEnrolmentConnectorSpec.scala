@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, put, stubFor, urlPathEqualTo}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.samplers._
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.Json
-import uk.gov.hmrc.audit.handler.HttpResult.Response
+import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
 class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
@@ -94,8 +93,8 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
     )
 
     val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
-    whenReady(response.failed) { res =>
-      res
+    whenReady(response) { res =>
+      res.status mustEqual Status.UNAUTHORIZED
     }
   }
 

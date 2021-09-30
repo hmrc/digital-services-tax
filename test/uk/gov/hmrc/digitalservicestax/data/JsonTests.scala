@@ -17,16 +17,16 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{Assertion, EitherValues, FlatSpec, Matchers, OptionValues}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{Format, JsError, JsNull, JsObject, JsPath, JsResult, JsString, Json, JsonValidationError}
-import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import BackendAndFrontendJson._
+
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest._
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -199,17 +199,6 @@ class JsonTests extends FlatSpec
   it should "serialize an enum entry as a string" in {
     val jsValue = Json.toJson(Activity.SocialMedia)
     jsValue shouldEqual JsString("SocialMedia")
-  }
-
-  ignore should "serialize a list of periods and local dates" in {
-    val generator = for {
-      num <- Gen.chooseNum(2, 15)
-      periods <- Gen.listOfN(num, periodArb.arbitrary).map { list =>
-        list.map(_ -> Gen.some(arbDate.arbitrary).sample.value)
-      }
-    } yield periods
-
-    testJsonRoundtrip(generator)
   }
 
   it should "test the JSON schema for Company" in {

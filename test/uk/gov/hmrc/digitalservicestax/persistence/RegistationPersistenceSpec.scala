@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.digitalservicestax.persistence
 
+import org.scalactic.anyvals.PosInt
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Registration, Return}
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.scalactic.anyvals.PosInt
-import org.scalatest.BeforeAndAfterEach
 
 class RegistationPersistenceSpec extends FakeApplicationSpec
   with ScalaFutures

@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.digitalservicestax.test
 
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.{BackendController, FrontendController}
-import cats.implicits._
-import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,9 +31,7 @@ class TestController @Inject()(
   mcc: MessagesControllerComponents,
   sc: ServicesConfig
 )(
-  implicit ec: ExecutionContext,
-  conf: Configuration,
-  environment: Environment
+  implicit ec: ExecutionContext
 ) extends BackendController(cc) with ExtraActions {
 
   def triggerTaxEnrolmentCallback(seed: String): Action[AnyContent] = Action.async { implicit request =>

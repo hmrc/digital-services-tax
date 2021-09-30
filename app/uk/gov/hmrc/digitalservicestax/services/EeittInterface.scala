@@ -17,13 +17,13 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import data._
+import java.time.format.DateTimeFormatter
+import java.time.{Period => _, _}
+
+//import enumeratum._
 import play.api.libs.json._
-import cats.syntax.either._
-import cats.{Id, ~>}
-import cats.data.NonEmptySet
-import java.time.{Period => _, _}, format.DateTimeFormatter
-import enumeratum._, values._
+import uk.gov.hmrc.digitalservicestax.data._
+
 import scala.collection.immutable.ListMap
 
 object EeittInterface {
@@ -53,9 +53,9 @@ object EeittInterface {
       )
   }
 
-  private implicit def enumEntryWrites[A <: EnumEntry] = new Writes[A] {
-    def writes(a: A): JsValue = JsString(a.entryName)
-  }
+//  private implicit def enumEntryWrites[A <: EnumEntry] = new Writes[A] {
+//    def writes(a: A): JsValue = JsString(a.entryName)
+//  }
 
   def strDate(d: LocalDate): String =
     d.format(format.DateTimeFormatter.BASIC_ISO_DATE)

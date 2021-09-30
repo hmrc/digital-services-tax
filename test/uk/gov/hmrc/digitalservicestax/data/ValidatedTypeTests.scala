@@ -18,13 +18,11 @@ package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
 
+import cats.implicits._
 import cats.kernel.Monoid
-import com.outworkers.util.samplers._
 import org.scalacheck.Gen
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import cats.implicits._
-import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 

@@ -22,8 +22,9 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.data.{Period, Registration, Return}
 import uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
-import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
   with ScalaFutures

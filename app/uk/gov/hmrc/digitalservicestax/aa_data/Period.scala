@@ -17,6 +17,7 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
+
 import shapeless.tag.@@
 
 case class Period(

@@ -17,15 +17,14 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
-import uk.gov.hmrc.digitalservicestax.data.{Company, CompanyRegWrapper, ContactDetails}
+import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest}
+import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
+import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import org.scalacheck.Arbitrary.arbitrary
-import com.outworkers.util.samplers._
 
 class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -75,35 +74,11 @@ class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks
     }
   }
 
-  "should get a response back if des available" ignore {
-    val resp = arbitrary[CompanyRegWrapper].sample.value
-
-    stubFor(
-      post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(
-              /// Json.toJson(resp).toString()
-              """"""
-            )
-        )
-    )
-
-    val future = RosmTestConnector.retrieveROSMDetails("1234567890")
-    whenReady(future) { x =>
-      x mustBe empty
-    }
-  }
-
-
  "retrieve ROSM details without ID" in {
 
    import RosmTestConnector._
-   import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats._
 
    val req = arbitrary[RosmRegisterWithoutIDRequest].sample.value
-   val response = gen[RosmWithoutIDResponse]
 
    stubFor(
       post(urlPathEqualTo(s"$desURL/$serviceURLWithoutId"))
