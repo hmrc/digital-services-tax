@@ -64,7 +64,6 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
       http.GET[TaxEnrolmentsSubscription](
         s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId"
       )
-//    (readRaw[TaxEnrolmentsSubscription], implicitly, implicitly)
     else {
       testConnector.getSubscription(subscriptionId)
     }
