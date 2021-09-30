@@ -42,7 +42,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    import uk.gov.hmrc.http.HttpReads.Implicits._
+    import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {

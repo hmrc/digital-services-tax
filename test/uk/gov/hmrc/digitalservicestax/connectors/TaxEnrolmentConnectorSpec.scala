@@ -93,8 +93,8 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
     )
 
     val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
-    whenReady(response.failed) { res =>
-      res
+    whenReady(response) { res =>
+      res.status mustEqual Status.UNAUTHORIZED
     }
   }
 
