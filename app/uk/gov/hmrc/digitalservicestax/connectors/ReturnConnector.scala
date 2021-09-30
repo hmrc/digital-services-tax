@@ -29,7 +29,7 @@ import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.duration._
@@ -42,6 +42,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
   appConfig: AppConfig)
   extends DesHelpers {
 
+  val logger: Logger = Logger(this.getClass)
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
@@ -93,7 +94,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
       Json.toJson(request)(writes)
     )
 
-    if (appConfig.logRegResponse) Logger.debug(
+    if (appConfig.logRegResponse) logger.debug(
       s"Return response is ${Await.result(result, 20.seconds)}"
     )
 

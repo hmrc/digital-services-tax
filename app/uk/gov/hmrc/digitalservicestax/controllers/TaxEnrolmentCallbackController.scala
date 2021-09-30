@@ -27,15 +27,13 @@ import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
@@ -47,8 +45,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   auditing: AuditConnector
 ) extends BackendController(cc) with AuthorisedFunctions {
 
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
-
+  val logger: Logger = Logger(this.getClass)
   implicit val ec: ExecutionContext = cc.executionContext
 
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
@@ -56,7 +53,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   def callback(formBundleNumberString: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val formBundleNumber = FormBundleNumber(formBundleNumberString)
     withJsonBody[CallbackNotification] { body =>
-      Logger.info(s"Tax-enrolment callback triggered, body: $body")
+      logger.info(s"Tax-enrolment callback triggered, body: $body")
       if (body.state == "SUCCEEDED") {
         (for {
           dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
@@ -80,11 +77,11 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
               dstNumber.some
             )
           )
-          Logger.info("Tax-enrolments callback, lookup and save of persistence successful")
+          logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
         }).recoverWith{
           case e: Exception =>
-            Logger.warn(s"Error inside SUCCEEDED tax-enrolment callback processing: $e")
+            logger.warn(s"Error inside SUCCEEDED tax-enrolment callback processing: $e")
             Future(NoContent)
           case _ =>
             Future(NoContent)
@@ -97,7 +94,7 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
             formBundleNumber,
             "ERROR")
         )
-        Logger.error(s"Got error from tax-enrolments callback for ${formBundleNumber}: [${body.errorResponse.getOrElse("")}]")
+        logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
         Future.successful(NoContent)
       }
     }

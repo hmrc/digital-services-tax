@@ -24,7 +24,7 @@ import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +36,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   testConnector: TestConnector
 ) extends DesHelpers {
 
+  val logger: Logger = Logger(this.getClass)
   val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
   val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
@@ -46,7 +47,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
     if (enabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
-          Logger.debug(
+          logger.debug(
             s"Tax Enrolments response is $Result"
           )
           Result
@@ -70,7 +71,7 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
-    Logger.error(s"Tax enrolment returned $e for ${subscribeUrl(formBundleNumber)}")
+    logger.error(s"Tax enrolment returned $e for ${subscribeUrl(formBundleNumber)}")
     HttpResponse(status = e.responseCode, json = Json.toJson(e.message), headers = Map.empty)
   }
 

@@ -121,7 +121,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val registrationFormat: OFormat[Registration] = Json.format[Registration]
   implicit val activityFormat: Format[Activity] = EnumFormats.formats(Activity)
   implicit val groupCompanyFormat: Format[GroupCompany] = Json.format[GroupCompany]
-  implicit val enrolmentWrites = Json.format[Enrolment]
+  implicit val enrolmentWrites: OFormat[Enrolment] = Json.format[Enrolment]
 
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] = {

@@ -30,7 +30,7 @@ import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits.{readOptionOfNotFound, _}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,6 +42,8 @@ class RosmConnector @Inject()(
   val servicesConfig: ServicesConfig,
   appConfig: AppConfig
 ) extends DesHelpers {
+
+  val logger: Logger = Logger(this.getClass)
 
   implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
     override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
@@ -65,7 +67,7 @@ class RosmConnector @Inject()(
   def retrieveROSMDetailsWithoutID(
     request: RosmRegisterWithoutIDRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
-    if (appConfig.logRegResponse) Logger.debug(s"RosmWithoutIdRequest is $request")
+    if (appConfig.logRegResponse) logger.debug(s"RosmWithoutIdRequest is $request")
     JsonSchemaChecker(request, "rosm-without-id-request")
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
   }
@@ -87,10 +89,10 @@ class RosmConnector @Inject()(
     ).recover {
       case NotAnOrganisationException => None
       case InvalidCompanyNameException =>
-        Logger.warn("Invalid company name retrieved from ROSM")
+        logger.warn("Invalid company name retrieved from ROSM")
         None
       case InvalidAddressException =>
-        Logger.warn("Invalid Address retrieved from ROSM")
+        logger.warn("Invalid Address retrieved from ROSM")
         None
     }
   }

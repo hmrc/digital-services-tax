@@ -32,7 +32,6 @@ import uk.gov.hmrc.digitalservicestax.connectors.ReturnConnector
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.RunMode
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,7 +39,6 @@ trait ControllerBaseSpec  extends PlaySpec with MockitoSugar with Results {
 
    val mockAuthConnector: AuthConnector = mock[AuthConnector]
    val mockRunModeConfiguration: Configuration = mock[Configuration]
-   val mockRunMode: RunMode = mock[RunMode]
    val mockAppConfig: AppConfig = mock[AppConfig]
    val mockPersistence: MongoPersistence = mock[MongoPersistence]
    val mockConnector: ReturnConnector = mock[connectors.ReturnConnector]
