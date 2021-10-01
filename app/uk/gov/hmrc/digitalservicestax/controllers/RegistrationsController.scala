@@ -19,6 +19,8 @@ package controllers
 
 import cats.data.OptionT
 import cats.implicits._
+
+
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -32,9 +34,9 @@ import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent._
 
@@ -42,7 +44,6 @@ import scala.concurrent._
 class RegistrationsController @Inject()(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
@@ -58,8 +59,8 @@ class RegistrationsController @Inject()(
   val servicesConfig: ServicesConfig
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers with AuditWrapper{
 
-  val log: Logger = Logger(this.getClass)
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
+  val logger: Logger = Logger(this.getClass)
+  val serviceConfig = new ServicesConfig(runModeConfiguration)
 
   implicit val ec: ExecutionContext = cc.executionContext
      
@@ -101,13 +102,13 @@ class RegistrationsController @Inject()(
     */
   def attemptRegistrationFix(r: Registration)(implicit request: LoggedInRequest[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Registration]] =
   {
-    Logger.warn(s"Enrolments from Auth: ${request.enrolments.enrolments.map(_.key).mkString(", ")}")
+    logger.warn(s"Enrolments from Auth: ${request.enrolments.enrolments.map(_.key).mkString(", ")}")
     (for {
       formBundle            <- OptionT(persistence.pendingCallbacks.reverseLookup(request.internalId))
       subscription          <- OptionT.liftF(taxEnrolmentConnector.getSubscription(formBundle))
       processedRegistration <- subscription match {
             case s@TaxEnrolmentsSubscription(_, _, "SUCCEEDED", _) =>
-              Logger.info("fetched a SUCCEEDED subscription. About to process and audit.")
+              logger.info("fetched a SUCCEEDED subscription. About to process and audit.")
               for {
                 dstNum <- OptionT.fromOption[Future](s.getDSTNumber)
                 updatedR <- OptionT.liftF(persistence.pendingCallbacks.process(formBundle, dstNum))
@@ -128,11 +129,11 @@ class RegistrationsController @Inject()(
               
             case TaxEnrolmentsSubscription(identifiers, _, state, errors) =>
               // we have a state other than SUCCEEDED
-              Logger.warn(
+              logger.warn(
                 s"state: $state, " +
                 s"errors: ${errors.getOrElse("none reported")}, " +
                 s"identifiers: ${if (identifiers.isEmpty) "none" else "some"}")
-              Logger.warn("attempting TE subscribe again")
+              logger.warn("attempting TE subscribe again")
               // attempt to subscribe again
               r.companyReg.safeId.fold(rosmConnector.getSafeId(r))(_.some.pure[Future]).map {
                 _.map { safeId =>
@@ -149,7 +150,7 @@ class RegistrationsController @Inject()(
               OptionT.some[Future](r)
           }
         } yield processedRegistration).fold {
-          Logger.warn("unable to get processed registration")
+          logger.warn("unable to get processed registration")
           none[Registration]
         }(_.some)
   }
@@ -162,10 +163,10 @@ class RegistrationsController @Inject()(
       case (Some(r), _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
       case (Some(r), p) if p.nonEmpty =>
-        Logger.info(s"pending registration for ${request.internalId}")
+        logger.info(s"pending registration for ${request.internalId}")
         Ok(Json.toJson(r))
       case _ =>
-        Logger.warn("no pending registration")
+        logger.warn("no pending registration")
         NotFound
     }
   }

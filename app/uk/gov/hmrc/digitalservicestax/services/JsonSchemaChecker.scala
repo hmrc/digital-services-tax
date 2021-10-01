@@ -27,6 +27,8 @@ import scala.collection.convert.ImplicitConversions._
 
 object JsonSchemaChecker {
 
+  val logger: Logger = Logger(this.getClass)
+
   def retrieveSchema(file: String): JsonNode = schema(s"/test/$file.schema.json")
 
   private def schema(path: String): JsonNode = {
@@ -43,12 +45,12 @@ object JsonSchemaChecker {
     val processingReport: ProcessingReport = validator.validate(schema, json)
     if (!processingReport.isSuccess) processingReport.foreach {
       x: ProcessingMessage =>
-        Logger.warn(
+        logger.warn(
           s"failed to validate against json schema, schema: ${x.asJson().get("schema")}, " +
             s"instance: ${x.asJson().get("instance")}, problem: ${x.asJson().get("keyword")}"
         )
     } else {
-      Logger.debug(s"Successful schema validation for $file.schema.json")
+      logger.debug(s"Successful schema validation for $file.schema.json")
     }
   }
 

@@ -38,8 +38,8 @@ object EeittInterface {
       JsObject(data)
   }
 
-  implicit def regimeSpecificWrites: Writes[Map[String, String]] = new Writes[Map[String, String]] {
-    def writes(value: Map[String, String]): JsValue =
+  implicit def regimeSpecificWrites: Writes[ListMap[String, String]] = new Writes[ListMap[String, String]] {
+    def writes(value: ListMap[String, String]): JsValue =
       JsArray(
         value.toList.zipWithIndex flatMap {
           case ((key, ""), i) => Nil

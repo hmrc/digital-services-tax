@@ -27,7 +27,7 @@ import uk.gov.hmrc.digitalservicestax.data.Registration
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,6 +42,7 @@ class RegistrationConnector @Inject()(
   ec: ExecutionContext
 ) extends DesHelpers with AuditWrapper {
 
+  val logger: Logger = Logger(this.getClass)
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
@@ -62,7 +63,7 @@ class RegistrationConnector @Inject()(
     )(implicitly, implicitly, addHeaders, implicitly)
 
     if (appConfig.logRegResponse) {
-      result.onComplete{tr => Logger.debug(s"Registration response is $tr")}
+      result.onComplete{tr => logger.debug(s"Registration response is $tr")}
     }
 
     result

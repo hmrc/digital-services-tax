@@ -77,6 +77,10 @@ Ensure your service manager config is up to date, and run the following command:
 
 This will start all the required services
 
+## Running the tests
+
+    sbt test
+
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").

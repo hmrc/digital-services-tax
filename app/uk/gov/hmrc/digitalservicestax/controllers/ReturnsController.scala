@@ -31,8 +31,7 @@ import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent._
 
@@ -40,7 +39,6 @@ import scala.concurrent._
 class ReturnsController @Inject()(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  val runMode: RunMode,
   appConfig: AppConfig,
   cc: ControllerComponents,
   persistence: MongoPersistence,
@@ -50,8 +48,7 @@ class ReturnsController @Inject()(
   loggedIn: LoggedInAction
 ) extends BackendController(cc) with AuthorisedFunctions {
 
-  val log = Logger(this.getClass())
-  val serviceConfig = new ServicesConfig(runModeConfiguration, runMode)
+  val logger = Logger(this.getClass())
 
   implicit val ec: ExecutionContext = cc.executionContext
 
@@ -81,7 +78,7 @@ class ReturnsController @Inject()(
           auditing.sendExtendedEvent(
             AuditingHelper.buildReturnResponseAudit("ERROR", e.getMessage.some)
           ) map {
-            Logger.warn(s"Error with DST Return ${e.getMessage}")
+            logger.warn(s"Error with DST Return ${e.getMessage}")
             throw e
           }
       }

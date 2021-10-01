@@ -27,15 +27,15 @@ import play.api.inject.DefaultApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.mvc.MessagesControllerComponents
-import play.api.{Application, ApplicationLoader}
-import play.core.DefaultWebCommands
+import play.api.{Application, ApplicationLoader, Logger}
 import play.modules.reactivemongo.DefaultReactiveMongoApi
 import reactivemongo.api.MongoConnection
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -47,16 +47,10 @@ trait FakeApplicationSpec extends PlaySpec
   with TryValues
   with ScalaFutures
   with TestWiring {
-  protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context(
-    environment,
-    sourceMapper = None,
-    new DefaultWebCommands,
-    configuration,
-    new DefaultApplicationLifecycle
-  )
+  protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context.create(environment)
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
-
+  val logger: Logger = Logger(this.getClass)
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
   lazy val httpAuditing: HttpAuditing = app.injector.instanceOf[HttpAuditing]
