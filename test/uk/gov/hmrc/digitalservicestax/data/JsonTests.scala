@@ -151,17 +151,15 @@ class JsonTests extends FlatSpec
   }
 
   it should "send the ultimateParent name for A_DST_GLOBAL_NAME field in Reg writer" in {
-    val parent = arbCo.arbitrary.sample.get
-    val reg = TestInstances.subGen.arbitrary.sample.get.copy(ultimateParent = Some(parent))
-
-    val regJson = Json.toJson(reg)(EeittInterface.registrationWriter)
-    val name: JsLookupResult = (regJson \ "regimeSpecificDetails" \ "A_DST_GLOBAL_NAME")
-    val foo = name
-    println
-
-//    name shouldEqual parent.name
+    implicit val arbRegWithParent: Arbitrary[Registration] = TestInstances.subGenWithParent
+    forAll { (reg: Registration) =>
+      val regJson: JsValue = Json.toJson(reg)(EeittInterface.registrationWriter)
+      val params = (regJson \ "registrationDetails" \ "regimeSpecificDetails").as[JsArray].value.toList
+      val param: JsValue = params.filter(js => (js \ "paramName").get.as[String] == "A_DST_GLOBAL_NAME").head
+      val name = (param \ "paramValue").get.as[String]
+      name shouldEqual reg.ultimateParent.get.name
+    }(implicitly, arbRegWithParent, implicitly, implicitly, implicitly, implicitly)
   }
-
 
   it should "serialize and de-serialise a GroupCompany instance" in {
     testJsonRoundtrip[GroupCompany](genGroupCo)

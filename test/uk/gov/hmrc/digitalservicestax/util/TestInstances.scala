@@ -362,6 +362,20 @@ object TestInstances {
     }
   )
 
+  def subGenWithParent: Arbitrary[Registration] = Arbitrary (
+    {
+      (
+        arbitrary[CompanyRegWrapper],
+        Gen.option(arbitrary[Address]),
+        arbitrary[Option[Company]].retryUntil(_.nonEmpty),
+        arbitrary[ContactDetails],
+        date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
+        arbitrary[LocalDate],
+        Gen.some(arbitrary[DSTRegNumber])
+      ).mapN(Registration.apply)
+    }
+  )
+
   implicit def genRegistration: Arbitrary[RosmRegisterWithoutIDRequest] = Arbitrary {
     (
       arbitrary[Boolean],
