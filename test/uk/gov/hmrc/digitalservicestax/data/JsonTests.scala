@@ -22,7 +22,7 @@ import enumeratum.scalacheck._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.{JsLookupResult, _}
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
