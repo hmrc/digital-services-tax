@@ -17,20 +17,21 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
-
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json._
+import play.api.libs.json.{JsLookupResult, _}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+import uk.gov.hmrc.digitalservicestax.services.{EeittInterface, JsonSchemaChecker}
+import uk.gov.hmrc.digitalservicestax.util.TestInstances
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.collection.immutable.ListMap
+import scala.language.postfixOps
 
 class JsonTests extends FlatSpec
   with Matchers
@@ -148,6 +149,19 @@ class JsonTests extends FlatSpec
       )
     }
   }
+
+  it should "send the ultimateParent name for A_DST_GLOBAL_NAME field in Reg writer" in {
+    val parent = arbCo.arbitrary.sample.get
+    val reg = TestInstances.subGen.arbitrary.sample.get.copy(ultimateParent = Some(parent))
+
+    val regJson = Json.toJson(reg)(EeittInterface.registrationWriter)
+    val name: JsLookupResult = (regJson \ "regimeSpecificDetails" \ "A_DST_GLOBAL_NAME")
+    val foo = name
+    println
+
+//    name shouldEqual parent.name
+  }
+
 
   it should "serialize and de-serialise a GroupCompany instance" in {
     testJsonRoundtrip[GroupCompany](genGroupCo)

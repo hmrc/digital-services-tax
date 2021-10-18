@@ -101,7 +101,7 @@ object EeittInterface {
              "A_DST_PRIM_NAME" -> {contact.forename + " " + contact.surname},
              "A_DST_PRIM_TELEPHONE" -> contact.phoneNumber,
              "A_DST_PRIM_EMAIL" -> contact.email,
-             "A_DST_GLOBAL_NAME" -> companyReg.company.name,
+             "A_DST_GLOBAL_NAME" -> ultimateParent.fold(""){_.name},
              "A_DATA_ORIGIN" -> "1",
              "A_DST_PERIOD_END_DATE" -> strDate(accountingPeriodEnd),
              "A_TAX_START_DATE" -> strDate(dateLiable),
