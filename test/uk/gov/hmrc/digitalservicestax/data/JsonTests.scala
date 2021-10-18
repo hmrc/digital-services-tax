@@ -31,7 +31,6 @@ import uk.gov.hmrc.digitalservicestax.util.TestInstances
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.collection.immutable.ListMap
-import scala.language.postfixOps
 
 class JsonTests extends FlatSpec
   with Matchers
@@ -151,7 +150,7 @@ class JsonTests extends FlatSpec
   }
 
   it should "send the ultimateParent name for A_DST_GLOBAL_NAME field in Reg writer" in {
-    implicit val arbRegWithParent: Arbitrary[Registration] = TestInstances.subGenWithParent
+    val arbRegWithParent: Arbitrary[Registration] = TestInstances.subGenWithParent
     forAll { (reg: Registration) =>
       val regJson: JsValue = Json.toJson(reg)(EeittInterface.registrationWriter)
       val params = (regJson \ "registrationDetails" \ "regimeSpecificDetails").as[JsArray].value.toList
