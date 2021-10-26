@@ -39,13 +39,6 @@ trait VolatilePersistence extends Persistence[Id] {
     }
   }
 
-  def randomDstNumber: DSTRegNumber = {
-    val r = new scala.util.Random()
-    def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
-    def digits: String = f"${r.nextInt.abs}%010d"
-    DSTRegNumber(s"${c}${c}DST$digits")
-  }
-
   val registrations = new Registrations {
 
     @volatile private var _data: Map[InternalId, (Registration, LocalDateTime)] = Map.empty
@@ -60,7 +53,7 @@ trait VolatilePersistence extends Persistence[Id] {
     def get(user: InternalId) = {
       _data.get(user) match {
         case Some((r,d)) if r.registrationNumber.isEmpty && d.plusMinutes(1).isBefore(LocalDateTime.now) =>
-          update(user, r.copy(registrationNumber = Some(randomDstNumber)))
+          update(user, r.copy(registrationNumber = Some(VolatilePersistence.randomDstNumber)))
           get(user)
         case x => x.map{_._1}
       }
@@ -93,5 +86,14 @@ trait VolatilePersistence extends Persistence[Id] {
     override def insert(reg: Registration, key: Key, ret: Return): Id[Unit] = {
       _data = _data + (reg -> Map(key -> ret))
     }
+  }
+}
+
+object VolatilePersistence {
+  def randomDstNumber: DSTRegNumber = {
+    val r = new scala.util.Random()
+    def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
+    def digits: String = f"${r.nextInt.abs}%010d"
+    DSTRegNumber(s"${c}${c}DST$digits")
   }
 }
