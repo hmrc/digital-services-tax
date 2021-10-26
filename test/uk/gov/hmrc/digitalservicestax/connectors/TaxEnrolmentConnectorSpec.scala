@@ -24,6 +24,8 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.language.postfixOps
+
 class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
   object TaxTestConnector extends TaxEnrolmentConnector(
@@ -76,7 +78,7 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
 
     val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
     whenReady(response) { res =>
-
+     res.status mustEqual Status.OK
     }
   }
 
