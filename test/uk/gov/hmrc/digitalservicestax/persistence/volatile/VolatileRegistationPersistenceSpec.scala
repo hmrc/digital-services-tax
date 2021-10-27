@@ -36,7 +36,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  val volatile = new FutureVolatilePersistence(actorSystem = actorSystem) {}
+  val volatile = new FutureVolatilePersistence() {}
 
   "it should retrieve a registration using .apply" in {
     forAll { (id: InternalId, reg: Registration) =>

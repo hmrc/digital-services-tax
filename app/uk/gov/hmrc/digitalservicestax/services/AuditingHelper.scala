@@ -33,7 +33,6 @@ object AuditingHelper {
 
   def buildCallbackAudit(
     body: CallbackNotification,
-    uri: String,
     formBundleNumber: FormBundleNumber,
     outcome: String,
     dstRegNo: Option[DSTRegNumber] = None

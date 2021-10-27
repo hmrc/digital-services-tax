@@ -121,7 +121,6 @@ class RegistrationsController @Inject()(
                   period
                 ).auditSuccess(_ => AuditingHelper.buildCallbackAudit(
                   CallbackNotification("SUCCEEDED", None),
-                  request.uri,
                   formBundle,
                   "SUCCESS",
                   s.getDSTNumber)))

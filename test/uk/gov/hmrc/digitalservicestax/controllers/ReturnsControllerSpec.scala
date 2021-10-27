@@ -35,7 +35,6 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
   object TestReturnsController extends ReturnsController(
     authConnector = mockAuthConnector,
     runModeConfiguration = mockRunModeConfiguration,
-    appConfig = mockAppConfig,
     cc = stubControllerComponents(),
     persistence = mockPersistence,
     connector = mockConnector,

@@ -55,7 +55,7 @@ package object data extends SimpleJson {
   type Money = BigDecimal @@ Money.Tag
   object Money extends ValidatedType[BigDecimal] {
     def validateAndTransform(in: BigDecimal): Option[BigDecimal] = {
-      Some(in).filter(_.scale == 2)
+      Some(in).filter(_.toString.matches("^[0-9]+(\\.[0-9]{1,2})?$"))
     }
 
     implicit def mon: Monoid[Money] = new Monoid[Money] {
