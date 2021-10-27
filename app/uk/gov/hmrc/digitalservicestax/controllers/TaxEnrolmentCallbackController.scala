@@ -71,7 +71,6 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           auditing.sendExtendedEvent(
             AuditingHelper.buildCallbackAudit(
               body,
-              request.uri,
               formBundleNumber,
               "SUCCESS",
               dstNumber.some
@@ -90,7 +89,6 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
         auditing.sendExtendedEvent(
           AuditingHelper.buildCallbackAudit(
             body,
-            request.uri,
             formBundleNumber,
             "ERROR")
         )

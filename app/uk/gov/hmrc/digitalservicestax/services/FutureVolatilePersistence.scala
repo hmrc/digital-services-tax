@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import akka.actor._
 import cats.instances.future._
 import javax.inject._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
@@ -26,7 +25,7 @@ import uk.gov.hmrc.digitalservicestax.data._
 import scala.concurrent._
 
 @Singleton
-class FutureVolatilePersistence @Inject()(actorSystem: ActorSystem)(implicit ec: ExecutionContext) extends Persistence[Future] {
+class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends Persistence[Future] {
 
   val inner = new VolatilePersistence {}
 

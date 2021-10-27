@@ -26,7 +26,6 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
@@ -39,7 +38,6 @@ import scala.concurrent._
 class ReturnsController @Inject()(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  appConfig: AppConfig,
   cc: ControllerComponents,
   persistence: MongoPersistence,
   connector: connectors.ReturnConnector,

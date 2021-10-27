@@ -35,7 +35,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
-  val volatile = new FutureVolatilePersistence(actorSystem = actorSystem) {}
+  val volatile = new FutureVolatilePersistence() {}
 
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>

@@ -21,10 +21,9 @@ import com.outworkers.util.samplers._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.Json
+import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
 import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.language.postfixOps
 
 class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
 
@@ -116,5 +115,18 @@ class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenProper
     whenReady(response) { res =>
       res.status mustEqual Status.BAD_REQUEST
     }
+  }
+
+  "should retrieve a DSTRegNumber" in {
+    val req = TaxEnrolmentsSubscription(
+      Some(
+        List(Identifier("DstRefNo", DSTRegNumber("ASDST1010101010")))
+      ),
+      "etmpId",
+      "state",
+      None
+    ).getDSTNumber
+
+    req mustBe Some(DSTRegNumber("ASDST1010101010"))
   }
 }

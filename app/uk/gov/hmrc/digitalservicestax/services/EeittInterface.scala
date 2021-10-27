@@ -20,7 +20,6 @@ package services
 import java.time.format.DateTimeFormatter
 import java.time.{Period => _, _}
 
-//import enumeratum._
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.data._
 
@@ -52,10 +51,6 @@ object EeittInterface {
         }
       )
   }
-
-//  private implicit def enumEntryWrites[A <: EnumEntry] = new Writes[A] {
-//    def writes(a: A): JsValue = JsString(a.entryName)
-//  }
 
   def strDate(d: LocalDate): String =
     d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
@@ -111,7 +106,6 @@ object EeittInterface {
              "A_CORR_ADR_LINE_4" -> companyReg.company.address.line4.getOrElse(""),
              "A_CORR_ADR_POST_CODE" -> companyReg.company.address.postalCode,
              "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
-//             "A_DST_GLOBAL_ID" -> ultimateOwner.reference
            )
          )
        )
@@ -166,7 +160,6 @@ object EeittInterface {
             Seq[(String, String)](
               "A_BANK_NAME" -> acctName,  // Name of account CHAR40
               "A_BANK_NON_UK" -> bool(false),
-//              "BANK_BSOC_NAME" -> bank.bankName, // Name of bank or building society CHAR40
               "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
               "A_BANK_ACC_NO" -> acctNo // Account number CHAR8
             ) ++ bsNo.filter(_.nonEmpty).map { a =>
