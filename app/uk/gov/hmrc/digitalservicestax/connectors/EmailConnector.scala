@@ -17,12 +17,11 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.Mode
-import play.api.libs.json.{JsValue, Json}
+import play.api.{Logger, Mode}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig: ServicesConfig) {
 
   val emailUrl: String = servicesConfig.baseUrl("email")
+  val logger = Logger(this.getClass)
 
   def sendConfirmationEmail(
     contact: ContactDetails,
@@ -53,7 +53,7 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
       "force" -> false
     )
 
-    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map { _ => () }
+    sendEmail(params)
   }
 
   def sendSubmissionReceivedEmail(contact: ContactDetails, companyName: CompanyName, parentCompany: Option[Company])(
@@ -72,8 +72,24 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
       "force" -> false
     )
 
-    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map { _ =>
-      ()
+    sendEmail(params)
+  }
+
+  private def sendEmail(
+    params: JsObject
+  )(
+   implicit hc: HeaderCarrier,
+   ex: ExecutionContext
+  ) = {
+    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map {
+      case x if x.status == play.api.http.Status.ACCEPTED =>
+        ()
+      case y if y.status == play.api.http.Status.BAD_REQUEST =>
+        logger.warn(y.toString())
+        ()
+      case z =>
+        logger.warn(s"Unexpected response from email service: $z")
+        ()
     }
   }
 }

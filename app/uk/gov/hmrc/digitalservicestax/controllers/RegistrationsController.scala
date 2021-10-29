@@ -93,7 +93,7 @@ class RegistrationsController @Inject()(
         data.companyReg.company.name,
         data.ultimateParent
       )
-    } yield Ok(JsNull)
+    } yield Ok(Json.toJson(reg))
     )
   }
 
