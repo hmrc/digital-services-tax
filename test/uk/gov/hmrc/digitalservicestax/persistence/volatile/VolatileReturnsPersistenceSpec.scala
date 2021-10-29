@@ -35,7 +35,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
 
   val period = Period.Key.of("0220").value
 
-  val volatile = new FutureVolatilePersistence(actorSystem = actorSystem) {}
+  val volatile = new FutureVolatilePersistence() {}
 
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>

@@ -17,12 +17,12 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
-
 import cats.implicits._
 import cats.kernel.Monoid
 import org.scalacheck.Gen
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import uk.gov.hmrc.digitalservicestax.util.TestInstances.{arbMoney, periodArb}
 
 class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
@@ -32,18 +32,23 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
     }
   }
 
-//  it should "correctly add 9 months and one day to a period" in {
-//    forAll { period: Period =>
-//      period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
-//    }
-//  }
+  it should "correctly add 10 months with the first day of the month for period end days at the end of the month, " +
+    "for all other cases add 9 months and one day to a period" in {
+    forAll { period: Period =>
+      if(period.end.getDayOfMonth == period.end.lengthOfMonth){
+        period.paymentDue shouldEqual period.end.plusMonths(10).withDayOfMonth(1)
+      } else {
+        period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
+      }
+    }
+  }
 
   it should "correctly define the class name of a validated type" in {
     AccountNumber.className shouldEqual "AccountNumber$"
   }
 
-  it should "store percentages as bytes and initialise percent monoids with byte monoids" in {
-    Monoid[Percent].empty shouldEqual Monoid[Byte].empty
+  it should "store percentages as bytes and initialise percent monoids with float monoids" in {
+    Monoid[Percent].empty shouldEqual Monoid[Float].empty
   }
 
   it should "add up percentages using monoidal syntax" in {
@@ -67,5 +72,25 @@ class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPro
 
     val comparison = LocalDate.now.plusDays(1) compare LocalDate.now()
     comparison shouldEqual 1
+  }
+
+  it should "encode an Activity as a URL" in {
+    forAll(Gen.oneOf(Activity.values)) { a =>
+      val expected = a.toString.replaceAll("(^[A-Z].*)([A-Z])", "$1-$2").toLowerCase
+      Activity.toUrl(a) shouldEqual expected
+    }
+  }
+
+  it should "fail to construct a type with a scale of more than 3" in {
+    an[IllegalArgumentException] should be thrownBy Percent.apply(1.1234F)
+  }
+
+  it should "combine and empty Money correctly" in {
+    import Money.mon
+    forAll { (a: Money, b: Money) =>
+      a.combine(b) - a shouldEqual b
+      a.combine(b) - b shouldEqual a
+      a.combine(b) - b - a shouldEqual mon.empty
+    }
   }
 }

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
-
 import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import org.scalacheck.{Arbitrary, Gen}
@@ -27,7 +26,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
+import uk.gov.hmrc.digitalservicestax.services.{EeittInterface, JsonSchemaChecker}
+import uk.gov.hmrc.digitalservicestax.util.TestInstances
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.collection.immutable.ListMap
@@ -147,6 +147,17 @@ class JsonTests extends FlatSpec
         JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "${sample.value}" instead"""))
       )
     }
+  }
+
+  it should "send the ultimateParent name for A_DST_GLOBAL_NAME field in Reg writer" in {
+    val arbRegWithParent: Arbitrary[Registration] = TestInstances.subGenWithParent
+    forAll { (reg: Registration) =>
+      val regJson: JsValue = Json.toJson(reg)(EeittInterface.registrationWriter)
+      val params = (regJson \ "registrationDetails" \ "regimeSpecificDetails").as[JsArray].value.toList
+      val param: JsValue = params.filter(js => (js \ "paramName").get.as[String] == "A_DST_GLOBAL_NAME").head
+      val name = (param \ "paramValue").get.as[String]
+      name shouldEqual reg.ultimateParent.get.name
+    }(implicitly, arbRegWithParent, implicitly, implicitly, implicitly, implicitly)
   }
 
   it should "serialize and de-serialise a GroupCompany instance" in {
