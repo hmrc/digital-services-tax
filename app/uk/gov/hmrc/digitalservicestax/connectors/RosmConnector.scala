@@ -44,21 +44,6 @@ class RosmConnector @Inject()(
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-
-  implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
-    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-      JsSuccess(CompanyRegWrapper (
-        Company(
-          {json \ "organisation" \ "organisationName"}.as[CompanyName],
-          {json \ "address"}.as[Address]
-        ),
-        safeId = SafeId(
-          {json \ "safeId"}.as[String]
-        ).some
-      ))
-    }
-  }
-
   val desURL: String = servicesConfig.baseUrl("des")
 
   val serviceURLWithId: String = "registration/organisation"

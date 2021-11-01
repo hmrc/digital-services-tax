@@ -40,9 +40,6 @@ trait DesHelpers {
   def desPost[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
     http.POST[I, O](url, body, headers)(wts, rds, addHeaders, ec)
 
-  def desPut[I, O](url: String, body: I)(implicit wts: Writes[I], rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
-    http.PUT[I, O](url, body, headers)(wts, rds, addHeaders, ec)
-
   def addHeaders(implicit hc: HeaderCarrier): HeaderCarrier = {
     hc.copy(authorization = None)
   }
