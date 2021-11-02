@@ -17,21 +17,23 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import java.time.LocalDateTime
-
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import cats.instances.future._
+import data.BackendAndFrontendJson._
+import data.Period.Key
+import data._
+import java.time.LocalDateTime
 import javax.inject._
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import play.api.libs.json._
 import play.modules.reactivemongo._
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.api.{Cursor, WriteConcern}
-import reactivemongo.play.json._
-import reactivemongo.play.json.collection._
-import uk.gov.hmrc.digitalservicestax.data.Period.Key
-import uk.gov.hmrc.digitalservicestax.data._
-
 import scala.concurrent._
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.UpdateOptions
+import org.mongodb.scala.model.Updates
+import org.mongodb.scala.model.FindOneAndUpdateOptions
 
 object MongoPersistence {
 
@@ -42,19 +44,19 @@ object MongoPersistence {
   )
 
   private[services] case class CallbackWrapper(
-    internalId: InternalId, 
+    internalId: InternalId,
     formBundle: FormBundleNumber,
     timestamp: LocalDateTime = LocalDateTime.now
   )
 
   private[services] case class RegWrapper(
-    session: InternalId, 
+    session: InternalId,
     data: Registration,
     timestamp: LocalDateTime = LocalDateTime.now
   )
 
   private[services] case class RetWrapper(
-    regNo: DSTRegNumber, 
+    regNo: DSTRegNumber,
     periodKey: Period.Key,
     data: Return,
     timestamp: LocalDateTime = LocalDateTime.now
@@ -63,152 +65,138 @@ object MongoPersistence {
 
 @Singleton
 class MongoPersistence @Inject()(
-  mongo: ReactiveMongoApi
+  mongo: ReactiveMongoApi,
+  mongoc: MongoComponent
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
   import MongoPersistence._
-  import mongo.database
 
   val pendingCallbacks: PendingCallbacks = new PendingCallbacks {
 
-    implicit val formatWrapper: OFormat[CallbackWrapper] = Json.format[CallbackWrapper]
-
-    lazy val collection: Future[JSONCollection] = {
-      database.map(_.collection[JSONCollection]("pending-callbacks")).flatMap { c =>
-
-        val sessionIndex = Index(
-          key = Seq("formBundle" -> IndexType.Ascending),
-          unique = true
+    lazy val repo = new PlayMongoRepository[CallbackWrapper](
+      collectionName = "pending-callbacks",
+      mongoComponent = mongoc,
+      domainFormat   = Json.format[CallbackWrapper],
+      indexes        = Seq(
+        IndexModel(
+          Indexes.ascending("internalId"),
+          IndexOptions().unique(true)
+        ),
+        IndexModel(
+          Indexes.ascending("formBundle"),
+          IndexOptions().unique(true)
         )
-        
-        c.indexesManager.ensure(sessionIndex).map(_ => c)
-      }
-    }
+      ),
+      extraCodecs    = Nil
+    )
 
     def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
       val wrapper = CallbackWrapper(internalId, formBundleNumber)
-      collection.flatMap(_.insert(ordered = true, WriteConcern.Journaled).one(wrapper)).map {
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
+      repo.collection
+        .insertOne(wrapper)
+        .toFuture
+        .map(_ => ())
     }
 
-    def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =  {
-      val selector = Json.obj("formBundle" -> formBundle.toString)
-      collection.flatMap(
-        _.find(selector)
-          .one[CallbackWrapper]
-      ).map{_.map{_.internalId}}
-    }
+    def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =
+      repo.collection
+        .find(Filters.equal("formBundle", formBundle))
+        .map(_.internalId)
+        .headOption()
 
-    def reverseLookup(internalId: InternalId): Future[Option[FormBundleNumber]] = {
-      val selector = Json.obj("internalId" -> internalId.toString)
-      collection.flatMap(
-        _.find(selector)
-          .one[CallbackWrapper]
-      ).map{_.map{_.formBundle}}
-    }
+    def reverseLookup(internalId: InternalId): Future[Option[FormBundleNumber]] =
+      repo.collection
+        .find(Filters.equal("internalId", internalId))
+        .map(_.formBundle)
+        .headOption()
 
-    def delete(formBundle: FormBundleNumber): Future[Unit] =  {
-      val selector = Json.obj("formBundle" -> formBundle.toString)
-      collection.flatMap(_.delete.one(selector)).map{_ => ()}
-    }
+    def delete(formBundle: FormBundleNumber): Future[Unit] =
+      repo.collection
+        .deleteOne(Filters.equal("formBundle", formBundle))
+        .toFuture
+        .map(_ => ())
 
     def update(formBundle: FormBundleNumber, internalId: InternalId): Future[Unit] = {
       val wrapper = CallbackWrapper(internalId, formBundle)
-      val selector = Json.obj("formBundle" -> formBundle.toString)      
-      collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
-          case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-          case e => throw new Exception(s"$e")
-        }
+      repo.collection
+        .findOneAndUpdate(
+          Filters.equal("formBundle", formBundle),
+          Updates.combine(
+            Updates.setOnInsert("formBundle", formBundle),
+            Updates.set("internalId", wrapper.internalId),
+            Updates.set("timestamp", wrapper.timestamp)
+          ),
+          FindOneAndUpdateOptions().upsert(true)
+        )
+        .toFuture
+        .map(_ => ())
     }
-    
   }
 
   val registrations: Registrations = new Registrations {
 
-    lazy val collection: Future[JSONCollection] = {
-      database.map(_.collection[JSONCollection]("registrations")).flatMap { c =>
-
-        val sessionIndex = Index(
-          key = Seq("session" -> IndexType.Ascending),
-          unique = true
+    lazy val repo = new PlayMongoRepository[RegWrapper](
+      collectionName = "registrations",
+      mongoComponent = mongoc,
+      domainFormat   = Json.format[RegWrapper],
+      indexes        = Seq(
+        IndexModel(
+          Indexes.ascending("session"),
+          IndexOptions().unique(true)
         )
-        
-        c.indexesManager.ensure(sessionIndex).map(_ => c)
-      }
-    }
-
-    implicit val formatWrapper: OFormat[RegWrapper] = Json.format[RegWrapper]
+      ),
+      extraCodecs    = Nil
+    )
 
     def insert(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)
-
-      collection.flatMap(_.insert(ordered = false, WriteConcern.Journaled).one(wrapper)).map {
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
+      repo.collection
+        .insertOne(wrapper)
+        .toFuture
+        .map(_ => ())
     }
 
-    override def update(user: InternalId, value: Registration): Future[Unit] = {
-      val wrapper = RegWrapper(user, value)
-      val selector = Json.obj("session" -> user.toString)
-      collection.flatMap(_.update(ordered = false).one(selector, wrapper, upsert = true)).map{
-          case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-          case e => throw new Exception(s"$e")
-        }
-    }
+    override def update(user: InternalId, value: Registration): Future[Unit] =
+      insert(user, value)
 
-    override def get(user: InternalId): Future[Option[Registration]] = {
-      val selector = Json.obj("session" -> user.toString)
-      collection.flatMap(_.find(selector).one[RegWrapper]).map{_.map{_.data}}
-    }
+    override def get(user: InternalId): Future[Option[Registration]] =
+      repo.collection
+        .find(Filters.equal("session", user))
+        .map(_.data)
+        .headOption()
 
   }
 
   def returns = new Returns {
 
-    lazy val collection: Future[JSONCollection] = {
-      database.map(_.collection[JSONCollection]("returns")).flatMap { c =>
-        val sessionIndex = Index(
-          key = Seq(
-            "regNo" -> IndexType.Ascending,
-            "periodKey" -> IndexType.Ascending
+    lazy val repo = new PlayMongoRepository[RetWrapper](
+      collectionName = "returns",
+      mongoComponent = mongoc,
+      domainFormat   = Json.format[RetWrapper],
+      indexes        = Seq(
+        IndexModel(
+          Indexes.compoundIndex(
+            Indexes.ascending("regNo"),
+            Indexes.ascending("periodKey")
           ),
-          unique = true
+          IndexOptions().unique(true)
         )
-        
-        c.indexesManager.ensure(sessionIndex).map(_ => c)
-      }
-    }
+      ),
+      extraCodecs    = Nil
+    )
 
-    implicit val formatWrapper = Json.format[RetWrapper]
-
-    def get(reg: Registration): Future[Map[Period.Key, Return]] =  {
+    def get(reg: Registration): Future[Map[Period.Key, Return]] =
       reg.registrationNumber match {
         case Some(regNo) =>
-          val selector = Json.obj("regNo" -> regNo.toString)
-
-          collection.flatMap(
-            _.find(selector)
-              .cursor[RetWrapper]()
-              .collect[List](
-                maxDocs = 1000,
-                err = Cursor.FailOnError[List[RetWrapper]]()
-              ).map { _.map{x => (x.periodKey, x.data)}.toMap }
-          )
-
-        case None => Future.failed(new IllegalArgumentException("Registration is not active"))
+          repo.collection
+            .find(Filters.equal("regNo", regNo))
+            .limit(1000)
+            .toFuture
+            .map(_.map{x => (x.periodKey, x.data)}.toMap)
+        case None =>
+          Future.failed(new IllegalArgumentException("Registration is not active"))
       }
 
-    }
-
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] = {
-      val selector = Json.obj(
-        "regNo" -> reg.registrationNumber.fold(
-          throw new IllegalArgumentException("Registration is not active"))
-          (_.toString), 
-        "periodKey" -> period.toString
-      )
 
       val wrapper = RetWrapper(
         reg.registrationNumber.getOrElse(
@@ -218,23 +206,14 @@ class MongoPersistence @Inject()(
         ret
       )
 
-      collection.flatMap(
-        _.update(ordered = false)
-          .one(selector, wrapper, upsert = true)
-      ).map{
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
+      repo.collection
+        .insertOne(wrapper)
+        .toFuture
+        .map(_ => ())
     }
 
-    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] = {
-      val wrapper = RetWrapper(reg.registrationNumber.get, key, ret)
-
-      collection.flatMap(_.insert(ordered = false, WriteConcern.Journaled).one(wrapper)).map {
-        case wr: reactivemongo.api.commands.WriteResult if wr.writeErrors.isEmpty => ()
-        case e => throw new Exception(s"$e")
-      }
-    }
+    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] =
+      update(reg, key, ret)
   }
 
 }

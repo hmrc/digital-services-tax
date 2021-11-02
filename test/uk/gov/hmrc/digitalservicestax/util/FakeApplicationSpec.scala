@@ -39,6 +39,7 @@ import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait FakeApplicationSpec extends PlaySpec
   with BaseOneAppPerSuite
@@ -46,7 +47,8 @@ trait FakeApplicationSpec extends PlaySpec
   with FakeApplicationFactory
   with TryValues
   with ScalaFutures
-  with TestWiring {
+  with TestWiring
+  with CleanMongoCollectionSupport {
   protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context.create(environment)
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
@@ -74,6 +76,8 @@ trait FakeApplicationSpec extends PlaySpec
     configuration = configuration,
     new DefaultApplicationLifecycle
   )
+
+  implicit val c = this.mongoComponent
 
   val mongoPersistence: MongoPersistence = wire[MongoPersistence]
 
