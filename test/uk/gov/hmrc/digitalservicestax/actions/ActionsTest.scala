@@ -32,6 +32,7 @@ import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSpec, WiremockSpec}
 import scala.concurrent.Future
 
 class ActionsTest extends FakeApplicationSpec
+  with WiremockSpec
   with ScalaFutures
   with BeforeAndAfterEach
   with EitherValues
