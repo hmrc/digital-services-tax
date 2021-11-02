@@ -32,8 +32,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
@@ -92,10 +91,6 @@ class ReturnConnector @Inject()(val http: HttpClient,
     val result = desPost[JsValue, ReturnResponse](
       url,
       Json.toJson(request)(writes)
-    )
-
-    if (appConfig.logRegResponse) logger.debug(
-      s"Return response is ${Await.result(result, 20.seconds)}"
     )
 
     result
