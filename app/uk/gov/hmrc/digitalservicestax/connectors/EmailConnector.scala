@@ -82,14 +82,14 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
    ex: ExecutionContext
   ) = {
     http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map {
-      case x if x.status == play.api.http.Status.ACCEPTED =>
+      case response if response.status == play.api.http.Status.ACCEPTED =>
         logger.info("email send accepted")
         ()
-      case y if y.status == play.api.http.Status.BAD_REQUEST =>
-        logger.warn(y.toString())
+      case response if response.status == play.api.http.Status.BAD_REQUEST =>
+        logger.warn(s"email send rejected, ${response.status}.")
         ()
-      case z =>
-        logger.warn(s"Unexpected response from email service: $z")
+      case _ =>
+        logger.warn(s"Unexpected response from email service")
         ()
     }
   }
