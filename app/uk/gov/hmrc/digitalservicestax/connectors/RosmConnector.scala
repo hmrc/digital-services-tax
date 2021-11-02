@@ -25,7 +25,6 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResp
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.{InvalidAddressException, InvalidCompanyNameException, NotAnOrganisationException}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.addressFormat
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
