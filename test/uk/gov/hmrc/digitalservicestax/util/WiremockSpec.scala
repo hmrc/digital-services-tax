@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
 import scala.concurrent.ExecutionContext
 
@@ -53,9 +52,4 @@ trait WiremockSpec extends FakeApplicationSpec with BeforeAndAfterEach with Befo
     super.afterAll()
     mockServer.stop()
   }
-
-  val fakeAuthConnector = new DefaultAuthConnector(httpClient, servicesConfig) {
-    override val serviceUrl = mockServerUrl
-  }
-
 }
