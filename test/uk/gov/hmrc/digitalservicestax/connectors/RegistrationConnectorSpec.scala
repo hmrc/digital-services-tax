@@ -32,7 +32,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks with MockitoSugar {
 
   val auditing: AuditConnector = mock[AuditConnector]
-  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, auditing, appConfig, implicitly) {
+  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, auditing, implicitly) {
     override val desURL: String = mockServerUrl
   }
 

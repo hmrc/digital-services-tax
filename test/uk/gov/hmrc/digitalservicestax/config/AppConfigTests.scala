@@ -45,7 +45,4 @@ class AppConfigTests extends FlatSpec with Matchers with TestWiring {
     dt shouldBe a [TemporalAccessor]
   }
 
-  it should "initialise a logRegResponse flag from app config" in {
-    appConfig.logRegResponse shouldEqual true
-  }
 }

@@ -31,8 +31,7 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
@@ -96,10 +95,6 @@ class ReturnConnector @Inject()(val http: HttpClient,
       case Right(value) => value
       case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
-
-    if (appConfig.logRegResponse) logger.debug(
-      s"Return response is ${Await.result(result, 20.seconds)}"
-    )
 
     result
   }

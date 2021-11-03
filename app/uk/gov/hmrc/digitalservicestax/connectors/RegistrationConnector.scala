@@ -19,9 +19,8 @@ package connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
-import play.api.{Logger, Mode}
+import play.api.Mode
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.Registration
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
@@ -36,11 +35,9 @@ class RegistrationConnector @Inject()(
   val mode: Mode,
   val servicesConfig: ServicesConfig,
   val auditing: AuditConnector,
-  appConfig: AppConfig,
   ec: ExecutionContext
 ) extends DesHelpers with AuditWrapper {
 
-  val logger: Logger = Logger(this.getClass)
   val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
@@ -53,21 +50,15 @@ class RegistrationConnector @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[RegistrationResponse] = {
-
     import services.EeittInterface.registrationWriter
     import uk.gov.hmrc.http.HttpReadsInstances._
-    val result = desPost[JsValue, Either[UpstreamErrorResponse,RegistrationResponse]](
+
+    desPost[JsValue, Either[UpstreamErrorResponse,RegistrationResponse]](
       s"$desURL/$registerPath/$idType/$idNumber", Json.toJson(request)
     )(implicitly, implicitly, addHeaders, implicitly).map {
       case Right(value) => value
       case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
-
-    if (appConfig.logRegResponse) {
-      result.onComplete{tr => logger.debug(s"Registration response is $tr")}
-    }
-
-    result
   }
 
 }

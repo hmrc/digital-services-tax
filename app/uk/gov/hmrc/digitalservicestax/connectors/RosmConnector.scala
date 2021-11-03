@@ -51,7 +51,6 @@ class RosmConnector @Inject()(
   def retrieveROSMDetailsWithoutID(
     request: RosmRegisterWithoutIDRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
-    if (appConfig.logRegResponse) logger.debug(s"RosmWithoutIdRequest is $request")
     JsonSchemaChecker(request, "rosm-without-id-request")
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
   }
