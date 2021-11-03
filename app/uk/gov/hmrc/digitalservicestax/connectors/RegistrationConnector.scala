@@ -24,11 +24,9 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.Registration
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -57,10 +55,13 @@ class RegistrationConnector @Inject()(
   ): Future[RegistrationResponse] = {
 
     import services.EeittInterface.registrationWriter
-
-    val result = desPost[JsValue, RegistrationResponse](
+    import uk.gov.hmrc.http.HttpReadsInstances._
+    val result = desPost[JsValue, Either[UpstreamErrorResponse,RegistrationResponse]](
       s"$desURL/$registerPath/$idType/$idNumber", Json.toJson(request)
-    )(implicitly, implicitly, addHeaders, implicitly)
+    )(implicitly, implicitly, addHeaders, implicitly).map {
+      case Right(value) => value
+      case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
+    }
 
     if (appConfig.logRegResponse) {
       result.onComplete{tr => logger.debug(s"Registration response is $tr")}

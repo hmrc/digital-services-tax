@@ -25,7 +25,6 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResp
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.{InvalidAddressException, InvalidCompanyNameException, NotAnOrganisationException}
 import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.addressFormat
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HeaderCarrier
@@ -44,21 +43,6 @@ class RosmConnector @Inject()(
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-
-  implicit val readCompanyReg: Reads[CompanyRegWrapper] = new Reads[CompanyRegWrapper] {
-    override def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
-      JsSuccess(CompanyRegWrapper (
-        Company(
-          {json \ "organisation" \ "organisationName"}.as[CompanyName],
-          {json \ "address"}.as[Address]
-        ),
-        safeId = SafeId(
-          {json \ "safeId"}.as[String]
-        ).some
-      ))
-    }
-  }
-
   val desURL: String = servicesConfig.baseUrl("des")
 
   val serviceURLWithId: String = "registration/organisation"
