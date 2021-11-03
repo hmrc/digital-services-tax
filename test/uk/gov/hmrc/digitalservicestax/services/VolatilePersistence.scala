@@ -34,21 +34,11 @@ trait VolatilePersistence extends Persistence[Id] {
       _data = _data + (formBundle -> internalId)
     def reverseLookup(id: InternalId): Option[FormBundleNumber] =
       _data.collectFirst{ case (k, v) if v == id => k }
-    override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Id[Unit] = {
-      _data = _data + (formBundleNumber -> internalId)
-    }
   }
 
   val registrations = new Registrations {
 
     @volatile private var _data: Map[InternalId, (Registration, LocalDateTime)] = Map.empty
-
-    override def insert(
-      user: InternalId,
-      reg: Registration
-    ): Id[Unit] = {
-      _data = _data + (user -> ((reg, LocalDateTime.now)))
-    }
 
     def get(user: InternalId) = {
       _data.get(user) match {
@@ -81,10 +71,6 @@ trait VolatilePersistence extends Persistence[Id] {
         existing + (period -> ret)
       }
       update(reg, updatedMap)
-    }
-
-    override def insert(reg: Registration, key: Key, ret: Return): Id[Unit] = {
-      _data = _data + (reg -> Map(key -> ret))
     }
   }
 }

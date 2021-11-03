@@ -41,7 +41,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
   "it should retrieve a registration using .apply" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.insert(id, reg)
+        _ <- volatile.registrations.update(id, reg)
         dbReg <- volatile.registrations(id)
       } yield dbReg
 
@@ -56,7 +56,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
       val updatedValue = reg.copy(registrationNumber = None)
 
       val chain = for {
-        _ <- volatile.registrations.insert(id, updatedValue)
+        _ <- volatile.registrations.update(id, updatedValue)
         dbReg <- volatile.registrations.get(id)
       } yield dbReg
 
@@ -69,7 +69,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
   "it should persist a registration object and retrieve it with .get" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.insert(id, reg)
+        _ <- volatile.registrations.update(id, reg)
         dbReg <- volatile.registrations.get(id)
       } yield dbReg
 
@@ -82,7 +82,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSpec
   "it should update a registration by userId" in {
     forAll { (id: InternalId, reg: Registration, updated: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.insert(id, reg)
+        _ <- volatile.registrations.update(id, reg)
         dbReg <- volatile.registrations.get(id)
         _ <- volatile.registrations.update(id, updated)
         postUpdate <- volatile.registrations.get(id)

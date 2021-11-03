@@ -19,7 +19,6 @@ package services
 
 import cats.instances.future._
 import data.BackendAndFrontendJson._
-import data.Period.Key
 import data._
 import java.time.LocalDateTime
 import javax.inject._
@@ -29,11 +28,9 @@ import play.modules.reactivemongo._
 import scala.concurrent._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.UpdateOptions
 import org.mongodb.scala.model.Updates
 import org.mongodb.scala.model.FindOneAndUpdateOptions
+import uk.gov.hmrc.mongo.play.json.Codecs
 
 object MongoPersistence {
 
@@ -45,27 +42,23 @@ object MongoPersistence {
 
   private[services] case class CallbackWrapper(
     internalId: InternalId,
-    formBundle: FormBundleNumber,
-    timestamp: LocalDateTime = LocalDateTime.now
+    formBundle: FormBundleNumber
   )
 
   private[services] case class RegWrapper(
     session: InternalId,
-    data: Registration,
-    timestamp: LocalDateTime = LocalDateTime.now
+    data: Registration
   )
 
   private[services] case class RetWrapper(
     regNo: DSTRegNumber,
     periodKey: Period.Key,
-    data: Return,
-    timestamp: LocalDateTime = LocalDateTime.now
+    data: Return
   )
 }
 
 @Singleton
 class MongoPersistence @Inject()(
-  mongo: ReactiveMongoApi,
   mongoc: MongoComponent
 )(implicit ec: ExecutionContext) extends Persistence[Future] {
   import MongoPersistence._
@@ -88,14 +81,6 @@ class MongoPersistence @Inject()(
       ),
       extraCodecs    = Nil
     )
-
-    def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
-      val wrapper = CallbackWrapper(internalId, formBundleNumber)
-      repo.collection
-        .insertOne(wrapper)
-        .toFuture
-        .map(_ => ())
-    }
 
     def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =
       repo.collection
@@ -123,13 +108,15 @@ class MongoPersistence @Inject()(
           Updates.combine(
             Updates.setOnInsert("formBundle", formBundle),
             Updates.set("internalId", wrapper.internalId),
-            Updates.set("timestamp", wrapper.timestamp)
+            Updates.setOnInsert("created", LocalDateTime.now),
+            Updates.set("updated", LocalDateTime.now)
           ),
           FindOneAndUpdateOptions().upsert(true)
         )
         .toFuture
         .map(_ => ())
     }
+
   }
 
   val registrations: Registrations = new Registrations {
@@ -147,16 +134,22 @@ class MongoPersistence @Inject()(
       extraCodecs    = Nil
     )
 
-    def insert(user: InternalId, value: Registration): Future[Unit] = {
+    def update(user: InternalId, value: Registration): Future[Unit] = {
       val wrapper = RegWrapper(user, value)
       repo.collection
-        .insertOne(wrapper)
+        .findOneAndUpdate(
+          Filters.equal("session", user),
+          Updates.combine(
+            Updates.setOnInsert("session", user),
+            Updates.set("data", Codecs.toBson(value)),
+            Updates.setOnInsert("created", LocalDateTime.now),
+            Updates.set("updated", LocalDateTime.now)
+          ),
+          FindOneAndUpdateOptions().upsert(true)
+        )
         .toFuture
         .map(_ => ())
     }
-
-    override def update(user: InternalId, value: Registration): Future[Unit] =
-      insert(user, value)
 
     override def get(user: InternalId): Future[Option[Registration]] =
       repo.collection
@@ -198,22 +191,33 @@ class MongoPersistence @Inject()(
 
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] = {
 
+      val regNo = reg.registrationNumber.getOrElse(
+        throw new IllegalArgumentException("Registration is not active")
+      )
+
       val wrapper = RetWrapper(
-        reg.registrationNumber.getOrElse(
-          throw new IllegalArgumentException("Registration is not active")
-        ),
+        regNo,
         period,
         ret
       )
 
       repo.collection
-        .insertOne(wrapper)
+        .findOneAndUpdate(
+          Filters.and(
+            Filters.equal("regNo", regNo),
+            Filters.equal("periodKey", period),
+          ),
+          Updates.combine(
+            Updates.setOnInsert("regNo", regNo),
+            Updates.setOnInsert("periodKey", period),
+            Updates.set("data", Codecs.toBson(ret)),
+            Updates.setOnInsert("created", LocalDateTime.now),
+            Updates.set("updated", LocalDateTime.now)
+          ),
+          FindOneAndUpdateOptions().upsert(true)
+        )
         .toFuture
         .map(_ => ())
     }
-
-    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] =
-      update(reg, key, ret)
   }
-
 }

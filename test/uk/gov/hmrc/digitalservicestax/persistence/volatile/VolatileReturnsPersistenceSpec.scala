@@ -40,7 +40,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- volatile.returns.insert(reg, period, ret)
+        _ <- volatile.returns.update(reg, period, ret)
         dbReg <- volatile.returns(reg, period)
       } yield dbReg
 
@@ -53,7 +53,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
   "it should persist a return object" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- volatile.returns.insert(reg, period, ret)
+        _ <- volatile.returns.update(reg, period, ret)
         dbReg <- volatile.returns.get(reg, period)
       } yield dbReg
 
@@ -66,7 +66,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSpec
   "it should update a return by registration and period" in {
     forAll { (reg: Registration, ret: Return, updatedReturn: Return) =>
       val chain = for {
-        _ <- volatile.returns.insert(reg, period, ret)
+        _ <- volatile.returns.update(reg, period, ret)
         dbReg <- volatile.returns.get(reg, period)
         _ <- volatile.returns.update(reg, period, updatedReturn)
         postUpdate <- volatile.returns.get(reg, period)

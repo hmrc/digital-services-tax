@@ -57,7 +57,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   "it should persist a return object and retrieve it using the the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        _ <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns(reg)
       } yield dbReg
 
@@ -72,7 +72,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        _ <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns(reg, period)
       } yield dbReg
 
@@ -85,7 +85,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSpec
   "it should persist a return object" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.insert(reg, period, ret)
+        _ <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns.get(reg, period)
       } yield dbReg
 

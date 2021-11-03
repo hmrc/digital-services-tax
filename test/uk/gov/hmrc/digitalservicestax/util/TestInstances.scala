@@ -255,7 +255,7 @@ object TestInstances {
     Gen.option(genRepayment)
     ).mapN(Return.apply))
 
-  implicit def arbDate: Arbitrary[LocalDate] = Arbitrary(
+  implicit def arbLocalDate: Arbitrary[LocalDate] = Arbitrary(
     date(LocalDate.of(2010, 1, 1), LocalDate.of(2020, 1, 1))
   )
 

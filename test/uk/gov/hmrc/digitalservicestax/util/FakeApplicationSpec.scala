@@ -28,7 +28,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.mvc.MessagesControllerComponents
 import play.api.{Application, ApplicationLoader, Logger}
-import play.modules.reactivemongo.DefaultReactiveMongoApi
 import reactivemongo.api.MongoConnection
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
@@ -43,7 +42,6 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait FakeApplicationSpec extends PlaySpec
   with BaseOneAppPerSuite
-  with MongoSpecSupport
   with FakeApplicationFactory
   with TryValues
   with ScalaFutures
@@ -68,14 +66,6 @@ trait FakeApplicationSpec extends PlaySpec
       )
     ).build()
   }
-
-  val reactiveMongoApi = new DefaultReactiveMongoApi(
-    parsedUri = MongoConnection.parseURI(mongoUri).success.value,
-    dbName = databaseName,
-    strictMode = false,
-    configuration = configuration,
-    new DefaultApplicationLifecycle
-  )
 
   implicit val c = this.mongoComponent
 
