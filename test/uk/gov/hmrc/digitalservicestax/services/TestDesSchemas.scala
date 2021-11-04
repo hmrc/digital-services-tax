@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.digitalservicestax.services
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import play.api.libs.json._
-class TestDesSchemas extends FlatSpec with Matchers {
+class TestDesSchemas extends AnyFlatSpec with Matchers {
 
   val dir = new java.io.File("conf/dst")
-  dir.listFiles().filter{_.getName.contains("example")}.sortBy(_.getName) map { file =>
+  dir.listFiles().filter{_.getName.contains("example")}.sortBy(_.getName) foreach { file =>
     val schemaName = file.getAbsolutePath.replaceAll("example[0-9]","schema")
     val schemaFile = new java.io.File(schemaName)
     s"${file.getName}" should s"have a schema called ${schemaFile.getName}" in {
-      schemaFile.exists shouldBe (true)
+      schemaFile.exists shouldBe true
     }
 
     it should s"conform to its schema" in {
@@ -36,7 +37,7 @@ class TestDesSchemas extends FlatSpec with Matchers {
       val result = checker.errorsIn(Json.parse(example))
       source.close()
       is.close()
-      result shouldBe (None)
+      result shouldBe None
     } 
   }
 }

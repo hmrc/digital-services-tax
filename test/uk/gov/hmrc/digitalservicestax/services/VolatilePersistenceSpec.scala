@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.digitalservicestax.services
 
-import org.scalatest.{FlatSpec, Matchers}
-class VolatilePersistenceSpec extends FlatSpec with Matchers {
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
+class VolatilePersistenceSpec extends AnyFlatSpec with Matchers {
 
   "randomDstNumber" should "not give duplicates" in {
     val many = (1 to 1000).map{_ => VolatilePersistence.randomDstNumber}

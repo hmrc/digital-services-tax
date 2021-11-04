@@ -19,14 +19,16 @@ package backend_data
 
 import cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{Assertion, FlatSpec, Matchers, OptionValues}
+import org.scalatest.{Assertion, OptionValues}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class RosmJsonSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
+class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
   def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
     forAll { sample: T =>

@@ -24,7 +24,6 @@ import java.time.LocalDateTime
 import javax.inject._
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import play.api.libs.json._
-import play.modules.reactivemongo._
 import scala.concurrent._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -135,7 +134,6 @@ class MongoPersistence @Inject()(
     )
 
     def update(user: InternalId, value: Registration): Future[Unit] = {
-      val wrapper = RegWrapper(user, value)
       repo.collection
         .findOneAndUpdate(
           Filters.equal("session", user),
@@ -193,12 +191,6 @@ class MongoPersistence @Inject()(
 
       val regNo = reg.registrationNumber.getOrElse(
         throw new IllegalArgumentException("Registration is not active")
-      )
-
-      val wrapper = RetWrapper(
-        regNo,
-        period,
-        ret
       )
 
       repo.collection
