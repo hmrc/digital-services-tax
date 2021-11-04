@@ -20,11 +20,12 @@ import java.time.LocalDate
 import cats.implicits._
 import cats.kernel.Monoid
 import org.scalacheck.Gen
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.util.TestInstances.{arbMoney, periodArb}
 
-class ValidatedTypeTests extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+class ValidatedTypeTests extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
   it should "fail to parse a validated tagged type using an of method" in {
     intercept[IllegalArgumentException] {

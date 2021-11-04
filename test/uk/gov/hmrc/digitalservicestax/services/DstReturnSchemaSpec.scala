@@ -18,12 +18,13 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import org.scalacheck.Arbitrary.{arbBigDecimal => _}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck._
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class DstReturnSchemaSpec extends FlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+class DstReturnSchemaSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
   "A return API call" should "conform to the schema" in {
     forAll { (period: Period, ret: Return) =>

@@ -20,7 +20,6 @@ package services
 import java.time.LocalDateTime
 
 import cats.Id
-import uk.gov.hmrc.digitalservicestax.data.Period.Key
 import uk.gov.hmrc.digitalservicestax.data._
 
 trait VolatilePersistence extends Persistence[Id] {

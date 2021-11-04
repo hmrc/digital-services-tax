@@ -21,6 +21,8 @@ import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
@@ -32,7 +34,7 @@ import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.collection.immutable.ListMap
 
-class JsonTests extends FlatSpec
+class JsonTests extends AnyFlatSpec
   with Matchers
   with ScalaCheckDrivenPropertyChecks
   with EitherValues
