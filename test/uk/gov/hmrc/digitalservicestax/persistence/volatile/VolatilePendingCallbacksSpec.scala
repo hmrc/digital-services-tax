@@ -40,7 +40,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks(formNo)
       } yield dbReg
 
@@ -53,7 +53,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   "it should retrieve a pending callback id using the get method" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks.get(formNo)
       } yield dbReg
 
@@ -66,8 +66,8 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   "it should confirm a registraion using the pending callbacks process" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.insert(id, reg)
-        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.registrations.update(id, reg)
+        _ <- volatile.pendingCallbacks.update(formNo, id)
         _ <- volatile.pendingCallbacks.process(formNo, reg.registrationNumber.value)
         formBundle <- volatile.pendingCallbacks.get(formNo)
       } yield formBundle
@@ -81,7 +81,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   "it should update a pending callback ID by form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks.get(formNo)
         _ <- volatile.pendingCallbacks.update(formNo, newId)
         postUpdate <- volatile.pendingCallbacks.get(formNo)
@@ -98,7 +98,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSpec
   "it should delete a pending callback by its form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.insert(formNo, id)
+        _ <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks.get(formNo)
         _ <- volatile.pendingCallbacks.delete(formNo)
         postUpdate <- volatile.pendingCallbacks.get(formNo)

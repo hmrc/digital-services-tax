@@ -29,8 +29,6 @@ abstract class Persistence[F[_]: cats.Monad] {
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
     }
 
-    def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): F[Unit]
-
     def get(formBundle: FormBundleNumber): F[Option[InternalId]]
     def reverseLookup(id: InternalId): F[Option[FormBundleNumber]]
     def delete(formBundle: FormBundleNumber): F[Unit]    
@@ -45,8 +43,6 @@ abstract class Persistence[F[_]: cats.Monad] {
     def apply(user: InternalId): F[Registration] = get(user).map {
       _.getOrElse(throw new NoSuchElementException(s"user not found: $user"))
     }
-
-    def insert(user: InternalId, reg: Registration): F[Unit]
 
     def get(user: InternalId): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
@@ -66,8 +62,6 @@ abstract class Persistence[F[_]: cats.Monad] {
     def apply(reg: Registration, periodKey: Period.Key): F[Return] = get(reg, periodKey).map{
       _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$periodKey"))
     }
-
-    def insert(reg: Registration, key: Period.Key, ret: Return): F[Unit]
 
     def get(reg: Registration): F[Map[Period.Key, Return]]
     def get(reg: Registration, period: Period.Key): F[Option[Return]] =

@@ -37,9 +37,6 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
     def delete(formBundle: FormBundleNumber) = f(V.delete(formBundle))
     def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
     def reverseLookup(id: InternalId) = f(V.reverseLookup(id))
-    override def insert(formBundleNumber: FormBundleNumber, internalId: InternalId): Future[Unit] = {
-      f(V.insert(formBundleNumber, internalId))
-    }
   }
 
   val registrations = new Registrations {
@@ -52,10 +49,6 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
 
     override def confirm(user: InternalId, newRegNo: DSTRegNumber): Future[Registration] =
       f(V.confirm(user, newRegNo))
-
-    override def insert(user: InternalId, reg: Registration): Future[Unit] = {
-      f(V.insert(user, reg))
-    }
   }
 
   val returns = new Returns {
@@ -63,10 +56,6 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
     def get(reg: Registration): Future[Map[Key, Return]] = f(V.get(reg))
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] =
       f(V.update(reg, period, ret))
-
-    override def insert(reg: Registration, key: Key, ret: Return): Future[Unit] = {
-      f(V.insert(reg, key, ret))
-    }
   }
 
 }

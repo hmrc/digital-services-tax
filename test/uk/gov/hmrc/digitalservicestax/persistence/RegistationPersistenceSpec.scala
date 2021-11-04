@@ -55,7 +55,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
   "it should retrieve a registration using the apply object" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
+        _ <- mongoPersistence.registrations.update(id, reg)
         dbReg <- mongoPersistence.registrations(id)
       } yield dbReg
 
@@ -68,7 +68,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
   "it should persist a registration object using the MongoConnector" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
+        _ <- mongoPersistence.registrations.update(id, reg)
         dbReg <- mongoPersistence.registrations.get(id)
       } yield dbReg
 
@@ -81,7 +81,7 @@ class RegistationPersistenceSpec extends FakeApplicationSpec
   "it should update a registration by userId" in {
     forAll { (id: InternalId, reg: Registration, updated: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
+        _ <- mongoPersistence.registrations.update(id, reg)
         dbReg <- mongoPersistence.registrations.get(id)
         _ <- mongoPersistence.registrations.update(id, updated)
         postUpdate <- mongoPersistence.registrations.get(id)

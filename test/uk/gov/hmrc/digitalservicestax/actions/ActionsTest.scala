@@ -59,7 +59,7 @@ class ActionsTest extends FakeApplicationSpec
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.insert(internal, reg)
+      _ <- mongoPersistence.registrations.update(internal, reg)
       block <- action.invokeBlock(req, { req: RegisteredRequest[_] =>
         Future.successful(
           Results.Ok(req.registration.registrationNumber.value)
@@ -89,7 +89,7 @@ class ActionsTest extends FakeApplicationSpec
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.insert(internal, regWithNoId)
+      _ <- mongoPersistence.registrations.update(internal, regWithNoId)
       block <- action.invokeBlock(req, { req: RegisteredRequest[_] =>
         Future.successful(
           Results.Ok(req.registration.registrationNumber.value)
@@ -138,7 +138,7 @@ class ActionsTest extends FakeApplicationSpec
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.insert(internal, reg)
+      _ <- mongoPersistence.registrations.update(internal, reg)
       block <- action.invokeBlock(loggedInReq, { req: RegisteredRequest[_] =>
         Future.successful(
           Results.Ok(req.registration.registrationNumber.value)

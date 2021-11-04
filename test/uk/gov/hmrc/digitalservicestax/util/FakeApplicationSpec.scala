@@ -28,7 +28,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.mvc.MessagesControllerComponents
 import play.api.{Application, ApplicationLoader, Logger}
-import play.modules.reactivemongo.DefaultReactiveMongoApi
 import reactivemongo.api.MongoConnection
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
@@ -39,14 +38,15 @@ import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait FakeApplicationSpec extends PlaySpec
   with BaseOneAppPerSuite
-  with MongoSpecSupport
   with FakeApplicationFactory
   with TryValues
   with ScalaFutures
-  with TestWiring {
+  with TestWiring
+  with CleanMongoCollectionSupport {
   protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context.create(environment)
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
@@ -67,13 +67,7 @@ trait FakeApplicationSpec extends PlaySpec
     ).build()
   }
 
-  val reactiveMongoApi = new DefaultReactiveMongoApi(
-    parsedUri = MongoConnection.parseURI(mongoUri).success.value,
-    dbName = databaseName,
-    strictMode = false,
-    configuration = configuration,
-    new DefaultApplicationLifecycle
-  )
+  implicit val c = this.mongoComponent
 
   val mongoPersistence: MongoPersistence = wire[MongoPersistence]
 

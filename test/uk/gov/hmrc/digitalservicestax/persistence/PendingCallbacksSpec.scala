@@ -46,7 +46,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks(formNo)
       } yield dbReg
 
@@ -60,8 +60,8 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   "it should confirm a registraion using the pending callbacks process" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.insert(id, reg)
-        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.registrations.update(id, reg)
+        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
         _ <- mongoPersistence.pendingCallbacks.process(formNo, reg.registrationNumber.value)
         formBundle <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield formBundle
@@ -75,7 +75,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   "it should retrieve a pending callback id using the get method" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield dbReg
 
@@ -88,7 +88,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   "it should update a pending callback ID by form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
         _ <- mongoPersistence.pendingCallbacks.update(formNo, newId)
         postUpdate <- mongoPersistence.pendingCallbacks.get(formNo)
@@ -105,7 +105,7 @@ class PendingCallbacksSpec extends FakeApplicationSpec
   "it should delete a pending callback by its form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.insert(formNo, id)
+        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
         _ <- mongoPersistence.pendingCallbacks.delete(formNo)
         postUpdate <- mongoPersistence.pendingCallbacks.get(formNo)
