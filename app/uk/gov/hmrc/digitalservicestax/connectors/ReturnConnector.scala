@@ -27,13 +27,11 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
@@ -89,14 +87,14 @@ class ReturnConnector @Inject()(val http: HttpClient,
     JsonSchemaChecker(request,"return-submission")(writes)
 
     val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
-    val result = desPost[JsValue, ReturnResponse](
+    import uk.gov.hmrc.http.HttpReadsInstances._
+    val result = desPost[JsValue, Either[UpstreamErrorResponse,ReturnResponse]](
       url,
       Json.toJson(request)(writes)
-    )
-
-    if (appConfig.logRegResponse) logger.debug(
-      s"Return response is ${Await.result(result, 20.seconds)}"
-    )
+    ).map {
+      case Right(value) => value
+      case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
+    }
 
     result
   }

@@ -26,13 +26,13 @@ import play.api.mvc.Results
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
-import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSpec, WiremockSpec}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ActionsTest extends FakeApplicationSpec
+  with WiremockSpec
   with ScalaFutures
   with BeforeAndAfterEach
   with EitherValues
@@ -151,7 +151,4 @@ class ActionsTest extends FakeApplicationSpec
     }
   }
 
-
-  "should execute an LoggedInAction or pending request" in {
-  }
 }
