@@ -25,11 +25,11 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
-class RegistrationConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks with MockitoSugar {
+class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks with MockitoSugar {
 
   val auditing: AuditConnector = mock[AuditConnector]
   object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, auditing, implicitly) {

@@ -1,6 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
+scalaVersion := "2.12.11"
 val appName = "digital-services-tax"
 PlayKeys.playDefaultPort := 8741
 
@@ -20,20 +21,11 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .settings(
     majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test ++ Seq(
-      "com.softwaremill.macwire"  %% "macros"                % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "util"                  % "2.3.4" % Test
-    )
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
   )
   .settings(scoverageSettings)
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
-  .settings(resolvers += Resolver.jcenterRepo)
+  .settings(resolvers ++= Seq(Resolver.jcenterRepo,  Resolver.bintrayRepo("wolfendale", "maven")))
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
-
-resolvers += Resolver.bintrayRepo("wolfendale", "maven")
-
-scalaVersion := "2.12.11"

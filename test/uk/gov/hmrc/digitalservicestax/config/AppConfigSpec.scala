@@ -16,29 +16,28 @@
 
 package uk.gov.hmrc.digitalservicestax.config
 
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
+
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import uk.gov.hmrc.digitalservicestax.util.TestWiring
+class AppConfigSpec extends FakeApplicationSetup {
 
-class AppConfigTests extends AnyFlatSpec with Matchers with TestWiring {
-
-  it should "read a non empty authbase URL from app config" in {
+  "should read a non empty authbase URL from app config" in {
     appConfig.authBaseUrl.isEmpty shouldEqual false
   }
 
-  it should "read a non empty auditingEnabled flag from app config" in {
+  "should read a non empty auditingEnabled flag from app config" in {
     appConfig.auditingEnabled shouldEqual false
   }
 
-  it should "read a non empty graphiteHost flag from app config" in {
+  "should read a non empty graphiteHost flag from app config" in {
     appConfig.graphiteHost.nonEmpty shouldEqual true
   }
 
 
-  it should "read an obligation start date from app config" in {
+  "should read an obligation start date from app config" in {
     val pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     appConfig.obligationStartDate.nonEmpty shouldEqual true
 

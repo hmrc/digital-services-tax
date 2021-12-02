@@ -20,17 +20,12 @@ import org.scalactic.anyvals.PosInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.data.{Period, Registration, Return}
-import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
+import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with ScalaCheckDrivenPropertyChecks {
 
-class ReturnsPersistenceSpec extends FakeApplicationSpec
-  with ScalaFutures
-  with ScalaCheckDrivenPropertyChecks {
-
-  implicit override val generatorDrivenConfig =
-    PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
+  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
   private[this] val period: Period.Key = Period.Key.of("0220").value
 

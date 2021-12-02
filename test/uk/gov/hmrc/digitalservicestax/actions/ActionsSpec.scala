@@ -18,8 +18,8 @@ package uk.gov.hmrc.digitalservicestax.actions
 
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.anyvals.PosInt
+import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterEach, EitherValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.mvc.Results
@@ -27,16 +27,11 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSpec, WiremockSpec}
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 
 import scala.concurrent.Future
 
-class ActionsTest extends FakeApplicationSpec
-  with WiremockSpec
-  with ScalaFutures
-  with BeforeAndAfterEach
-  with EitherValues
-  with ScalaCheckDrivenPropertyChecks {
+class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFutures with EitherValues with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(
     minSize = 1,

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import java.time.LocalDate
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.domain.ShortString
 import com.outworkers.util.samplers._
@@ -28,10 +27,10 @@ import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import uk.gov.hmrc.http.HeaderCarrier
 
-class ReturnConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
+class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
   object ReturnTestConnector extends ReturnConnector(httpClient, environment.mode, servicesConfig, appConfig) {
     override val desURL: String = mockServerUrl

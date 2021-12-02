@@ -22,10 +22,10 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import uk.gov.hmrc.http.HeaderCarrier
 
-class TaxEnrolmentConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
+class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
   object TaxTestConnector extends TaxEnrolmentConnector(
     httpClient,

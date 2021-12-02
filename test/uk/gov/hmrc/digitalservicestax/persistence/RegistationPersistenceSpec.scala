@@ -21,16 +21,10 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
-import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSpec
+import uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-class RegistationPersistenceSpec extends FakeApplicationSpec
-  with ScalaFutures
-  with BeforeAndAfterEach
-  with ScalaCheckDrivenPropertyChecks {
-
+class RegistationPersistenceSpec extends FakeApplicationSetup with ScalaFutures with BeforeAndAfterEach with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))

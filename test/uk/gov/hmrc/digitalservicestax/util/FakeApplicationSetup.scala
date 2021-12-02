@@ -18,7 +18,6 @@ package uk.gov.hmrc.digitalservicestax.util
 
 
 import akka.actor.ActorSystem
-import com.softwaremill.macwire.wire
 import org.scalatest.TryValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
@@ -26,47 +25,49 @@ import play.api.i18n.MessagesApi
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.mvc.MessagesControllerComponents
-import play.api.{Application, ApplicationLoader, Logger}
+import play.api.{Application, Configuration, Environment}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.play.audit.http.HttpAuditing
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.io.File
+import java.time.Clock
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
-trait FakeApplicationSpec extends PlaySpec
-  with BaseOneAppPerSuite
-  with FakeApplicationFactory
-  with TryValues
-  with ScalaFutures
-  with TestWiring
-  with CleanMongoCollectionSupport {
-  protected[this] val context: ApplicationLoader.Context = ApplicationLoader.Context.create(environment)
+trait FakeApplicationSetup extends PlaySpec with BaseOneAppPerSuite with FakeApplicationFactory with TryValues
+  with ScalaFutures with CleanMongoCollectionSupport {
 
   implicit lazy val actorSystem: ActorSystem = app.actorSystem
-  val logger: Logger = Logger(this.getClass)
+  implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+  implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 100.millis)
+  implicit val clock: Clock = Clock.systemDefaultZone()
+  implicit val c = this.mongoComponent
+
+  lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+  lazy val environment: Environment = Environment.simple(new File("."))
+  lazy val configuration: Configuration = Configuration.load(environment)
   lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
   lazy val httpAuditing: HttpAuditing = app.injector.instanceOf[HttpAuditing]
   lazy val httpClient: HttpClient = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
-  lazy val mcc = app.injector.instanceOf[MessagesControllerComponents]
+  lazy val mcc: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
 
+  val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
+  val servicesConfig: ServicesConfig = app.injector.instanceOf[ServicesConfig]
   val testConnector: TestConnector = new TestConnector(httpClient, environment, configuration, servicesConfig)
+  val appName: String = configuration.get[String]("appName")
 
   override def fakeApplication(): Application = {
-    GuiceApplicationBuilder(environment = environment).configure(
-      Map(
-        "tax-enrolments.enabled" -> "true"
-      )
-    ).build()
+    GuiceApplicationBuilder(environment = environment)
+      .configure(Map("tax-enrolments.enabled" -> "true", "auditing.enabled" -> "false"))
+      .build()
   }
 
-  implicit val c = this.mongoComponent
-
-  val mongoPersistence: MongoPersistence = wire[MongoPersistence]
-
-  implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 100.millis)
 }

@@ -22,10 +22,10 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.data.{CompanyName, ContactDetails, DSTRegNumber, Period}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import uk.gov.hmrc.http.HeaderCarrier
 
-class EmailConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
+class EmailConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
   object EmailTestConnector extends EmailConnector(httpClient, environment.mode, servicesConfig) {
     override val emailUrl: String = mockServerUrl

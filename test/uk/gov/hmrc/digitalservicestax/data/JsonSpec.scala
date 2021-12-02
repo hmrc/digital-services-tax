@@ -34,11 +34,7 @@ import uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.collection.immutable.ListMap
 
-class JsonTests extends AnyFlatSpec
-  with Matchers
-  with ScalaCheckDrivenPropertyChecks
-  with EitherValues
-  with OptionValues {
+class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with EitherValues with OptionValues {
 
   def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
     forAll { sample: T =>

@@ -18,16 +18,13 @@ package uk.gov.hmrc.digitalservicestax.util
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 
-import scala.concurrent.ExecutionContext
+trait WiremockServer extends BeforeAndAfterAll with BeforeAndAfterEach {
+  this: Suite =>
 
-trait WiremockSpec extends FakeApplicationSpec with BeforeAndAfterEach with BeforeAndAfterAll with ScalaFutures {
   val port: Int = WireMockSupport.port
   protected[this] val mockServer = new WireMockServer(port)
-
-  implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   val mockServerUrl = s"http://localhost:$port"
 

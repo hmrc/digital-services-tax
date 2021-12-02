@@ -20,13 +20,13 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest}
+import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import uk.gov.hmrc.digitalservicestax.util.WiremockSpec
+import uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import uk.gov.hmrc.http.HeaderCarrier
 
-class RosmConnectorSpec extends WiremockSpec with ScalaCheckDrivenPropertyChecks {
+class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
   object RosmTestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig, appConfig) {
     override val desURL: String = mockServerUrl
