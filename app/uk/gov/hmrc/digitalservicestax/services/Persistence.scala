@@ -47,7 +47,7 @@ abstract class Persistence[F[_]: cats.Monad] {
     def get(user: InternalId): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
 
-    private[services] def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
+    def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
       for {
         existing <- apply(user)
         updated  = existing.copy(registrationNumber = Some(registrationNumber))

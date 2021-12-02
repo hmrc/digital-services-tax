@@ -1,6 +1,7 @@
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
+import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, integrationTestSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
+scalaVersion := "2.12.11"
 val appName = "digital-services-tax"
 PlayKeys.playDefaultPort := 8741
 
@@ -20,20 +21,28 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .settings(
     majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test ++ Seq(
-      "com.softwaremill.macwire"  %% "macros"                % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "macrosakka"            % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "proxy"                 % "2.3.4" % Test,
-      "com.softwaremill.macwire"  %% "util"                  % "2.3.4" % Test
-    )
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
   )
   .settings(scoverageSettings)
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
-  .settings(resolvers += Resolver.jcenterRepo)
+  .settings(integrationTestSettings ++ unitTestSettings)
+  .settings(resolvers ++= Seq(Resolver.jcenterRepo,  Resolver.bintrayRepo("wolfendale", "maven")))
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
 
-resolvers += Resolver.bintrayRepo("wolfendale", "maven")
+// If you want integration tests in the test package you need to extend Test config ...
+lazy val IntegrationTest = config("it") extend Test
 
-scalaVersion := "2.12.11"
+lazy val unitTestSettings = inConfig(Test)(Defaults.testTasks) ++ Seq(
+  Test / testOptions := Seq(Tests.Filter(name => name startsWith "unit")),
+  Test / fork := true,
+  Test / unmanagedSourceDirectories := Seq((baseDirectory in Test).value / "test"),
+  addTestReportOption(Test, "test-reports")
+)
+
+lazy val integrationTestSettings = inConfig(IntegrationTest)(Defaults.testTasks) ++ Seq(
+  IntegrationTest / testOptions := Seq(Tests.Filter(name => name startsWith "it")),
+  IntegrationTest / fork := false,
+  IntegrationTest / parallelExecution := false,
+  addTestReportOption(IntegrationTest, "integration-test-reports")
+)
