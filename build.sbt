@@ -1,4 +1,4 @@
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
+import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, integrationTestSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
 scalaVersion := "2.12.11"
@@ -26,6 +26,23 @@ lazy val microservice = Project(appName, file("."))
   .settings(scoverageSettings)
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
+  .settings(integrationTestSettings ++ unitTestSettings)
   .settings(resolvers ++= Seq(Resolver.jcenterRepo,  Resolver.bintrayRepo("wolfendale", "maven")))
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
+
+// If you want integration tests in the test package you need to extend Test config ...
+lazy val IntegrationTest = config("it") extend Test
+
+lazy val unitTestSettings = inConfig(Test)(Defaults.testTasks) ++ Seq(
+  Test / testOptions := Seq(Tests.Filter(name => name startsWith "unit")),
+  Test / fork := true,
+  Test / unmanagedSourceDirectories := Seq((baseDirectory in Test).value / "test"),
+  addTestReportOption(Test, "test-reports")
+)
+
+lazy val integrationTestSettings = inConfig(IntegrationTest)(Defaults.testTasks) ++ Seq(
+  IntegrationTest / testOptions := Seq(Tests.Filter(name => name startsWith "it")),
+  IntegrationTest / fork := false,
+  IntegrationTest / parallelExecution := false,
+  addTestReportOption(IntegrationTest, "integration-test-reports")
+)
