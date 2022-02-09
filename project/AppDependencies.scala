@@ -5,19 +5,19 @@ import sbt._
 
 object AppDependencies {
 
-  val hmrcMongoVersion = "0.55.0"
+  val hmrcMongoVersion = "0.59.0"
   val play = "28"
 
   val compile = Seq(
     "com.github.java-json-tools"     %  "json-schema-validator"         % "2.2.14",
-    "org.typelevel"                  %% "cats-core"                     % "2.6.1",
+    "org.typelevel"                  %% "cats-core"                     % "2.7.0",
     "uk.gov.hmrc"                    %% "simple-reactivemongo"          % s"8.0.0-play-$play",
     "org.reactivemongo"              %% "play2-reactivemongo"           % s"0.18.6-play26",
     "uk.gov.hmrc.mongo"              %% s"hmrc-mongo-play-$play"        % hmrcMongoVersion,
-    "uk.gov.hmrc"                    %% s"bootstrap-backend-play-$play" % "5.14.0",
+    "uk.gov.hmrc"                    %% s"bootstrap-backend-play-$play" % "5.20.0",
     "com.beachape"                   %% "enumeratum"                    % "1.7.0",
     "com.beachape"                   %% "enumeratum-play-json"          % "1.7.0",
-    "com.chuusai"                    %% "shapeless"                     % "2.3.3",
+    "com.chuusai"                    %% "shapeless"                     % "2.3.7",
     "commons-validator"              % "commons-validator"              % "1.6",
     "fr.marcwrobel"                  % "jbanking"                       % "2.0.0",
     compilerPlugin("com.github.ghik" %% "silencer-plugin"               % "1.4.2"),
