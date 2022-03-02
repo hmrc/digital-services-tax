@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
-
-
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import play.api.{Configuration, Logger}
@@ -31,18 +28,18 @@ import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent._
 
 @Singleton
 class RegistrationsController @Inject()(
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  appConfig: AppConfig,
+  val appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
@@ -51,14 +48,10 @@ class RegistrationsController @Inject()(
   persistence: MongoPersistence,
   val auditing: AuditConnector,
   loggedIn: LoggedInAction,
-  registered: RegisteredOrPending,
-  returnConnector: ReturnConnector,
-  val http: HttpClient,
-  val servicesConfig: ServicesConfig
+  val http: HttpClient
 ) extends BackendController(cc) with AuthorisedFunctions with DesHelpers with AuditWrapper{
 
   val logger: Logger = Logger(this.getClass)
-  val serviceConfig = new ServicesConfig(runModeConfiguration)
 
   implicit val ec: ExecutionContext = cc.executionContext
      

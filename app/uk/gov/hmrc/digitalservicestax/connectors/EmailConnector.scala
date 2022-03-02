@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.{Logger, Mode}
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig: ServicesConfig) {
+class EmailConnector @Inject()(http: HttpClient, appConfig: AppConfig) {
 
-  val emailUrl: String = servicesConfig.baseUrl("email")
   val logger = Logger(this.getClass)
 
   def sendConfirmationEmail(
@@ -81,7 +80,7 @@ class EmailConnector @Inject()(http: HttpClient, val mode: Mode, servicesConfig:
    implicit hc: HeaderCarrier,
    ex: ExecutionContext
   ) = {
-    http.POST[JsValue, HttpResponse](s"$emailUrl/hmrc/email", params) map {
+    http.POST[JsValue, HttpResponse](s"${appConfig.emailUrl}/hmrc/email", params) map {
       case response if response.status == play.api.http.Status.ACCEPTED =>
         logger.info("email send accepted")
         ()

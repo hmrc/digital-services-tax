@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,20 @@ import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 import java.time.LocalDate
 
 class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
-  object ReturnTestConnector extends ReturnConnector(httpClient, environment.mode, servicesConfig, appConfig) {
-    override val desURL: String = mockServerUrl
-  }
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.des.port" -> WireMockSupport.port
+    )
+    .build()
+
+  object ReturnTestConnector extends ReturnConnector(httpClient, environment.mode, appConfig)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

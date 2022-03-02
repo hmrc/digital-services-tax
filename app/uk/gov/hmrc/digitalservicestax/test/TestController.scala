@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package uk.gov.hmrc.digitalservicestax.test
 
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -29,7 +29,7 @@ class TestController @Inject()(
   connector: TestConnector,
   cc: ControllerComponents,
   mcc: MessagesControllerComponents,
-  sc: ServicesConfig
+  val appConfig: AppConfig
 )(
   implicit ec: ExecutionContext
 ) extends BackendController(cc) with ExtraActions {
@@ -39,6 +39,5 @@ class TestController @Inject()(
       Future.successful(Ok("tax enrolment callback triggered "))
   }
 
-  override def servicesConfig: ServicesConfig = sc
   override def messagesControllerComponents: MessagesControllerComponents = mcc
 }

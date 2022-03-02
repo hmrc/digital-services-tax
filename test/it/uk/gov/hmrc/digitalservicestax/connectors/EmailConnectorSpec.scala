@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,26 @@
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.digitalservicestax.connectors.EmailConnector
 import uk.gov.hmrc.digitalservicestax.data.{CompanyName, ContactDetails, DSTRegNumber, Period}
 import uk.gov.hmrc.http.HeaderCarrier
-import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 
 class EmailConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
-  object EmailTestConnector extends EmailConnector(httpClient, environment.mode, servicesConfig) {
-    override val emailUrl: String = mockServerUrl
-  }
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.email.port" -> WireMockSupport.port
+    )
+    .build()
+
+  object EmailTestConnector extends EmailConnector(httpClient, appConfig)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

@@ -18,25 +18,32 @@ For details about the digital services tax see [the GOV.UK guidance](https://www
 
 ## APIs
 
-**GET  /lookup-company**
+###GET  /lookup-company
+
 Using a UTR from Enrolments, this retrieves a registered company from ROSM, or returns a 404 if no organisation record is found.
-               
-**GET  /lookup-company/:utr/:postcode**
+
+###GET  /lookup-company/:utr/:postcode
+
 Retrieves a company and it's address from ROSM with a provided utr. If the retrieved company's postcode matches the parameter then the company is retrieved. If no company is found or if the postcodes do not match then a 404 is returned.  
 
-**POST /registration**    
+###POST /registration
+
 Submits a registration to ETMP. Fails if a registration has already been submitted for a given safeId.
-             
-**GET  /registration**
+
+###GET  /registration
+
 Retrieves a registration from ETMP if it exists, or returns 404 if no record exists.                 
 
-**POST /returns/:periodKey**
+###POST /returns/:periodKey
+
 Submits a return to ETMP which is assigned to a periodKey. A return with the same periodKey can be sent again, this allows the user to make an adjustment.
 
-**GET  /returns**  
+###GET  /returns
+
 Returns a list of all returns held on ETMP.  
 
-**POST /tax-enrolment-callback/:subscriptionId**
+###POST /tax-enrolment-callback/:subscriptionId
+
 Handles the callback from tax enrolments when the registration is activated.    
    
 See [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidissuer) and [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidsubscriber) for details
@@ -77,10 +84,27 @@ Ensure your service manager config is up to date, and run the following command:
 
 This will start all the required services
 
+## Running to test changes using journey tests
+
+In order to test backend changes, the service needs to be ran in line with the SM profile to ensure that the callback is triggered successfully (allowing for the return journey), you need to run the service using the following command:
+
+`sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes -Dconfig.resource=application.conf -Dmicroservice.services.tax-enrolments.enabled=false -Drun.mode=Dev`
+
+
 ## Running the tests
 
-    sbt test
+###Unit tests:
 
-### License
+`sbt test`
+
+###Integration tests:
+
+`sbt it:test`
+
+###All tests:
+
+`sbt test it:test`
+
+## License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").

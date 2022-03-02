@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package uk.gov.hmrc.digitalservicestax
 package connectors
 
 import cats.syntax.option._
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats.rosmWithoutIDResponseFormat
@@ -27,23 +26,20 @@ import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.http.HttpReads.Implicits.{readOptionOfNotFound, _}
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RosmConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig
+  val appConfig: AppConfig
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-  val desURL: String = servicesConfig.baseUrl("des")
 
   val serviceURLWithId: String = "registration/organisation"
   val serviceURLWithoutId: String = "registration/02.00.00/organisation"
@@ -52,7 +48,7 @@ class RosmConnector @Inject()(
     request: RosmRegisterWithoutIDRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[RosmWithoutIDResponse]] = {
     JsonSchemaChecker(request, "rosm-without-id-request")
-    desPost[JsValue, Option[RosmWithoutIDResponse]](s"$desURL/$serviceURLWithoutId", Json.toJson(request))
+    desPost[JsValue, Option[RosmWithoutIDResponse]](s"${appConfig.desURL}/$serviceURLWithoutId", Json.toJson(request))
   }
 
   def retrieveROSMDetails(utr: String)(
@@ -67,7 +63,7 @@ class RosmConnector @Inject()(
     )
 
     desPost[JsValue, Option[CompanyRegWrapper]](
-      s"$desURL/$serviceURLWithId/utr/$utr",
+      s"${appConfig.desURL}/$serviceURLWithId/utr/$utr",
       request
     ).recover {
       case NotAnOrganisationException => None

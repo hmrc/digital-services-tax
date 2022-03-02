@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,28 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HttpClient, _}
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig,
+  val appConfig: AppConfig,
   testConnector: TestConnector
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-  val callbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
-  val serviceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
-  val enabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
-  lazy val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-    if (enabled) {
+    if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         Result => {
           logger.debug(
@@ -61,9 +54,9 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
-    if (enabled)
+    if (appConfig.taxEnrolmentsEnabled)
       http.GET[TaxEnrolmentsSubscription](
-        s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId"
+        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
       )
     else {
       testConnector.getSubscription(subscriptionId)
@@ -76,12 +69,12 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   }
 
   def subscribeUrl(subscriptionId: String) =
-    s"$taxEnrolmentsUrl/tax-enrolments/subscriptions/$subscriptionId/subscriber"
+    s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
   private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
     Json.obj(
-      "serviceName" -> serviceName,
-      "callback" -> s"$callbackUrl$formBundleNumber",
+      "serviceName" -> appConfig.taxEnrolmentsServiceName,
+      "callback" -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
       "etmpId" -> safeId
     )
   }

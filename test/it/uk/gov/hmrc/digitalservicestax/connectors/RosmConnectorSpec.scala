@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,18 @@ import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
-  object RosmTestConnector extends RosmConnector(httpClient, environment.mode, servicesConfig, appConfig) {
-    override val desURL: String = mockServerUrl
-  }
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.des.port" -> WireMockSupport.port
+    )
+    .build()
+
+  object RosmTestConnector extends RosmConnector(httpClient, environment.mode, appConfig)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -77,19 +83,15 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
 
  "retrieve ROSM details without ID" in {
 
-   import RosmTestConnector._
+   import RosmTestConnector.serviceURLWithoutId
 
    val req = arbitrary[RosmRegisterWithoutIDRequest].sample.value
 
    stubFor(
-      post(urlPathEqualTo(s"$desURL/$serviceURLWithoutId"))
+      post(urlPathEqualTo(s"${appConfig.desURL}/$serviceURLWithoutId"))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withBody(
-              ///Json.toJson(response).toString()
-              """"""
-            )
         )
    )
 
