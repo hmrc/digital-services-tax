@@ -20,17 +20,17 @@ import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ExtraActions {
 
   val logger: Logger = Logger(this.getClass)
-  def servicesConfig: ServicesConfig
+  def appConfig: AppConfig
   def messagesControllerComponents: MessagesControllerComponents
   val InboundDataAction: ActionBuilder[Request, AnyContent] = AuthorisedFilterAction
-  val bearerToken = s"Bearer ${servicesConfig.getConfString("des.token", "")}"
+  val bearerToken = s"Bearer ${appConfig.desToken}"
 
   object AuthorisedFilterAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request] {
 

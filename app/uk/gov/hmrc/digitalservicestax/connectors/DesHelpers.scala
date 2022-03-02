@@ -18,20 +18,20 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DesHelpers {
 
   def http: HttpClient
-  def servicesConfig: ServicesConfig
+  def appConfig: AppConfig
+
   private def headers = Seq(
     HeaderNames.CONTENT_TYPE -> ContentTypes.JSON,
-    "Environment" -> servicesConfig.getConfString("des.environment", ""),
-    "Authorization" -> s"Bearer ${servicesConfig.getConfString("des.token", "")}"
+    "Environment" -> appConfig.desEnvironment,
+    "Authorization" -> s"Bearer ${appConfig.desToken}"
   )
 
   def desGet[O](url: String)(implicit rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =

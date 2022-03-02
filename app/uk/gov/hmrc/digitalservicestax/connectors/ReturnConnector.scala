@@ -17,9 +17,6 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import java.time.LocalDate
-
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
@@ -29,19 +26,18 @@ import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.LocalDate
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReturnConnector @Inject()(val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
-  appConfig: AppConfig)
+  val appConfig: AppConfig)
   extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-  val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
   def getNextPendingPeriod(
@@ -61,7 +57,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
-    val url = s"$desURL/enterprise/obligation-data/zdst/$dstRegNo/DST" +
+    val url = s"${appConfig.desURL}/enterprise/obligation-data/zdst/$dstRegNo/DST" +
       s"?from=${appConfig.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"
 
@@ -86,7 +82,7 @@ class ReturnConnector @Inject()(val http: HttpClient,
 
     JsonSchemaChecker(request,"return-submission")(writes)
 
-    val url = s"$desURL/cross-regime/return/DST/zdst/$dstRegNo"
+    val url = s"${appConfig.desURL}/cross-regime/return/DST/zdst/$dstRegNo"
     import uk.gov.hmrc.http.HttpReadsInstances._
     val result = desPost[JsValue, Either[UpstreamErrorResponse,ReturnResponse]](
       url,

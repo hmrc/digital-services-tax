@@ -23,7 +23,13 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 @Singleton
 class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
 
+  val desURL: String = servicesConfig.baseUrl("des")
+  val desEnvironment: String = servicesConfig.getConfString("des.environment", "")
+  val desToken: String = servicesConfig.getConfString("des.token", "")
+
   val authBaseUrl: String = servicesConfig.baseUrl("auth")
+
+  val emailUrl: String = servicesConfig.baseUrl("email")
 
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
   val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
@@ -31,4 +37,9 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 
   val fixFailedCallback: Boolean = config.getOptional[Boolean]("fix.callback-failure.enabled").getOrElse(false)
+
+  val taxEnrolmentsCallbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
+  val taxEnrolmentsServiceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
+  val taxEnrolmentsEnabled: Boolean = servicesConfig.getConfBool("tax-enrolments.enabled", true)
+  val taxEnrolmentsUrl: String = servicesConfig.baseUrl("tax-enrolments")
 }

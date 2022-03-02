@@ -17,28 +17,27 @@
 package uk.gov.hmrc.digitalservicestax
 package connectors
 
-import javax.inject.{Inject, Singleton}
-import play.api.libs.json._
 import play.api.Mode
+import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.Registration
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RegistrationConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
-  val servicesConfig: ServicesConfig,
+  val appConfig: AppConfig,
   val auditing: AuditConnector,
   ec: ExecutionContext
 ) extends DesHelpers with AuditWrapper {
 
-  val desURL: String = servicesConfig.baseUrl("des")
   val registerPath = "cross-regime/subscription/DST"
 
   def send(
@@ -54,7 +53,7 @@ class RegistrationConnector @Inject()(
     import uk.gov.hmrc.http.HttpReadsInstances._
 
     desPost[JsValue, Either[UpstreamErrorResponse,RegistrationResponse]](
-      s"$desURL/$registerPath/$idType/$idNumber", Json.toJson(request)
+      s"${appConfig.desURL}/$registerPath/$idType/$idNumber", Json.toJson(request)
     )(implicitly, implicitly, addHeaders, implicitly).map {
       case Right(value) => value
       case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)

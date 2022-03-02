@@ -29,13 +29,20 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks with MockitoSugar {
 
   val auditing: AuditConnector = mock[AuditConnector]
-  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, servicesConfig, auditing, implicitly) {
-    override val desURL: String = mockServerUrl
-  }
+
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.des.port" -> WireMockSupport.port
+    )
+    .build()
+
+  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, appConfig, auditing, implicitly)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

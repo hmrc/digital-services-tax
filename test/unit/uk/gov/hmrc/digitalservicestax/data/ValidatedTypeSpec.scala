@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.data
 
-import java.time.LocalDate
 import cats.implicits._
 import cats.kernel.Monoid
 import org.scalacheck.Gen

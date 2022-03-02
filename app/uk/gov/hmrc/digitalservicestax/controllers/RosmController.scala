@@ -24,7 +24,6 @@ import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -36,7 +35,6 @@ class RosmController @Inject()(
   val authConnector: AuthConnector,
   rosmConnector: RosmConnector,
   val runModeConfiguration: Configuration,
-  appConfig: AppConfig,
   cc: ControllerComponents
 ) extends BackendController(cc) with AuthorisedFunctions {
   val logger = Logger(this.getClass())

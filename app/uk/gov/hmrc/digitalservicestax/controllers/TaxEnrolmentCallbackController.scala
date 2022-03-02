@@ -17,27 +17,23 @@
 package uk.gov.hmrc.digitalservicestax.controllers
 
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
-  appConfig: AppConfig,
   cc: ControllerComponents,
-  registrationConnector: RegistrationConnector,
-  rosmConnector: RosmConnector,
   taxEnrolments: TaxEnrolmentConnector,
   emailConnector: EmailConnector,
   returnConnector: ReturnConnector,

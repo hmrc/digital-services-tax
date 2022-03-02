@@ -60,7 +60,7 @@ trait FakeApplicationSetup extends PlaySpec with BaseOneAppPerSuite with FakeApp
 
   val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
   val servicesConfig: ServicesConfig = app.injector.instanceOf[ServicesConfig]
-  val testConnector: TestConnector = new TestConnector(httpClient, environment, configuration, servicesConfig)
+  val testConnector: TestConnector = new TestConnector(httpClient, appConfig)
   val appName: String = configuration.get[String]("appName")
 
   override def fakeApplication(): Application = {

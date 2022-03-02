@@ -25,24 +25,25 @@ import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnec
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
+
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.tax-enrolments.port" -> WireMockSupport.port
+    )
+    .build()
 
   object TaxTestConnector extends TaxEnrolmentConnector(
     httpClient,
     environment.mode,
-    servicesConfig,
     appConfig,
     testConnector
-  ) {
-    override lazy val taxEnrolmentsUrl: String = mockServerUrl
-  }
+  )
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-
-  "should correctly configure a tax enrolments URL" in {
-    TaxTestConnector.taxEnrolmentsUrl.isEmpty mustEqual false
-  }
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
     val subscriptionId = gen[ShortString].value
