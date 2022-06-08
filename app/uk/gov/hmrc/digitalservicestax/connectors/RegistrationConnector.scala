@@ -23,6 +23,7 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.Registration
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
@@ -34,8 +35,7 @@ class RegistrationConnector @Inject()(
   val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig,
-  val auditing: AuditConnector,
-  ec: ExecutionContext
+  val auditing: AuditConnector
 ) extends DesHelpers with AuditWrapper {
 
   val registerPath = "cross-regime/subscription/DST"
@@ -43,18 +43,16 @@ class RegistrationConnector @Inject()(
   def send(
     idType: String,
     idNumber: String,
-    request: Registration,
-    providerId: String
+    request: Registration
   )(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[RegistrationResponse] = {
     import services.EeittInterface.registrationWriter
-    import uk.gov.hmrc.http.HttpReadsInstances._
 
-    desPost[JsValue, Either[UpstreamErrorResponse,RegistrationResponse]](
+    desPost[JsValue, Either[UpstreamErrorResponse, RegistrationResponse]](
       s"${appConfig.desURL}/$registerPath/$idType/$idNumber", Json.toJson(request)
-    )(implicitly, implicitly, addHeaders, implicitly).map {
+    ).map {
       case Right(value) => value
       case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
