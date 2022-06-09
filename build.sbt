@@ -36,7 +36,7 @@ lazy val IntegrationTest = config("it") extend Test
 lazy val unitTestSettings = inConfig(Test)(Defaults.testTasks) ++ Seq(
   Test / testOptions := Seq(Tests.Filter(name => name startsWith "unit")),
   Test / fork := true,
-  Test / unmanagedSourceDirectories := Seq((baseDirectory in Test).value / "test"),
+  Test / unmanagedSourceDirectories := Seq((Test / baseDirectory).value / "test"),
   addTestReportOption(Test, "test-reports")
 )
 
