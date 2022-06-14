@@ -71,8 +71,7 @@ class RegistrationsController @Inject()(
                 ).getOrElse(throw new RuntimeException("Rosm not retrieved safeId and not UTR"))
               )
             },
-            data,
-            request.providerId
+            data
           )
           _  <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
           _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)

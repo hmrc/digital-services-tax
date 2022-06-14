@@ -42,7 +42,7 @@ class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer
     )
     .build()
 
-  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, appConfig, auditing, implicitly)
+  object RegTestConnector extends RegistrationConnector(httpClient, environment.mode, appConfig, auditing)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -62,7 +62,7 @@ class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer
         .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
 
 
-    val response = RegTestConnector.send(idType, idNumber, reg, "provider")
+    val response = RegTestConnector.send(idType, idNumber, reg)
     whenReady(response) { res =>
       res
     }
