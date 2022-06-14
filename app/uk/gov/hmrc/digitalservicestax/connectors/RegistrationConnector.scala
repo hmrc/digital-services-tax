@@ -52,7 +52,7 @@ class RegistrationConnector @Inject()(
 
     desPost[JsValue, Either[UpstreamErrorResponse, RegistrationResponse]](
       s"${appConfig.desURL}/$registerPath/$idType/$idNumber", Json.toJson(request)
-    ).map {
+    )(implicitly, implicitly, addHeaders, implicitly).map {
       case Right(value) => value
       case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
