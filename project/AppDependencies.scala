@@ -5,14 +5,12 @@ import sbt._
 
 object AppDependencies {
 
-  val hmrcMongoVersion = "0.66.0"
+  val hmrcMongoVersion = "0.68.0"
   val play = "28"
 
   val compile = Seq(
     "com.github.java-json-tools"     %  "json-schema-validator"         % "2.2.14",
     "org.typelevel"                  %% "cats-core"                     % "2.7.0",
-    "uk.gov.hmrc"                    %% "simple-reactivemongo"          % s"8.1.0-play-$play",
-    "org.reactivemongo"              %% "play2-reactivemongo"           % "0.20.13-play28",
     "uk.gov.hmrc.mongo"              %% s"hmrc-mongo-play-$play"        % hmrcMongoVersion,
     "uk.gov.hmrc"                    %% s"bootstrap-backend-play-$play" % "5.24.0",
     "com.beachape"                   %% "enumeratum"                    % "1.7.0",
@@ -39,7 +37,6 @@ object AppDependencies {
     "com.vladsch.flexmark"   %   "flexmark-all"               % "0.62.2"                % Test,
     "com.github.tomakehurst" %  "wiremock-jre8"               % "2.27.2"                % Test,
     "com.outworkers"         %% "util-samplers"               % "0.57.0"                % Test,
-    "uk.gov.hmrc"            %% "reactivemongo-test"          % s"5.0.0-play-$play"     % Test,
     "uk.gov.hmrc.mongo"      %% s"hmrc-mongo-test-play-$play" % hmrcMongoVersion        % Test
 
   )
