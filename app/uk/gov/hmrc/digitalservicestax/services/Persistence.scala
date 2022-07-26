@@ -20,6 +20,7 @@ package services
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
 
+import scala.concurrent.Future
 import scala.language.higherKinds
 
 abstract class Persistence[F[_]: cats.Monad] {
@@ -31,9 +32,9 @@ abstract class Persistence[F[_]: cats.Monad] {
 
     def get(formBundle: FormBundleNumber): F[Option[InternalId]]
     def reverseLookup(id: InternalId): F[Option[FormBundleNumber]]
-    def delete(formBundle: FormBundleNumber): F[Unit]    
+    def delete(formBundle: FormBundleNumber): F[Unit]
     def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
-    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] = 
+    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] =
       {apply(formBundle) >>= (registrations.confirm(_, regId))} <* delete(formBundle)
   }
 
@@ -53,6 +54,8 @@ abstract class Persistence[F[_]: cats.Monad] {
         updated  = existing.copy(registrationNumber = Some(registrationNumber))
         _        <- update(user, updated)
       } yield (updated)
+
+    def findByDstReg(DSTRegNumber: DSTRegNumber): F[Option[Registration]]
   }
 
   def registrations: Registrations
@@ -68,6 +71,7 @@ abstract class Persistence[F[_]: cats.Monad] {
       get(reg).map{_.get(period)}
 
     def update(reg: Registration, period: Period.Key, ret: Return): F[Unit]
+
   }
 
   def returns: Returns
