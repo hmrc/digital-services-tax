@@ -128,6 +128,10 @@ class MongoPersistence @Inject()(
         IndexModel(
           Indexes.ascending("session"),
           IndexOptions().unique(true)
+        ),
+        IndexModel(
+          Indexes.ascending("data.registrationNumber"),
+          IndexOptions().unique(false)
         )
       ),
       extraCodecs    = Nil
@@ -154,6 +158,13 @@ class MongoPersistence @Inject()(
         .find(Filters.equal("session", user))
         .map(_.data)
         .headOption()
+
+    override def findByDstReg(dstRegNumber: DSTRegNumber): Future[Option[Registration]] = {
+      repo.collection
+        .find(Filters.equal("data.registrationNumber", dstRegNumber))
+        .map(_.data)
+        .headOption()
+    }
 
   }
 
