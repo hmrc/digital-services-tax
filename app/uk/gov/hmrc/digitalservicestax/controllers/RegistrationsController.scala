@@ -87,18 +87,21 @@ class RegistrationsController @Inject()(
     )
   }
 
-  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request =>
+  def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request: LoggedInRequest[AnyContent] =>
     for {
       a <- persistence.registrations.get(request.internalId)
       b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
     } yield (a, b) match {
       case (Some(r), _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
+      case (Some(r), _) if r.registrationNumber.isEmpty =>
+        logger.info("No Registration Number found for user")
+        NotFound
       case (Some(r), p) if p.nonEmpty =>
-        logger.info(s"pending registration for ${request.internalId}")
+        logger.info(s"pending registration")
         Ok(Json.toJson(r))
       case _ =>
-        logger.warn("no pending registration")
+        logger.info("no pending registration")
         NotFound
     }
   }
