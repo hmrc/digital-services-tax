@@ -87,4 +87,17 @@ class RegistationPersistenceSpec extends FakeApplicationSetup with ScalaFutures 
       }
     }
   }
+
+  "it should find a registration by DST Registration NUmber" in {
+    forAll { (id: InternalId, reg: Registration) =>
+      val chain = for {
+        _ <- mongoPersistence.registrations.update(id, reg)
+        dbReg <- mongoPersistence.registrations.findByDstReg(reg.registrationNumber.head)
+      } yield dbReg
+
+      whenReady(chain) { dbRes =>
+        dbRes.value mustEqual reg
+      }
+    }
+  }
 }

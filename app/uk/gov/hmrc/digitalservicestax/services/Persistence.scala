@@ -54,6 +54,8 @@ abstract class Persistence[F[_]: cats.Monad] {
         updated  = existing.copy(registrationNumber = Some(registrationNumber))
         _        <- update(user, updated)
       } yield (updated)
+
+    def findByDstReg(DSTRegNumber: DSTRegNumber): F[Option[Registration]]
   }
 
   def registrations: Registrations

@@ -45,9 +45,9 @@
 
     <logger name="com.google.inject" level="INFO"/>
 
-    <logger name="uk.gov" level="WARN"/>
+    <logger name="uk.gov" level="INFO"/>
 
-    <logger name="application" level="WARN"/>
+    <logger name="application" level="INFO"/>
 
     <logger name="connector" level="ERROR">
         <appender-ref ref="STDOUT"/>
