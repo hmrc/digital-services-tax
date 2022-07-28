@@ -50,8 +50,6 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
 
     override def confirm(user: InternalId, newRegNo: DSTRegNumber): Future[Registration] =
       f(V.confirm(user, newRegNo))
-
-    override def findByDstReg(DSTRegNumber: DSTRegNumber): Future[Option[Registration]] = f(V.findByDstReg(DSTRegNumber))
   }
 
   val returns = new Returns {
