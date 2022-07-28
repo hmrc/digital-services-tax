@@ -29,17 +29,17 @@ class DstRegChecker @Inject()(configuration: Configuration, db: MongoPersistence
 
   val logger: Logger = Logger(this.getClass)
 
-  logger.warn("\n<<>><<>><<>><<>><<>><<>><<>>DST REG CHECKER RUNNING<<>><<>><<>><<>><<>><<>><<>>\n")
+  logger.info("\n<<>><<>><<>><<>><<>><<>><<>>DST REG CHECKER RUNNING<<>><<>><<>><<>><<>><<>><<>>\n")
 
   val dstRegNumberConf: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC")
 
   if (dstRegNumberConf.isEmpty) {
-    logger.warn("\n<<>><<>><<>><<>><<>><<>><<>>ERROR READING VALUE<<>><<>><<>><<>><<>><<>><<>>\n")
+    logger.info("\n<<>><<>><<>><<>><<>><<>><<>>ERROR READING VALUE<<>><<>><<>><<>><<>><<>><<>>\n")
   } else {
     val optDstRegNumber: Option[String @@ data.DSTRegNumber.Tag] = dstRegNumberConf.map(DSTRegNumber(_))
 
     if (optDstRegNumber.isEmpty) {
-      logger.warn("\n<<>><<>><<>><<>><<>><<>><<>>ERROR VALUE PROVIDED IS NOT A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n")
+      logger.info("\n<<>><<>><<>><<>><<>><<>><<>>ERROR VALUE PROVIDED IS NOT A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n")
     }
 
     val dstRegNumber: String @@ data.DSTRegNumber.Tag = optDstRegNumber.head
@@ -51,7 +51,7 @@ class DstRegChecker @Inject()(configuration: Configuration, db: MongoPersistence
 
     effOptReg.map { optReg =>
       if (optReg.isEmpty) {
-        logger.warn("\n<<>><<>><<>><<>><<>><<>><<>>ERROR NO REGISTRATION COULD BE FOUND FOR THE INTERNAL ID<<>><<>><<>><<>><<>><<>><<>>\n")
+        logger.info("\n<<>><<>><<>><<>><<>><<>><<>>ERROR NO REGISTRATION COULD BE FOUND FOR THE INTERNAL ID<<>><<>><<>><<>><<>><<>><<>>\n")
       }
     }
   }
