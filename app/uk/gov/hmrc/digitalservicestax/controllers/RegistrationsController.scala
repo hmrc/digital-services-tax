@@ -94,10 +94,10 @@ class RegistrationsController @Inject()(
     } yield (a, b) match {
       case (Some(r), _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
-      case (Some(r), _) if r.registrationNumber.isEmpty =>
-        logger.info("No Registration Number found for user")
-        NotFound
       case (Some(r), p) if p.nonEmpty =>
+        if (r.registrationNumber.isEmpty) {
+          logger.info(s"no registration number found in registration details")
+        }
         logger.info(s"pending registration")
         Ok(Json.toJson(r))
       case _ =>
