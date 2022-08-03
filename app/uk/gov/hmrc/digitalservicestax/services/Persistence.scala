@@ -19,6 +19,7 @@ package services
 
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -55,7 +56,7 @@ abstract class Persistence[F[_]: cats.Monad] {
         _        <- update(user, updated)
       } yield (updated)
 
-    def findByDstReg(DSTRegNumber: DSTRegNumber): F[Option[Registration]]
+    def findByDstReg(DSTRegNumber: DSTRegNumber): F[Option[RegWrapper]]
   }
 
   def registrations: Registrations

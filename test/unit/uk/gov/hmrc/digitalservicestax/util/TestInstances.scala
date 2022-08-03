@@ -17,7 +17,6 @@
 package unit.uk.gov.hmrc.digitalservicestax.util
 
 import java.time.LocalDate
-
 import cats.implicits.{none, _}
 import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
@@ -29,6 +28,7 @@ import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import scala.collection.immutable.ListMap
@@ -358,6 +358,15 @@ object TestInstances {
         arbitrary[LocalDate],
         Gen.some(arbitrary[DSTRegNumber])
       ).mapN(Registration.apply)
+    }
+  )
+
+  implicit def arbRegWrapper: Arbitrary[RegWrapper] = Arbitrary (
+    {
+      (
+        arbitrary[InternalId],
+        arbitrary[Registration]
+      ).mapN(RegWrapper.apply)
     }
   )
 

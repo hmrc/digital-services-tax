@@ -44,7 +44,7 @@ object MongoPersistence {
     formBundle: FormBundleNumber
   )
 
-  private[services] case class RegWrapper(
+  case class RegWrapper(
     session: InternalId,
     data: Registration
   )
@@ -159,10 +159,9 @@ class MongoPersistence @Inject()(
         .map(_.data)
         .headOption()
 
-    override def findByDstReg(dstRegNumber: DSTRegNumber): Future[Option[Registration]] = {
+    override def findByDstReg(dstRegNumber: DSTRegNumber): Future[Option[RegWrapper]] = {
       repo.collection
         .find(Filters.equal("data.registrationNumber", dstRegNumber))
-        .map(_.data)
         .headOption()
     }
 

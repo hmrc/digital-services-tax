@@ -21,6 +21,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -89,14 +90,14 @@ class RegistationPersistenceSpec extends FakeApplicationSetup with ScalaFutures 
   }
 
   "it should find a registration by DST Registration NUmber" in {
-    forAll { (id: InternalId, reg: Registration) =>
+    forAll { (id: InternalId, regWrapper: RegWrapper) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.update(id, reg)
-        dbReg <- mongoPersistence.registrations.findByDstReg(reg.registrationNumber.head)
+        _ <- mongoPersistence.registrations.update(id, regWrapper.data)
+        dbReg <- mongoPersistence.registrations.findByDstReg(regWrapper.data.registrationNumber.head)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
-        dbRes.value mustEqual reg
+        dbRes.value.data mustEqual regWrapper.data
       }
     }
   }

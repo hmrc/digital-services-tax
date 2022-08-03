@@ -21,6 +21,7 @@ import cats.instances.future._
 import javax.inject._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.digitalservicestax.services.Persistence
 
 import scala.concurrent._
@@ -51,7 +52,7 @@ class FutureVolatilePersistence @Inject()(implicit ec: ExecutionContext) extends
     override def confirm(user: InternalId, newRegNo: DSTRegNumber): Future[Registration] =
       f(V.confirm(user, newRegNo))
 
-    override def findByDstReg(DSTRegNumber: DSTRegNumber): Future[Option[Registration]] = f(V.findByDstReg(DSTRegNumber))
+    override def findByDstReg(DSTRegNumber: DSTRegNumber): Future[Option[RegWrapper]] = f(V.findByDstReg(DSTRegNumber))
   }
 
   val returns = new Returns {

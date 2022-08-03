@@ -18,6 +18,7 @@ package uk.gov.hmrc.digitalservicestax.services
 
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -38,9 +39,11 @@ class DstRegChecker @Inject()(configuration: Configuration, db: MongoPersistence
     Try(dstRegNumberConf.map(DSTRegNumber(_))) match {
       case Success(dstRegNumber) =>
         logger.info("DST REGISTRATION IS A VALID ONE")
-        db.registrations.findByDstReg(dstRegNumber.head).map { optReg: Option[Registration] =>
+        db.registrations.findByDstReg(dstRegNumber.head).map { optReg: Option[RegWrapper] =>
           if (optReg.isEmpty) {
             logger.info("ERROR NO REGISTRATION COULD BE FOUND FOR THE DST REGISTRATION NUMBER IN THE CONF")
+          } else {
+            logger.info(s"FOUND REGISTRATION FOR THE USER, THE INTERNAL ID IS: ${optReg.head.session}")
           }
         }
       case Failure(_) => logger.info("DST REGISTRATION IS NOT A VALUE FORMAT")

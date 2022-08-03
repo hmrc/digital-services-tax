@@ -19,6 +19,7 @@ package unit.uk.gov.hmrc.digitalservicestax.services
 import java.time.LocalDateTime
 import cats.Id
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.digitalservicestax.services.Persistence
 
 trait VolatilePersistence extends Persistence[Id] {
@@ -50,7 +51,7 @@ trait VolatilePersistence extends Persistence[Id] {
     def update(user: InternalId, reg: Registration): Unit = 
       _data = _data + (user -> ((reg, LocalDateTime.now)))
 
-    override def findByDstReg(DSTRegNumber: DSTRegNumber): Id[Option[Registration]] = ???
+    override def findByDstReg(DSTRegNumber: DSTRegNumber): Id[Option[RegWrapper]] = ???
   }
 
   val returns = new Returns {
