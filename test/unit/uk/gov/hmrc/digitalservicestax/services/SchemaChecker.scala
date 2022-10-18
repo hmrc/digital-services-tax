@@ -23,7 +23,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.libs.json._
 
 case class SchemaChecker(schemaStream: java.io.InputStream) {
-  val schemaText = scala.io.Source.fromInputStream(schemaStream).getLines.mkString
+  val schemaText = scala.io.Source.fromInputStream(schemaStream).getLines().mkString
   schemaStream.close
   val schema = JsonLoader.fromString(schemaText)
   val validator = JsonSchemaFactory.byDefault.getValidator

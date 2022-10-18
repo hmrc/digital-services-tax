@@ -140,9 +140,9 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit def listMapReads[V](implicit formatV: Reads[V]): Reads[ListMap[String, V]] = new Reads[ListMap[String, V]] {
     def reads(json: JsValue) = json match {
       case JsObject(m) =>
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+        type Errors = scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]
 
-        def locate(e: Errors, key: String): Seq[(JsPath, Seq[JsonValidationError])] = e.map {
+        def locate(e: Errors, key: String): scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] = e.map {
           case (path, validationError) => (JsPath \ key) ++ path -> validationError
         }
 

@@ -20,9 +20,6 @@ package services
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
 
-import scala.concurrent.Future
-import scala.language.higherKinds
-
 abstract class Persistence[F[_]: cats.Monad] {
 
   protected trait PendingCallbacks {

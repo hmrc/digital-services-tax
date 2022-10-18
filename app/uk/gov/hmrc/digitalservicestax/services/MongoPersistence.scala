@@ -96,7 +96,7 @@ class MongoPersistence @Inject()(
     def delete(formBundle: FormBundleNumber): Future[Unit] =
       repo.collection
         .deleteOne(Filters.equal("formBundle", formBundle))
-        .toFuture
+        .toFuture()
         .map(_ => ())
 
     def update(formBundle: FormBundleNumber, internalId: InternalId): Future[Unit] = {
@@ -112,7 +112,7 @@ class MongoPersistence @Inject()(
           ),
           FindOneAndUpdateOptions().upsert(true)
         )
-        .toFuture
+        .toFuture()
         .map(_ => ())
     }
 
@@ -149,7 +149,7 @@ class MongoPersistence @Inject()(
           ),
           FindOneAndUpdateOptions().upsert(true)
         )
-        .toFuture
+        .toFuture()
         .map(_ => ())
     }
 
@@ -184,7 +184,7 @@ class MongoPersistence @Inject()(
           repo.collection
             .find(Filters.equal("regNo", regNo))
             .limit(1000)
-            .toFuture
+            .toFuture()
             .map(_.map{x => (x.periodKey, x.data)}.toMap)
         case None =>
           Future.failed(new IllegalArgumentException("Registration is not active"))
@@ -211,7 +211,7 @@ class MongoPersistence @Inject()(
           ),
           FindOneAndUpdateOptions().upsert(true)
         )
-        .toFuture
+        .toFuture()
         .map(_ => ())
     }
   }

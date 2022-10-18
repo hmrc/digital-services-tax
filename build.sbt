@@ -1,7 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, integrationTestSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
-scalaVersion := "2.12.16"
+scalaVersion := "2.13.10"
 val appName = "digital-services-tax"
 PlayKeys.playDefaultPort := 8741
 
@@ -21,7 +21,13 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .settings(
     majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test,
+    scalacOptions                     += "-Wconf:src=routes/.*:s",
+    scalacOptions                     += "-Wconf:cat=unused-imports&src=html/.*:s",
+  )
+  .settings(
+    // To resolve a bug with version 2.x.x of the scoverage plugin - https://github.com/sbt/sbt/issues/6997
+    libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
   )
   .settings(scoverageSettings)
   .settings(publishingSettings: _*)
