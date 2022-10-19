@@ -1,7 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, integrationTestSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
-scalaVersion := "2.13.10"
+scalaVersion := "2.13.9"
 val appName = "digital-services-tax"
 PlayKeys.playDefaultPort := 8741
 
