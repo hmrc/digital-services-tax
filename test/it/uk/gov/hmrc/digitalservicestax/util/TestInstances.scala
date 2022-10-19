@@ -268,7 +268,7 @@ object TestInstances {
     (
       Gen.alphaNumChar,
       arbitrary[String]
-      ).mapN(_ + _).
+      ).mapN((num, str) => s"$num$str").
       map{_.take(maxLen)}.map { NonEmptyString.apply }
     )
 

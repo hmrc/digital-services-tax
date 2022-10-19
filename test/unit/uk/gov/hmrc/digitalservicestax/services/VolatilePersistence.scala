@@ -75,8 +75,8 @@ trait VolatilePersistence extends Persistence[Id] {
 object VolatilePersistence {
   def randomDstNumber: DSTRegNumber = {
     val r = new scala.util.Random()
-    def c: Char = {65 + r.nextInt.abs % (90 - 64)}.toChar
-    def digits: String = f"${r.nextInt.abs}%010d"
+    def c: Char = {65 + r.nextInt().abs % (90 - 64)}.toChar
+    def digits: String = f"${r.nextInt().abs}%010d"
     DSTRegNumber(s"${c}${c}DST$digits")
   }
 }

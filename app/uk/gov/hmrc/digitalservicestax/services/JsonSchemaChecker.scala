@@ -23,7 +23,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.Logger
 import play.api.libs.json.{Json, Writes}
 
-import scala.collection.convert.ImplicitConversions._
+import scala.jdk.CollectionConverters._
 
 object JsonSchemaChecker {
 
@@ -33,7 +33,7 @@ object JsonSchemaChecker {
 
   private def schema(path: String): JsonNode = {
     val stream = getClass.getResourceAsStream(path)
-    val schemaText = scala.io.Source.fromInputStream(stream).getLines.mkString
+    val schemaText = scala.io.Source.fromInputStream(stream).getLines().mkString
     stream.close()
     JsonLoader.fromString(schemaText)
   }
@@ -43,7 +43,7 @@ object JsonSchemaChecker {
     val validator = JsonSchemaFactory.byDefault.getValidator
     val json = JsonLoader.fromString(Json.prettyPrint(Json.toJson(model)))
     val processingReport: ProcessingReport = validator.validate(schema, json)
-    if (!processingReport.isSuccess) processingReport.foreach {
+    if (!processingReport.isSuccess) processingReport.asScala.foreach {
       x: ProcessingMessage =>
         logger.warn(
           s"failed to validate against json schema, schema: ${x.asJson().get("schema")}, " +
