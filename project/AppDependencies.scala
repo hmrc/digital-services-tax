@@ -33,7 +33,7 @@ object AppDependencies {
     "com.beachape"                 %% "enumeratum-scalacheck"       % "1.7.0"                 % Test,
     "wolfendale"                   %% "scalacheck-gen-regexp"       % "0.1.2"                 % Test,
     "com.vladsch.flexmark"         %  "flexmark-all"                % "0.62.2"                % Test,
-    "com.github.tomakehurst"       %  "wiremock-jre8"               % "2.33.2"                % Test,
+    "com.github.tomakehurst"       % "wiremock-standalone"          % "2.27.2"                % Test,
     "com.outworkers"               %% "util-samplers"               % "0.57.0"                % Test,
     "uk.gov.hmrc.mongo"            %% s"hmrc-mongo-test-play-$play" % hmrcMongoVersion        % Test,
     "com.fasterxml.jackson.module" %% "jackson-module-scala"        % "2.13.4"                % Test
