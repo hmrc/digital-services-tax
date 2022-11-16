@@ -12,7 +12,7 @@ object AppDependencies {
     "com.github.java-json-tools"     %  "json-schema-validator"         % "2.2.14",
     "org.typelevel"                  %% "cats-core"                     % "2.8.0",
     "uk.gov.hmrc.mongo"              %% s"hmrc-mongo-play-$play"        % hmrcMongoVersion,
-    "uk.gov.hmrc"                    %% s"bootstrap-backend-play-$play" % "7.8.0",
+    "uk.gov.hmrc"                    %% s"bootstrap-backend-play-$play" % "7.11.0",
     "com.beachape"                   %% "enumeratum"                    % "1.7.0",
     "com.beachape"                   %% "enumeratum-play-json"          % "1.7.0",
     "com.chuusai"                    %% "shapeless"                     % "2.4.0-M1",
