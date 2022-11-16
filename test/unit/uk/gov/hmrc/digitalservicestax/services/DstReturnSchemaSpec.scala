@@ -30,6 +30,10 @@ class DstReturnSchemaSpec extends AnyFlatSpec with Matchers with ScalaCheckDrive
     forAll { (period: Period, ret: Return) =>
       val json = EeittInterface.returnRequestWriter("aoeu",period).writes(ret)
       SchemaChecker.EeittReturn.request.errorsIn(json) should be (None)
+
+      //testing that the receivedAt timestamp seconds is in millis
+      val receivedAtSeconds = json("receivedAt").as[String].split('.').last
+      receivedAtSeconds.size should be (4)
     }
   }
 

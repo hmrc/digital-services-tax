@@ -240,7 +240,7 @@ object EeittInterface {
           )
         }
       Json.obj(
-        "receivedAt" -> ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
+        "receivedAt" -> ZonedDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS).format(DateTimeFormatter.ISO_INSTANT),
         "periodFrom" -> period.start,
         "periodTo" -> period.end,
         "returnsDetails" -> Json.obj(
