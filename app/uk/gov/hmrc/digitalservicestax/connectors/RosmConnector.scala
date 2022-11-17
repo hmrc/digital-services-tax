@@ -33,7 +33,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RosmConnector @Inject()(
+class RosmConnector @Inject() (
   val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig
@@ -41,7 +41,7 @@ class RosmConnector @Inject()(
 
   val logger: Logger = Logger(this.getClass)
 
-  val serviceURLWithId: String = "registration/organisation"
+  val serviceURLWithId: String    = "registration/organisation"
   val serviceURLWithoutId: String = "registration/02.00.00/organisation"
 
   def retrieveROSMDetailsWithoutID(
@@ -51,39 +51,39 @@ class RosmConnector @Inject()(
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"${appConfig.desURL}/$serviceURLWithoutId", Json.toJson(request))
   }
 
-  def retrieveROSMDetails(utr: String)(
-    implicit hc: HeaderCarrier,
+  def retrieveROSMDetails(utr: String)(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Option[CompanyRegWrapper]] = {
-    implicit val r = backend_data.RosmJsonReader
+    implicit val r       = backend_data.RosmJsonReader
     val request: JsValue = Json.obj(
-      "regime" -> "DST",
+      "regime"            -> "DST",
       "requiresNameMatch" -> false,
-      "isAnAgent" -> false
+      "isAnAgent"         -> false
     )
 
     desPost[JsValue, Option[CompanyRegWrapper]](
       s"${appConfig.desURL}/$serviceURLWithId/utr/$utr",
       request
     ).recover {
-      case NotAnOrganisationException => None
+      case NotAnOrganisationException  => None
       case InvalidCompanyNameException =>
         logger.warn("Invalid company name retrieved from ROSM")
         None
-      case InvalidAddressException =>
+      case InvalidAddressException     =>
         logger.warn("Invalid Address retrieved from ROSM")
         None
     }
   }
 
-  def getSafeId(data: Registration)(implicit hc:HeaderCarrier, ec: ExecutionContext): Future[Option[SafeId]] = {
+  def getSafeId(data: Registration)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[SafeId]] =
     retrieveROSMDetailsWithoutID(
       RosmRegisterWithoutIDRequest(
         isAnAgent = false,
         isAGroup = false,
         data.companyReg.company,
         data.contact
-      )).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
-  }
+      )
+    ).map(_.fold(Option.empty[SafeId])(x => SafeId(x.safeId).some))
 
 }

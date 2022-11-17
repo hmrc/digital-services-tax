@@ -22,22 +22,22 @@ import play.api.libs.json._
 class TestDesSchemas extends AnyFlatSpec with Matchers {
 
   val dir = new java.io.File("conf/dst")
-  dir.listFiles().filter{_.getName.contains("example")}.sortBy(_.getName) foreach { file =>
-    val schemaName = file.getAbsolutePath.replaceAll("example[0-9]","schema")
+  dir.listFiles().filter(_.getName.contains("example")).sortBy(_.getName) foreach { file =>
+    val schemaName = file.getAbsolutePath.replaceAll("example[0-9]", "schema")
     val schemaFile = new java.io.File(schemaName)
     s"${file.getName}" should s"have a schema called ${schemaFile.getName}" in {
       schemaFile.exists shouldBe true
     }
 
-    it should s"conform to its schema" in {
-      val is = new java.io.FileInputStream(schemaFile)
+    it                 should s"conform to its schema" in {
+      val is      = new java.io.FileInputStream(schemaFile)
       val checker = SchemaChecker(is)
-      val source = scala.io.Source.fromFile(file)
+      val source  = scala.io.Source.fromFile(file)
       val example = source.getLines().mkString
-      val result = checker.errorsIn(Json.parse(example))
+      val result  = checker.errorsIn(Json.parse(example))
       source.close()
       is.close()
       result shouldBe None
-    } 
+    }
   }
 }

@@ -32,24 +32,24 @@ object JsonSchemaChecker {
   def retrieveSchema(file: String): JsonNode = schema(s"/test/$file.schema.json")
 
   private def schema(path: String): JsonNode = {
-    val stream = getClass.getResourceAsStream(path)
+    val stream     = getClass.getResourceAsStream(path)
     val schemaText = scala.io.Source.fromInputStream(stream).getLines().mkString
     stream.close()
     JsonLoader.fromString(schemaText)
   }
 
   def apply[A](model: A, file: String)(implicit format: Writes[A]): Unit = {
-    val schema = retrieveSchema(file)
-    val validator = JsonSchemaFactory.byDefault.getValidator
-    val json = JsonLoader.fromString(Json.prettyPrint(Json.toJson(model)))
+    val schema                             = retrieveSchema(file)
+    val validator                          = JsonSchemaFactory.byDefault.getValidator
+    val json                               = JsonLoader.fromString(Json.prettyPrint(Json.toJson(model)))
     val processingReport: ProcessingReport = validator.validate(schema, json)
-    if (!processingReport.isSuccess) processingReport.asScala.foreach {
-      x: ProcessingMessage =>
-        logger.warn(
-          s"failed to validate against json schema, schema: ${x.asJson().get("schema")}, " +
-            s"instance: ${x.asJson().get("instance")}, problem: ${x.asJson().get("keyword")}"
-        )
-    } else {
+    if (!processingReport.isSuccess) processingReport.asScala.foreach { x: ProcessingMessage =>
+      logger.warn(
+        s"failed to validate against json schema, schema: ${x.asJson().get("schema")}, " +
+          s"instance: ${x.asJson().get("instance")}, problem: ${x.asJson().get("keyword")}"
+      )
+    }
+    else {
       logger.debug(s"Successful schema validation for $file.schema.json")
     }
   }

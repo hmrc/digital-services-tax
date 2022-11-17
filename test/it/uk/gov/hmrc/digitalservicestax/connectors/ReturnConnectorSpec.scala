@@ -51,7 +51,8 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200)))
+        .willReturn(aResponse().withStatus(200))
+    )
 
     val response = ReturnTestConnector.getNextPendingPeriod(dstRegNumber)
     whenReady(response.failed) { res =>
@@ -61,11 +62,12 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
     val dstRegNumber = arbitrary[DSTRegNumber].sample.value
-    val periods = arbitrary[List[Period]].sample.value.map(_ -> Option.empty[LocalDate])
+    val periods      = arbitrary[List[Period]].sample.value.map(_ -> Option.empty[LocalDate])
 
     stubFor(
       get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(periods).toString())))
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(periods).toString()))
+    )
 
     val response = ReturnTestConnector.getPeriods(dstRegNumber)
     whenReady(response.failed) { res =>
@@ -73,12 +75,11 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
     }
   }
 
-
   "should send a new period/DST number" in {
     val customGen = for {
       dstRegNumber <- arbitrary[DSTRegNumber]
-      period <- arbitrary[Period]
-      ret <- arbitrary[Return]
+      period       <- arbitrary[Period]
+      ret          <- arbitrary[Return]
     } yield (dstRegNumber, period, ret)
 
     val resp = ReturnResponse(
@@ -89,7 +90,8 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
     forAll(customGen) { case (dstNo, period, ret) =>
       stubFor(
         post(urlPathEqualTo(s"""/cross-regime/return/DST/zdst/$dstNo"""))
-          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
+      )
 
       val response = ReturnTestConnector.send(dstNo, period, ret, isAmend = false)
       whenReady(response) { res =>

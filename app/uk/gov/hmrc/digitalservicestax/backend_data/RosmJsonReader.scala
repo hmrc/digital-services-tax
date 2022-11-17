@@ -28,23 +28,25 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
   object InvalidAddressException extends RuntimeException("Invalid address")
 
   implicit val jaddress: Reads[Address] = new Reads[Address] {
-    def reads(json: JsValue): JsResult[Address] = JsSuccess{
-      try{
-        {(json \ "countryCode").as[String]} match {
-          case "GB" => UkAddress(
-            {json \ "addressLine1"}.as[AddressLine],
-            {json \ "addressLine2"}.asOpt[AddressLine],
-            {json \ "addressLine3"}.asOpt[AddressLine],
-            {json \ "addressLine4"}.asOpt[AddressLine],
-            {json \ "postalCode"}.as[Postcode]
-          )
-          case country => ForeignAddress(
-            {json \ "addressLine1"}.as[AddressLine],
-            {json \ "addressLine2"}.asOpt[AddressLine],
-            {json \ "addressLine3"}.asOpt[AddressLine],
-            {json \ "addressLine4"}.asOpt[AddressLine],
-            CountryCode(country)
-          )
+    def reads(json: JsValue): JsResult[Address] = JsSuccess {
+      try {
+        { (json \ "countryCode").as[String] } match {
+          case "GB"    =>
+            UkAddress(
+              { json \ "addressLine1" }.as[AddressLine],
+              { json \ "addressLine2" }.asOpt[AddressLine],
+              { json \ "addressLine3" }.asOpt[AddressLine],
+              { json \ "addressLine4" }.asOpt[AddressLine],
+              { json \ "postalCode" }.as[Postcode]
+            )
+          case country =>
+            ForeignAddress(
+              { json \ "addressLine1" }.as[AddressLine],
+              { json \ "addressLine2" }.asOpt[AddressLine],
+              { json \ "addressLine3" }.asOpt[AddressLine],
+              { json \ "addressLine4" }.asOpt[AddressLine],
+              CountryCode(country)
+            )
         }
       } catch {
         case e: JsResultException => throw InvalidAddressException
@@ -54,31 +56,32 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
 
   def oreads(json: JsObject): JsResult[CompanyRegWrapper] = {
 
-    if ({json \ "organisation"}.isEmpty) {
+    if ({ json \ "organisation" }.isEmpty) {
       throw NotAnOrganisationException
     }
 
     try {
-      {json \ "organisation" \ "organisationName"}.as[CompanyName]
+      { json \ "organisation" \ "organisationName" }.as[CompanyName]
     } catch {
       case e: JsResultException => throw InvalidCompanyNameException
     }
 
-    JsSuccess(CompanyRegWrapper (
-      Company(
-        {json \ "organisation" \ "organisationName"}.as[CompanyName],
-        {json \ "address"}.as[Address]
-      ),
-      safeId = SafeId(
-        {json \ "safeId"}.as[String]
-      ).some
-    ))
+    JsSuccess(
+      CompanyRegWrapper(
+        Company(
+          { json \ "organisation" \ "organisationName" }.as[CompanyName],
+          { json \ "address" }.as[Address]
+        ),
+        safeId = SafeId(
+          { json \ "safeId" }.as[String]
+        ).some
+      )
+    )
   }
 
-  def reads(json: JsValue): JsResult[CompanyRegWrapper] = {
+  def reads(json: JsValue): JsResult[CompanyRegWrapper] =
     json match {
       case o: JsObject => oreads(o)
-      case x => JsError(s"expected an object, found $x")
+      case x           => JsError(s"expected an object, found $x")
     }
-  }
 }

@@ -35,14 +35,14 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
 
   it should "correctly add 10 months with the first day of the month for period end days at the end of the month, " +
     "for all other cases add 9 months and one day to a period" in {
-    forAll { period: Period =>
-      if(period.end.getDayOfMonth == period.end.lengthOfMonth){
-        period.paymentDue shouldEqual period.end.plusMonths(10).withDayOfMonth(1)
-      } else {
-        period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
+      forAll { period: Period =>
+        if (period.end.getDayOfMonth == period.end.lengthOfMonth) {
+          period.paymentDue shouldEqual period.end.plusMonths(10).withDayOfMonth(1)
+        } else {
+          period.paymentDue shouldEqual period.end.plusMonths(9).plusDays(1)
+        }
       }
     }
-  }
 
   it should "correctly define the class name of a validated type" in {
     AccountNumber.className shouldEqual "AccountNumber$"
@@ -56,13 +56,13 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
 
     val generator = for {
       p1 <- Gen.chooseNum(0, 100)
-      p2 = 100 - p1
+      p2  = 100 - p1
     } yield p1.toByte -> p2.toByte
 
     forAll(generator) { case (p1, p2) =>
       whenever(p1 >= 0 && p2 >= 0) {
         val addedPercent = Monoid.combineAll(Seq(Percent(p1), Percent(p2)))
-        val addedBytes = Monoid.combineAll(Seq(p1, p2))
+        val addedBytes   = Monoid.combineAll(Seq(p1, p2))
         addedPercent shouldEqual Percent(addedBytes)
       }
     }
@@ -76,13 +76,13 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
   }
 
   it should "fail to construct a type with a scale of more than 3" in {
-    an[IllegalArgumentException] should be thrownBy Percent.apply(1.1234F)
+    an[IllegalArgumentException] should be thrownBy Percent.apply(1.1234f)
   }
 
   it should "combine and empty Money correctly" in {
     forAll { (a: Money, b: Money) =>
-      a.combine(b) - a shouldEqual b
-      a.combine(b) - b shouldEqual a
+      a.combine(b) - a     shouldEqual b
+      a.combine(b) - b     shouldEqual a
       a.combine(b) - b - a shouldEqual Money.mon.empty
     }
   }

@@ -36,13 +36,12 @@ class AppConfigSpec extends FakeApplicationSetup {
     appConfig.graphiteHost.nonEmpty shouldEqual true
   }
 
-
   "should read an obligation start date from app config" in {
     val pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     appConfig.obligationStartDate.nonEmpty shouldEqual true
 
     val dt = pattern.parse(appConfig.obligationStartDate)
-    dt shouldBe a [TemporalAccessor]
+    dt shouldBe a[TemporalAccessor]
   }
 
 }

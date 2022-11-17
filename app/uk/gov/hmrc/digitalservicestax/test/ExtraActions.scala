@@ -26,20 +26,21 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ExtraActions {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                                        = Logger(this.getClass)
   def appConfig: AppConfig
   def messagesControllerComponents: MessagesControllerComponents
   val InboundDataAction: ActionBuilder[Request, AnyContent] = AuthorisedFilterAction
-  val bearerToken = s"Bearer ${appConfig.desToken}"
+  val bearerToken                                           = s"Bearer ${appConfig.desToken}"
 
   object AuthorisedFilterAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request] {
 
-    override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
+    override protected def filter[A](request: Request[A]): Future[Option[Result]] =
       Future.successful(
-        request.headers.get(HeaderNames.AUTHORIZATION).fold[Option[Result]] {
-          Some(Unauthorized(s"No ${HeaderNames.AUTHORIZATION} present"))
-        } {
-          a =>
+        request.headers
+          .get(HeaderNames.AUTHORIZATION)
+          .fold[Option[Result]] {
+            Some(Unauthorized(s"No ${HeaderNames.AUTHORIZATION} present"))
+          } { a =>
             if (a.matches(bearerToken))
               None
             else {
@@ -52,9 +53,8 @@ trait ExtraActions {
 
               Some(Unauthorized("Supplied bearer token does not match config"))
             }
-        }
+          }
       )
-    }
 
     override def parser: BodyParser[AnyContent] = messagesControllerComponents.parsers.defaultBodyParser
 

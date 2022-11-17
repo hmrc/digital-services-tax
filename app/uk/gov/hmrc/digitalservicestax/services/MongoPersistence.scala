@@ -57,9 +57,10 @@ object MongoPersistence {
 }
 
 @Singleton
-class MongoPersistence @Inject()(
+class MongoPersistence @Inject() (
   mongoc: MongoComponent
-)(implicit ec: ExecutionContext) extends Persistence[Future] {
+)(implicit ec: ExecutionContext)
+    extends Persistence[Future] {
   import MongoPersistence._
 
   val pendingCallbacks: PendingCallbacks = new PendingCallbacks {
@@ -67,8 +68,8 @@ class MongoPersistence @Inject()(
     lazy val repo = new PlayMongoRepository[CallbackWrapper](
       collectionName = "pending-callbacks",
       mongoComponent = mongoc,
-      domainFormat   = Json.format[CallbackWrapper],
-      indexes        = Seq(
+      domainFormat = Json.format[CallbackWrapper],
+      indexes = Seq(
         IndexModel(
           Indexes.ascending("internalId"),
           IndexOptions().unique(true)
@@ -78,7 +79,7 @@ class MongoPersistence @Inject()(
           IndexOptions().unique(true)
         )
       ),
-      extraCodecs    = Nil
+      extraCodecs = Nil
     )
 
     def get(formBundle: FormBundleNumber): Future[Option[InternalId]] =
@@ -123,8 +124,8 @@ class MongoPersistence @Inject()(
     lazy val repo = new PlayMongoRepository[RegWrapper](
       collectionName = "registrations",
       mongoComponent = mongoc,
-      domainFormat   = Json.format[RegWrapper],
-      indexes        = Seq(
+      domainFormat = Json.format[RegWrapper],
+      indexes = Seq(
         IndexModel(
           Indexes.ascending("session"),
           IndexOptions().unique(true)
@@ -134,10 +135,10 @@ class MongoPersistence @Inject()(
           IndexOptions().unique(false)
         )
       ),
-      extraCodecs    = Nil
+      extraCodecs = Nil
     )
 
-    def update(user: InternalId, value: Registration): Future[Unit] = {
+    def update(user: InternalId, value: Registration): Future[Unit] =
       repo.collection
         .findOneAndUpdate(
           Filters.equal("session", user),
@@ -151,7 +152,6 @@ class MongoPersistence @Inject()(
         )
         .toFuture()
         .map(_ => ())
-    }
 
     override def get(user: InternalId): Future[Option[Registration]] =
       repo.collection
@@ -165,8 +165,8 @@ class MongoPersistence @Inject()(
     lazy val repo = new PlayMongoRepository[RetWrapper](
       collectionName = "returns",
       mongoComponent = mongoc,
-      domainFormat   = Json.format[RetWrapper],
-      indexes        = Seq(
+      domainFormat = Json.format[RetWrapper],
+      indexes = Seq(
         IndexModel(
           Indexes.compoundIndex(
             Indexes.ascending("regNo"),
@@ -175,7 +175,7 @@ class MongoPersistence @Inject()(
           IndexOptions().unique(true)
         )
       ),
-      extraCodecs    = Nil
+      extraCodecs = Nil
     )
 
     def get(reg: Registration): Future[Map[Period.Key, Return]] =
@@ -185,8 +185,8 @@ class MongoPersistence @Inject()(
             .find(Filters.equal("regNo", regNo))
             .limit(1000)
             .toFuture()
-            .map(_.map{x => (x.periodKey, x.data)}.toMap)
-        case None =>
+            .map(_.map(x => (x.periodKey, x.data)).toMap)
+        case None        =>
           Future.failed(new IllegalArgumentException("Registration is not active"))
       }
 
@@ -200,7 +200,7 @@ class MongoPersistence @Inject()(
         .findOneAndUpdate(
           Filters.and(
             Filters.equal("regNo", regNo),
-            Filters.equal("periodKey", period),
+            Filters.equal("periodKey", period)
           ),
           Updates.combine(
             Updates.setOnInsert("regNo", regNo),

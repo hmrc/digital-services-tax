@@ -25,8 +25,11 @@ import unit.uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class VolatileRegistationPersistenceSpec extends FakeApplicationSetup with ScalaFutures with BeforeAndAfterEach with ScalaCheckDrivenPropertyChecks {
-
+class VolatileRegistationPersistenceSpec
+    extends FakeApplicationSetup
+    with ScalaFutures
+    with BeforeAndAfterEach
+    with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
@@ -36,7 +39,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSetup with Scala
   "it should retrieve a registration using .apply" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.update(id, reg)
+        _     <- volatile.registrations.update(id, reg)
         dbReg <- volatile.registrations(id)
       } yield dbReg
 
@@ -51,7 +54,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSetup with Scala
       val updatedValue = reg.copy(registrationNumber = None)
 
       val chain = for {
-        _ <- volatile.registrations.update(id, updatedValue)
+        _     <- volatile.registrations.update(id, updatedValue)
         dbReg <- volatile.registrations.get(id)
       } yield dbReg
 
@@ -64,7 +67,7 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSetup with Scala
   "it should persist a registration object and retrieve it with .get" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.update(id, reg)
+        _     <- volatile.registrations.update(id, reg)
         dbReg <- volatile.registrations.get(id)
       } yield dbReg
 
@@ -77,9 +80,9 @@ class VolatileRegistationPersistenceSpec extends FakeApplicationSetup with Scala
   "it should update a registration by userId" in {
     forAll { (id: InternalId, reg: Registration, updated: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.update(id, reg)
-        dbReg <- volatile.registrations.get(id)
-        _ <- volatile.registrations.update(id, updated)
+        _          <- volatile.registrations.update(id, reg)
+        dbReg      <- volatile.registrations.get(id)
+        _          <- volatile.registrations.update(id, updated)
         postUpdate <- volatile.registrations.get(id)
       } yield dbReg -> postUpdate
 

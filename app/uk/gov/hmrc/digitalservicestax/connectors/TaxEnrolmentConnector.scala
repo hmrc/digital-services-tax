@@ -27,7 +27,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TaxEnrolmentConnector @Inject()(val http: HttpClient,
+class TaxEnrolmentConnector @Inject() (
+  val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig,
   testConnector: TestConnector
@@ -35,24 +36,28 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
 
   val logger: Logger = Logger(this.getClass)
 
-  def subscribe(safeId: String, formBundleNumber: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+  def subscribe(safeId: String, formBundleNumber: String)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        Result => {
+        Result =>
           logger.debug(
             s"Tax Enrolments response is $Result"
           )
           Result
-        }
       } recover {
         case e: UnauthorizedException => handleError(e, formBundleNumber)
-        case e: BadRequestException => handleError(e, formBundleNumber)
+        case e: BadRequestException   => handleError(e, formBundleNumber)
       }
     } else Future.successful[HttpResponse](HttpResponse(418, ""))
   }
 
-  def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+  def getSubscription(
+    subscriptionId: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
       http.GET[TaxEnrolmentsSubscription](
@@ -71,13 +76,12 @@ class TaxEnrolmentConnector @Inject()(val http: HttpClient,
   def subscribeUrl(subscriptionId: String) =
     s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
-  private def requestBody(safeId: String, formBundleNumber: String): JsObject = {
+  private def requestBody(safeId: String, formBundleNumber: String): JsObject =
     Json.obj(
       "serviceName" -> appConfig.taxEnrolmentsServiceName,
-      "callback" -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
-      "etmpId" -> safeId
+      "callback"    -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
+      "etmpId"      -> safeId
     )
-  }
 
 }
 
@@ -87,12 +91,10 @@ case class TaxEnrolmentsSubscription(
   state: String,
   errorResponse: Option[String]
 ) {
-  def getDSTNumber: Option[DSTRegNumber] = {
-
+  def getDSTNumber: Option[DSTRegNumber] =
     identifiers.getOrElse(Nil).collectFirst {
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
-  }
 
 }
 

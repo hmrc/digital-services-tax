@@ -38,10 +38,10 @@ object AuditingHelper {
     dstRegNo: Option[DSTRegNumber] = None
   ): ExtendedDataEvent = {
     val details = Json.obj(
-      "subscriptionId" -> formBundleNumber.toString,
+      "subscriptionId"        -> formBundleNumber.toString,
       "dstRegistrationNumber" -> dstRegNo,
-      "outcome" -> outcome,
-      "errorMsg" -> body.errorResponse
+      "outcome"               -> outcome,
+      "errorMsg"              -> body.errorResponse
     )
     baseEvent("digitalServicesTaxEnrolmentResponse").copy(detail = details)
   }
@@ -50,32 +50,40 @@ object AuditingHelper {
     data: Registration,
     providerId: String,
     formBundleNumber: Option[FormBundleNumber],
-    outcome: String): ExtendedDataEvent = {
+    outcome: String
+  ): ExtendedDataEvent = {
 
-    val details = Json.obj(
-      "subscriptionId" -> formBundleNumber,
-      "outcome" -> outcome,
-      "authProviderType" -> "GovernmentGateway",
-      "authProviderId" -> providerId
-    ).++(registrationJson(data))
+    val details = Json
+      .obj(
+        "subscriptionId"   -> formBundleNumber,
+        "outcome"          -> outcome,
+        "authProviderType" -> "GovernmentGateway",
+        "authProviderId"   -> providerId
+      )
+      .++(registrationJson(data))
 
-    baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail =details)
+    baseEvent("digitalServicesTaxRegistrationSubmitted").copy(detail = details)
   }
 
   private def registrationJson(data: Registration): JsObject =
     (JsPath \ "companyReg" \ "company" \ "address" \ "_type")
-      .prune(Json.toJson(data)(registrationFormat)
-        .as[JsObject]).get
+      .prune(
+        Json
+          .toJson(data)(registrationFormat)
+          .as[JsObject]
+      )
+      .get
 
   def buildReturnResponseAudit(
     outcome: String,
     errMsg: Option[String] = None
-  ): ExtendedDataEvent = {
-    baseEvent("returnSubmissionResponse").copy(detail = Json.obj(
-      "responseStatus" -> outcome,
-      "errorReason" -> errMsg
-    ))
-  }
+  ): ExtendedDataEvent =
+    baseEvent("returnSubmissionResponse").copy(detail =
+      Json.obj(
+        "responseStatus" -> outcome,
+        "errorReason"    -> errMsg
+      )
+    )
 
   def buildReturnSubmissionAudit(
     regNo: DSTRegNumber,
@@ -93,12 +101,14 @@ object AuditingHelper {
       true
     )
 
-    val details = Json.obj(
-      "dstRegistrationNumber" -> regNo.toString,
-      "authProviderType" -> "GovernmentGateway",
-      "authProviderId" -> providerId,
-      "deviceId" -> hc.deviceID
-    ).++(Json.toJson(data)(writes).as[JsObject])
+    val details = Json
+      .obj(
+        "dstRegistrationNumber" -> regNo.toString,
+        "authProviderType"      -> "GovernmentGateway",
+        "authProviderId"        -> providerId,
+        "deviceId"              -> hc.deviceID
+      )
+      .++(Json.toJson(data)(writes).as[JsObject])
 
     baseEvent("returnSubmitted").copy(detail = details)
   }

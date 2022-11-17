@@ -35,7 +35,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent._
 
 @Singleton()
-class ReturnsController @Inject()(
+class ReturnsController @Inject() (
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
   cc: ControllerComponents,
@@ -44,7 +44,8 @@ class ReturnsController @Inject()(
   auditing: AuditConnector,
   registered: Registered,
   loggedIn: LoggedInAction
-) extends BackendController(cc) with AuthorisedFunctions {
+) extends BackendController(cc)
+    with AuthorisedFunctions {
 
   val logger = Logger(this.getClass())
 
@@ -52,27 +53,30 @@ class ReturnsController @Inject()(
 
   def submitReturn(periodKeyString: String): Action[JsValue] =
     loggedIn.andThen(registered).async(parse.json) { implicit request =>
-      val regNo = request.registration.registrationNumber.get
+      val regNo     = request.registration.registrationNumber.get
       val periodKey = Period.Key(periodKeyString)
-      withJsonBody[Return](data => {
+      withJsonBody[Return] { data =>
         for {
-          allPeriods <- connector.getPeriods(regNo)
-          (period, previous) = allPeriods.find {
-            _._1.key == periodKey
-          }.getOrElse {
-            throw new NoSuchElementException(s"no period found for $periodKey")
-          }
-          _ <- connector.send(regNo, period, data, previous.isDefined)
-          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnSubmissionAudit(regNo, request.authRequest.providerId, period, data, previous.isDefined))
-          _ <- persistence.returns(request.registration, period.key) = data
-          _ <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
-        } yield {
-          Ok(JsNull)
-        }
-      }).recoverWith {
+          allPeriods        <- connector.getPeriods(regNo)
+          (period, previous) = allPeriods
+                                 .find {
+                                   _._1.key == periodKey
+                                 }
+                                 .getOrElse {
+                                   throw new NoSuchElementException(s"no period found for $periodKey")
+                                 }
+          _                 <- connector.send(regNo, period, data, previous.isDefined)
+          _                 <- auditing.sendExtendedEvent(
+                                 AuditingHelper
+                                   .buildReturnSubmissionAudit(regNo, request.authRequest.providerId, period, data, previous.isDefined)
+                               )
+          _                 <- persistence.returns(request.registration, period.key) = data
+          _                 <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
+        } yield Ok(JsNull)
+      }.recoverWith {
         case e: NoSuchElementException =>
           Future.successful(NotFound)
-        case e =>
+        case e                         =>
           auditing.sendExtendedEvent(
             AuditingHelper.buildReturnResponseAudit("ERROR", e.getMessage.some)
           ) map {
@@ -86,9 +90,11 @@ class ReturnsController @Inject()(
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
       connector.getPeriods(regNo).map { a =>
-        Ok(JsArray(
-          a.collect { case (p, None) => Json.toJson(p) }
-        ))
+        Ok(
+          JsArray(
+            a.collect { case (p, None) => Json.toJson(p) }
+          )
+        )
       }
     }
 
@@ -96,9 +102,11 @@ class ReturnsController @Inject()(
     loggedIn.andThen(registered).async { implicit request =>
       val regNo = request.registration.registrationNumber.get
       connector.getPeriods(regNo).map { a =>
-        Ok(JsArray(
-          a.collect { case (p, _) => Json.toJson(p) }
-        ))
+        Ok(
+          JsArray(
+            a.collect { case (p, _) => Json.toJson(p) }
+          )
+        )
       }
     }
 
@@ -107,13 +115,14 @@ class ReturnsController @Inject()(
       val regNo = request.registration.registrationNumber.get
 
       connector.getPeriods(regNo).map { a =>
-        Ok(JsArray(
-          a.collect {
-            case (p, Some(_))
-                if p.returnDue.isAfter(LocalDate.now.minusYears(1)) =>
-              Json.toJson(p)
-          }
-        ))
+        Ok(
+          JsArray(
+            a.collect {
+              case (p, Some(_)) if p.returnDue.isAfter(LocalDate.now.minusYears(1)) =>
+                Json.toJson(p)
+            }
+          )
+        )
       }
     }
 

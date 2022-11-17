@@ -25,7 +25,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestConnector @Inject()(
+class TestConnector @Inject() (
   http: HttpClient,
   appConfig: AppConfig
 ) {
@@ -33,10 +33,11 @@ class TestConnector @Inject()(
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
     http.GET[HttpResponse](s"${appConfig.desURL}/$url/$param")
 
-  def getSubscription(subscriptionId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
+  def getSubscription(
+    subscriptionId: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
     http.GET[DstRegNoWrapper](s"${appConfig.desURL}/get-subscription/$subscriptionId").map { x =>
       TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", "FOOBAR", None)
     }
 
 }
-

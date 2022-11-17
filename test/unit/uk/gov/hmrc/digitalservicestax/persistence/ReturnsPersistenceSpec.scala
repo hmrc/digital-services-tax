@@ -32,7 +32,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
   "it fail to retrieve a non existing return with a NoSuchElementException" in {
     forAll { reg: Registration =>
       whenReady(mongoPersistence.returns(reg, period).failed) { ex =>
-        ex mustBe a [NoSuchElementException]
+        ex mustBe a[NoSuchElementException]
         ex.getMessage mustBe s"return not found: $reg/$period"
       }
     }
@@ -43,7 +43,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
       val adjustedReg = reg.copy(registrationNumber = None)
 
       whenReady(mongoPersistence.returns.get(adjustedReg).failed) { ex =>
-        ex mustBe a [IllegalArgumentException]
+        ex mustBe a[IllegalArgumentException]
         ex.getMessage mustBe "Registration is not active"
       }
     }
@@ -52,22 +52,21 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
   "it should persist a return object and retrieve it using the the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.update(reg, period, ret)
+        _     <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns(reg)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
         dbRes.size mustEqual 1
-        dbRes must contain (period -> ret)
+        dbRes must contain(period -> ret)
       }
     }
   }
 
-
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.update(reg, period, ret)
+        _     <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns(reg, period)
       } yield dbReg
 
@@ -80,7 +79,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
   "it should persist a return object" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- mongoPersistence.returns.update(reg, period, ret)
+        _     <- mongoPersistence.returns.update(reg, period, ret)
         dbReg <- mongoPersistence.returns.get(reg, period)
       } yield dbReg
 

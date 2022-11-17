@@ -36,18 +36,19 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
     )
     .build()
 
-  object TaxTestConnector extends TaxEnrolmentConnector(
-    httpClient,
-    environment.mode,
-    appConfig,
-    testConnector
-  )
+  object TaxTestConnector
+      extends TaxEnrolmentConnector(
+        httpClient,
+        environment.mode,
+        appConfig,
+        testConnector
+      )
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
     val subscriptionId = gen[ShortString].value
-    val enrolment = gen[TaxEnrolmentsSubscription]
+    val enrolment      = gen[TaxEnrolmentsSubscription]
 
     stubFor(
       get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$subscriptionId"""))
@@ -65,7 +66,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "create a new subscription for a tax enrolment" in {
-    val safeId = gen[ShortString].value
+    val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value
 
     stubFor(
@@ -79,12 +80,12 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
 
     val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
     whenReady(response) { res =>
-     res.status mustEqual Status.OK
+      res.status mustEqual Status.OK
     }
   }
 
   "handle an unauthorised exception" in {
-    val safeId = gen[ShortString].value
+    val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value
 
     stubFor(
@@ -102,7 +103,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "handle a BadRequest exception" in {
-    val safeId = gen[ShortString].value
+    val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value
 
     stubFor(

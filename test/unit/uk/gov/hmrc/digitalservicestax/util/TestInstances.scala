@@ -21,7 +21,7 @@ import java.time.LocalDate
 import cats.implicits.{none, _}
 import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
-import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
+import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
 import org.scalacheck.Gen.buildableOf
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
@@ -37,7 +37,7 @@ object TestInstances {
 
   // these characters look very suspect to me
   implicit val arbString: Arbitrary[String] = Arbitrary(
-    Gen.alphaNumStr.map{_.take(255)}
+    Gen.alphaNumStr.map(_.take(255))
     //    RegexpGen.from("""^[0-9a-zA-Z{À-˿’}\\- &`'^._|]{1,255}$""")
   )
 
@@ -60,24 +60,23 @@ object TestInstances {
   }
 
   def nonEmptyString: Gen[NonEmptyString] =
-    arbitrary[String].filter(_.nonEmpty).map{NonEmptyString.apply}
-
+    arbitrary[String].filter(_.nonEmpty).map(NonEmptyString.apply)
 
   implicit class RichRegexValidatedString[A <: RegexValidatedString](val in: A) {
-    def gen = RegexpGen.from(in.regex).map{in.apply}
+    def gen = RegexpGen.from(in.regex).map(in.apply)
   }
 
   def genActivityPercentMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
     (
       arbitrary[Activity],
-      Gen.choose(0,100).map{x => Percent.apply(x.asInstanceOf[Byte])}
+      Gen.choose(0, 100).map(x => Percent.apply(x.asInstanceOf[Byte]))
     ).tupled
   )
 
   def genGroupCo: Gen[GroupCompany] = (
     CompanyName.gen,
     Gen.option(UTR.gen)
-    ).mapN(GroupCompany.apply)
+  ).mapN(GroupCompany.apply)
 
   implicit def genEnrolmentIdentifier: Arbitrary[EnrolmentIdentifier] = Arbitrary {
     (
@@ -88,11 +87,11 @@ object TestInstances {
 
   implicit def enrolmentArbitrary: Arbitrary[Enrolment] = Arbitrary {
     for {
-      key <- arbitrary[NonEmptyString]
-      sized <- Gen.chooseNum(1, 10)
+      key        <- arbitrary[NonEmptyString]
+      sized      <- Gen.chooseNum(1, 10)
       enrolments <- Gen.listOfN(sized, genEnrolmentIdentifier.arbitrary)
-      state <- nonEmptyString
-      delegate <- Gen.const(none[String])
+      state      <- nonEmptyString
+      delegate   <- Gen.const(none[String])
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
@@ -204,11 +203,11 @@ object TestInstances {
     RestrictiveString.gen
   )
 
-  def gencomap: Gen[ListMap[GroupCompany, Money]] = buildableOf[ListMap[GroupCompany,Money],(GroupCompany,Money)](
+  def gencomap: Gen[ListMap[GroupCompany, Money]] = buildableOf[ListMap[GroupCompany, Money], (GroupCompany, Money)](
     (
       genGroupCo,
       arbitrary[Money]
-      ).tupled
+    ).tupled
   )
 
   def genBankAccount: Gen[BankAccount] = {
@@ -217,10 +216,10 @@ object TestInstances {
       SortCode.gen,
       AccountNumber.gen,
       Gen.option(BuildingSocietyRollNumber.gen)
-      ).mapN(DomesticBankAccount.apply)
+    ).mapN(DomesticBankAccount.apply)
 
     val genForeign: Gen[ForeignBankAccount] =
-      arbitrary[IBAN].map{ForeignBankAccount.apply}
+      arbitrary[IBAN].map(ForeignBankAccount.apply)
     Gen.oneOf(genDomestic, genForeign)
   }
 
@@ -233,57 +232,62 @@ object TestInstances {
   def date(start: LocalDate, end: LocalDate): Gen[LocalDate] =
     Gen.choose(start.toEpochDay, end.toEpochDay).map(LocalDate.ofEpochDay)
 
-
   def genAllowanceAmount(g: Gen[Map[Activity, Percent]]): Gen[Option[Money]] =
     g.map {
-      case x if x.forall{ case (_,v) => v > 0 } => Gen.some(arbitrary[Money])
-      case _ => Gen.const(None)
+      case x if x.forall { case (_, v) => v > 0 } => Gen.some(arbitrary[Money])
+      case _                                      => Gen.const(None)
     }.flatten
 
-  def genActivitySet: Gen[Set[Activity]] = Gen.oneOf(1,2,3).map { x =>
-    Gen.listOfN(x, arbitrary[Activity])
-  }.flatten.retryUntil(x => x.distinct.size == x.size, 100).map(_.toSet)
+  def genActivitySet: Gen[Set[Activity]] = Gen
+    .oneOf(1, 2, 3)
+    .map { x =>
+      Gen.listOfN(x, arbitrary[Activity])
+    }
+    .flatten
+    .retryUntil(x => x.distinct.size == x.size, 100)
+    .map(_.toSet)
 
-  implicit def returnGen: Arbitrary[Return] = Arbitrary((
-    genActivitySet,
-    genActivityPercentMap,
-    arbitrary[Money],
-    genAllowanceAmount(genActivityPercentMap),
-    gencomap,
-    arbitrary[Money],
-    Gen.option(genRepayment)
-    ).mapN(Return.apply))
+  implicit def returnGen: Arbitrary[Return] = Arbitrary(
+    (
+      genActivitySet,
+      genActivityPercentMap,
+      arbitrary[Money],
+      genAllowanceAmount(genActivityPercentMap),
+      gencomap,
+      arbitrary[Money],
+      Gen.option(genRepayment)
+    ).mapN(Return.apply)
+  )
 
   implicit def arbLocalDate: Arbitrary[LocalDate] = Arbitrary(
     date(LocalDate.of(2010, 1, 1), LocalDate.of(2020, 1, 1))
   )
 
-  implicit def periodArb: Arbitrary[Period] = Arbitrary((
-    arbitrary[LocalDate],
-    arbitrary[LocalDate],
-    arbitrary[LocalDate],
-    arbitrary[NonEmptyString].map{_.take(4)}.map{Period.Key(_)}
-    ).mapN(Period.apply))
+  implicit def periodArb: Arbitrary[Period] = Arbitrary(
+    (
+      arbitrary[LocalDate],
+      arbitrary[LocalDate],
+      arbitrary[LocalDate],
+      arbitrary[NonEmptyString].map(_.take(4)).map(Period.Key(_))
+    ).mapN(Period.apply)
+  )
 
-  def neString(maxLen: Int = 255) = (
+  def neString(maxLen: Int = 255) =
     (
       Gen.alphaNumChar,
       arbitrary[String]
-      ).mapN((num, str) => s"$num$str").
-      map{_.take(maxLen)}.map { NonEmptyString.apply }
-    )
+    ).mapN((num, str) => s"$num$str").map(_.take(maxLen)).map { NonEmptyString.apply }
 
-  implicit def arbNEString: Arbitrary[NonEmptyString] = Arbitrary { neString() }
-  implicit def arbPostcode: Arbitrary[Postcode] = Arbitrary(Postcode.gen)
-  implicit def arbDSTNumber: Arbitrary[DSTRegNumber] = Arbitrary(DSTRegNumber.gen)
+  implicit def arbNEString: Arbitrary[NonEmptyString]           = Arbitrary(neString())
+  implicit def arbPostcode: Arbitrary[Postcode]                 = Arbitrary(Postcode.gen)
+  implicit def arbDSTNumber: Arbitrary[DSTRegNumber]            = Arbitrary(DSTRegNumber.gen)
   implicit def arbFormBundleNumber: Arbitrary[FormBundleNumber] = Arbitrary(FormBundleNumber.gen)
-  implicit def arbCountryCode: Arbitrary[CountryCode] = Arbitrary(CountryCode.gen)
-  implicit def arbPhone: Arbitrary[PhoneNumber] = Arbitrary(PhoneNumber.gen)
-  implicit def arbUTR: Arbitrary[UTR] = Arbitrary(UTR.gen)
-  implicit def safeId: Arbitrary[SafeId] = Arbitrary(SafeId.gen)
-  implicit def arbAddressLine: Arbitrary[AddressLine] = Arbitrary(AddressLine.gen)
-  implicit def arbCompanyName: Arbitrary[CompanyName] = Arbitrary(CompanyName.gen)
-
+  implicit def arbCountryCode: Arbitrary[CountryCode]           = Arbitrary(CountryCode.gen)
+  implicit def arbPhone: Arbitrary[PhoneNumber]                 = Arbitrary(PhoneNumber.gen)
+  implicit def arbUTR: Arbitrary[UTR]                           = Arbitrary(UTR.gen)
+  implicit def safeId: Arbitrary[SafeId]                        = Arbitrary(SafeId.gen)
+  implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
+  implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
 
   implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
     import com.outworkers.util.samplers._
@@ -291,11 +295,11 @@ object TestInstances {
   }
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
-  implicit def arbEmail: Arbitrary[Email] = Arbitrary{
+  implicit def arbEmail: Arbitrary[Email] = Arbitrary {
     (
       neString(20),
       neString(20)
-      ).mapN((a,b) => Email(s"${a}@${b}.co.uk"))
+    ).mapN((a, b) => Email(s"$a@$b.co.uk"))
   }
 
   implicit def arbAddr: Arbitrary[Address] = Arbitrary {
@@ -326,7 +330,7 @@ object TestInstances {
     (
       arbitrary[CompanyName],
       arbitrary[Address]
-      ).mapN(Company.apply)
+    ).mapN(Company.apply)
   )
 
   implicit def arbCoRegWrap: Arbitrary[CompanyRegWrapper] = Arbitrary(
@@ -335,7 +339,7 @@ object TestInstances {
       Gen.const(none[UTR]),
       Gen.const(none[SafeId]),
       Gen.const(false)
-      ).mapN(CompanyRegWrapper.apply)
+    ).mapN(CompanyRegWrapper.apply)
   )
 
   implicit def arbContact: Arbitrary[ContactDetails] = Arbitrary {
@@ -344,36 +348,32 @@ object TestInstances {
       arbitrary[RestrictiveString],
       arbitrary[PhoneNumber],
       arbitrary[Email]
-      ).mapN(ContactDetails.apply)
+    ).mapN(ContactDetails.apply)
   }
 
-  implicit def subGen: Arbitrary[Registration] = Arbitrary (
-    {
-      (
-        arbitrary[CompanyRegWrapper],
-        Gen.option(arbitrary[Address]),
-        arbitrary[Option[Company]],
-        arbitrary[ContactDetails],
-        date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
-        arbitrary[LocalDate],
-        Gen.some(arbitrary[DSTRegNumber])
-      ).mapN(Registration.apply)
-    }
-  )
+  implicit def subGen: Arbitrary[Registration] = Arbitrary {
+    (
+      arbitrary[CompanyRegWrapper],
+      Gen.option(arbitrary[Address]),
+      arbitrary[Option[Company]],
+      arbitrary[ContactDetails],
+      date(LocalDate.of(2039, 1, 1), LocalDate.of(2040, 1, 1)),
+      arbitrary[LocalDate],
+      Gen.some(arbitrary[DSTRegNumber])
+    ).mapN(Registration.apply)
+  }
 
-  def subGenWithParent: Arbitrary[Registration] = Arbitrary (
-    {
-      (
-        arbitrary[CompanyRegWrapper],
-        Gen.option(arbitrary[Address]),
-        arbitrary[Option[Company]].retryUntil(_.nonEmpty),
-        arbitrary[ContactDetails],
-        date(LocalDate.of(2039,1,1), LocalDate.of(2040,1,1)),
-        arbitrary[LocalDate],
-        Gen.some(arbitrary[DSTRegNumber])
-      ).mapN(Registration.apply)
-    }
-  )
+  def subGenWithParent: Arbitrary[Registration] = Arbitrary {
+    (
+      arbitrary[CompanyRegWrapper],
+      Gen.option(arbitrary[Address]),
+      arbitrary[Option[Company]].retryUntil(_.nonEmpty),
+      arbitrary[ContactDetails],
+      date(LocalDate.of(2039, 1, 1), LocalDate.of(2040, 1, 1)),
+      arbitrary[LocalDate],
+      Gen.some(arbitrary[DSTRegNumber])
+    ).mapN(Registration.apply)
+  }
 
   implicit def genRegistration: Arbitrary[RosmRegisterWithoutIDRequest] = Arbitrary {
     (
@@ -381,8 +381,7 @@ object TestInstances {
       arbitrary[Boolean],
       arbitrary[Company],
       arbitrary[ContactDetails]
-      ).mapN(RosmRegisterWithoutIDRequest.apply)
+    ).mapN(RosmRegisterWithoutIDRequest.apply)
   }
-
 
 }

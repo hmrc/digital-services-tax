@@ -36,7 +36,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent._
 
 @Singleton
-class RegistrationsController @Inject()(
+class RegistrationsController @Inject() (
   val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
   val appConfig: AppConfig,
@@ -49,41 +49,48 @@ class RegistrationsController @Inject()(
   val auditing: AuditConnector,
   loggedIn: LoggedInAction,
   val http: HttpClient
-) extends BackendController(cc) with AuthorisedFunctions with DesHelpers with AuditWrapper{
+) extends BackendController(cc)
+    with AuthorisedFunctions
+    with DesHelpers
+    with AuditWrapper {
 
   val logger: Logger = Logger(this.getClass)
 
   implicit val ec: ExecutionContext = cc.executionContext
-     
+
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
-    withJsonBody[Registration](data => for {
-      _      <- persistence.registrations.update(request.internalId, data)
-      safeId <- data.companyReg.safeId.fold(rosmConnector.getSafeId(data).map{_.get})(_.pure[Future])
-      reg    <- (
-        // these steps are combined for auditing purposes
-        for {
-          r  <- registrationConnector.send(
-            idType   = if (data.companyReg.useSafeId) "safe" else "utr",
-            idNumber = if (data.companyReg.useSafeId) {safeId} else {
-              data.companyReg.utr.getOrElse(
-                getUtrFromAuth(
-                  request.enrolments
-                ).getOrElse(throw new RuntimeException("Rosm not retrieved safeId and not UTR"))
-              )
-            },
-            data
-          )
-          _  <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
-          _  <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
-        } yield r
-      ).auditError  (_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
-       .auditSuccess(r => AuditingHelper.buildRegistrationAudit(data, request.providerId, Some(r.formBundleNumber), "SUCCESS"))
-      _      <- emailConnector.sendSubmissionReceivedEmail(
-        data.contact,
-        data.companyReg.company.name,
-        data.ultimateParent
-      )
-    } yield Ok(Json.toJson(reg))
+    withJsonBody[Registration](data =>
+      for {
+        _      <- persistence.registrations.update(request.internalId, data)
+        safeId <- data.companyReg.safeId.fold(rosmConnector.getSafeId(data).map(_.get))(_.pure[Future])
+        reg    <- (
+                    // these steps are combined for auditing purposes
+                    for {
+                      r <- registrationConnector.send(
+                             idType = if (data.companyReg.useSafeId) "safe" else "utr",
+                             idNumber = if (data.companyReg.useSafeId) { safeId }
+                             else {
+                               data.companyReg.utr.getOrElse(
+                                 getUtrFromAuth(
+                                   request.enrolments
+                                 ).getOrElse(throw new RuntimeException("Rosm not retrieved safeId and not UTR"))
+                               )
+                             },
+                             data
+                           )
+                      _ <- persistence.pendingCallbacks(r.formBundleNumber) = request.internalId
+                      _ <- taxEnrolmentConnector.subscribe(safeId, r.formBundleNumber)
+                    } yield r
+                  ).auditError(_ => AuditingHelper.buildRegistrationAudit(data, request.providerId, None, "ERROR"))
+                    .auditSuccess(r =>
+                      AuditingHelper.buildRegistrationAudit(data, request.providerId, Some(r.formBundleNumber), "SUCCESS")
+                    )
+        _      <- emailConnector.sendSubmissionReceivedEmail(
+                    data.contact,
+                    data.companyReg.company.name,
+                    data.ultimateParent
+                  )
+      } yield Ok(Json.toJson(reg))
     )
   }
 
@@ -94,13 +101,13 @@ class RegistrationsController @Inject()(
     } yield (a, b) match {
       case (Some(r), _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
-      case (Some(r), p) if p.nonEmpty =>
+      case (Some(r), p) if p.nonEmpty                     =>
         if (r.registrationNumber.isEmpty) {
           logger.info(s"no registration number found in registration details")
         }
         logger.info(s"pending registration")
         Ok(Json.toJson(r))
-      case _ =>
+      case _                                              =>
         logger.info("no pending registration")
         NotFound
     }

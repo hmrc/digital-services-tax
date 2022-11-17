@@ -32,7 +32,12 @@ import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockS
 
 import scala.concurrent.Future
 
-class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFutures with EitherValues with ScalaCheckDrivenPropertyChecks {
+class ActionsSpec
+    extends FakeApplicationSetup
+    with WiremockServer
+    with ScalaFutures
+    with EitherValues
+    with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(
     minSize = 1,
@@ -42,10 +47,10 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
   "should execute an action against a registered user using LoggedInRequest" in {
     val action = new Registered(mongoPersistence)
 
-    val internal = arbitrary[InternalId].sample.value
+    val internal   = arbitrary[InternalId].sample.value
     val enrolments = arbitrary[Enrolments].sample.value
     val providerId = arbitrary[NonEmptyString].sample.value
-    val reg = arbitrary[Registration].sample.value
+    val reg        = arbitrary[Registration].sample.value
 
     val req = LoggedInRequest(
       internal,
@@ -55,12 +60,15 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.update(internal, reg)
-      block <- action.invokeBlock(req, { req: RegisteredRequest[_] =>
-        Future.successful(
-          Results.Ok(req.registration.registrationNumber.value)
-        )
-      })
+      _     <- mongoPersistence.registrations.update(internal, reg)
+      block <- action.invokeBlock(
+                 req,
+                 { req: RegisteredRequest[_] =>
+                   Future.successful(
+                     Results.Ok(req.registration.registrationNumber.value)
+                   )
+                 }
+               )
     } yield block
 
     whenReady(chain) { resp =>
@@ -71,10 +79,10 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
   "should return forbidden if there is no DST number on the registration" in {
     val action = new Registered(mongoPersistence)
 
-    val internal = arbitrary[InternalId].sample.value
-    val enrolments = arbitrary[Enrolments].sample.value
-    val providerId = arbitrary[NonEmptyString].sample.value
-    val reg = arbitrary[Registration].sample.value
+    val internal    = arbitrary[InternalId].sample.value
+    val enrolments  = arbitrary[Enrolments].sample.value
+    val providerId  = arbitrary[NonEmptyString].sample.value
+    val reg         = arbitrary[Registration].sample.value
     val regWithNoId = reg.copy(registrationNumber = None)
 
     val req = LoggedInRequest(
@@ -85,12 +93,15 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.update(internal, regWithNoId)
-      block <- action.invokeBlock(req, { req: RegisteredRequest[_] =>
-        Future.successful(
-          Results.Ok(req.registration.registrationNumber.value)
-        )
-      })
+      _     <- mongoPersistence.registrations.update(internal, regWithNoId)
+      block <- action.invokeBlock(
+                 req,
+                 { req: RegisteredRequest[_] =>
+                   Future.successful(
+                     Results.Ok(req.registration.registrationNumber.value)
+                   )
+                 }
+               )
     } yield block
 
     whenReady(chain) { resp =>
@@ -98,11 +109,10 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
     }
   }
 
-
   "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
     val action = new Registered(mongoPersistence)
 
-    val internal = arbitrary[InternalId].sample.value
+    val internal   = arbitrary[InternalId].sample.value
     val enrolments = arbitrary[Enrolments].sample.value
     val providerId = arbitrary[NonEmptyString].sample.value
 
@@ -121,10 +131,10 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
   "should execute an action against a registered user using Registered or pending request" in {
     val action = new RegisteredOrPending(mongoPersistence)
 
-    val internal = arbitrary[InternalId].sample.value
+    val internal   = arbitrary[InternalId].sample.value
     val enrolments = arbitrary[Enrolments].sample.value
     val providerId = arbitrary[NonEmptyString].sample.value
-    val reg = arbitrary[Registration].sample.value
+    val reg        = arbitrary[Registration].sample.value
 
     val loggedInReq = LoggedInRequest(
       internal,
@@ -134,12 +144,15 @@ class ActionsSpec extends FakeApplicationSetup with WiremockServer with ScalaFut
     )
 
     val chain = for {
-      _ <- mongoPersistence.registrations.update(internal, reg)
-      block <- action.invokeBlock(loggedInReq, { req: RegisteredRequest[_] =>
-        Future.successful(
-          Results.Ok(req.registration.registrationNumber.value)
-        )
-      })
+      _     <- mongoPersistence.registrations.update(internal, reg)
+      block <- action.invokeBlock(
+                 loggedInReq,
+                 { req: RegisteredRequest[_] =>
+                   Future.successful(
+                     Results.Ok(req.registration.registrationNumber.value)
+                   )
+                 }
+               )
     } yield block
 
     whenReady(chain) { resp =>

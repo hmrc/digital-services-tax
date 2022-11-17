@@ -24,7 +24,10 @@ import unit.uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class VolatileReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with ScalaCheckDrivenPropertyChecks {
+class VolatileReturnsPersistenceSpec
+    extends FakeApplicationSetup
+    with ScalaFutures
+    with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
@@ -36,7 +39,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutu
   "it should persist a return object using the apply method" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- volatile.returns.update(reg, period, ret)
+        _     <- volatile.returns.update(reg, period, ret)
         dbReg <- volatile.returns(reg, period)
       } yield dbReg
 
@@ -49,7 +52,7 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutu
   "it should persist a return object" in {
     forAll { (reg: Registration, ret: Return) =>
       val chain = for {
-        _ <- volatile.returns.update(reg, period, ret)
+        _     <- volatile.returns.update(reg, period, ret)
         dbReg <- volatile.returns.get(reg, period)
       } yield dbReg
 
@@ -62,9 +65,9 @@ class VolatileReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutu
   "it should update a return by registration and period" in {
     forAll { (reg: Registration, ret: Return, updatedReturn: Return) =>
       val chain = for {
-        _ <- volatile.returns.update(reg, period, ret)
-        dbReg <- volatile.returns.get(reg, period)
-        _ <- volatile.returns.update(reg, period, updatedReturn)
+        _          <- volatile.returns.update(reg, period, ret)
+        dbReg      <- volatile.returns.get(reg, period)
+        _          <- volatile.returns.update(reg, period, updatedReturn)
         postUpdate <- volatile.returns.get(reg, period)
       } yield dbReg -> postUpdate
 

@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EmailConnector @Inject()(http: HttpClient, appConfig: AppConfig) {
+class EmailConnector @Inject() (http: HttpClient, appConfig: AppConfig) {
 
   val logger = Logger(this.getClass)
 
@@ -42,33 +42,35 @@ class EmailConnector @Inject()(http: HttpClient, appConfig: AppConfig) {
       "to"         -> Seq(contact.email.toString),
       "templateId" -> "dst_registration_accepted",
       "parameters" -> Json.obj(
-        "dstNumber"  -> dstNumber.toString,
-        "name" -> s"${contact.forename} ${contact.surname}",
-        "companyName" -> companyName.toString,
-        "groupCompanyName" -> parentCompanyName.toString,
-        "paymentDeadline" -> paymentDeadline.paymentDue.toString.replace("-", ""),
+        "dstNumber"            -> dstNumber.toString,
+        "name"                 -> s"${contact.forename} ${contact.surname}",
+        "companyName"          -> companyName.toString,
+        "groupCompanyName"     -> parentCompanyName.toString,
+        "paymentDeadline"      -> paymentDeadline.paymentDue.toString.replace("-", ""),
         "submitReturnDeadline" -> paymentDeadline.returnDue.toString.replace("-", "")
       ),
-      "force" -> false
+      "force"      -> false
     )
 
     sendEmail(params)
   }
 
-  def sendSubmissionReceivedEmail(contact: ContactDetails, companyName: CompanyName, parentCompany: Option[Company])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] = {
+  def sendSubmissionReceivedEmail(
+    contact: ContactDetails,
+    companyName: CompanyName,
+    parentCompany: Option[Company]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val params = Json.obj(
       "to"         -> Seq(contact.email.toString),
       "templateId" -> "dst_registration_received",
       "parameters" -> Json.obj(
-        "name" -> s"${contact.forename} ${contact.surname}",
-        "companyName" -> companyName.toString,
+        "name"             -> s"${contact.forename} ${contact.surname}",
+        "companyName"      -> companyName.toString,
         "groupCompanyName" -> parentCompany.fold("unknown") {
           _.name.toString
         }
       ),
-      "force" -> false
+      "force"      -> false
     )
 
     sendEmail(params)
@@ -76,20 +78,19 @@ class EmailConnector @Inject()(http: HttpClient, appConfig: AppConfig) {
 
   private def sendEmail(
     params: JsObject
-  )(
-   implicit hc: HeaderCarrier,
-   ex: ExecutionContext
-  ) = {
+  )(implicit
+    hc: HeaderCarrier,
+    ex: ExecutionContext
+  ) =
     http.POST[JsValue, HttpResponse](s"${appConfig.emailUrl}/hmrc/email", params) map {
-      case response if response.status == play.api.http.Status.ACCEPTED =>
+      case response if response.status == play.api.http.Status.ACCEPTED    =>
         logger.info("email send accepted")
         ()
       case response if response.status == play.api.http.Status.BAD_REQUEST =>
         logger.warn(s"email send rejected, ${response.status}.")
         ()
-      case _ =>
+      case _                                                               =>
         logger.warn(s"Unexpected response from email service")
         ()
     }
-  }
 }

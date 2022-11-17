@@ -32,29 +32,27 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReturnConnector @Inject()(val http: HttpClient,
-  val mode: Mode,
-  val appConfig: AppConfig)
-  extends DesHelpers {
+class ReturnConnector @Inject() (val http: HttpClient, val mode: Mode, val appConfig: AppConfig) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
-  val registerPath = "cross-regime/subscription/DST"
+  val registerPath   = "cross-regime/subscription/DST"
 
   def getNextPendingPeriod(
-    dstRegNo: DSTRegNumber    
-  )(
-    implicit hc: HeaderCarrier,
+    dstRegNo: DSTRegNumber
+  )(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Period] =
-    getPeriods(dstRegNo).map{
-      _.sortBy(_._1.start.toEpochDay).collectFirst { case (x, None) => x }      
+    getPeriods(dstRegNo).map {
+      _.sortBy(_._1.start.toEpochDay)
+        .collectFirst { case (x, None) => x }
         .getOrElse(throw new NoSuchElementException)
     }
 
   def getPeriods(
-    dstRegNo: DSTRegNumber    
-  )(
-    implicit hc: HeaderCarrier,
+    dstRegNo: DSTRegNumber
+  )(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
     val url = s"${appConfig.desURL}/enterprise/obligation-data/zdst/$dstRegNo/DST" +
@@ -69,8 +67,8 @@ class ReturnConnector @Inject()(val http: HttpClient,
     period: Period,
     request: Return,
     isAmend: Boolean
-  )(
-    implicit hc: HeaderCarrier,
+  )(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[ReturnResponse] = {
 
@@ -80,16 +78,16 @@ class ReturnConnector @Inject()(val http: HttpClient,
       isAmend
     )
 
-    JsonSchemaChecker(request,"return-submission")(writes)
+    JsonSchemaChecker(request, "return-submission")(writes)
 
-    val url = s"${appConfig.desURL}/cross-regime/return/DST/zdst/$dstRegNo"
+    val url    = s"${appConfig.desURL}/cross-regime/return/DST/zdst/$dstRegNo"
     import uk.gov.hmrc.http.HttpReadsInstances._
-    val result = desPost[JsValue, Either[UpstreamErrorResponse,ReturnResponse]](
+    val result = desPost[JsValue, Either[UpstreamErrorResponse, ReturnResponse]](
       url,
       Json.toJson(request)(writes)
     ).map {
       case Right(value) => value
-      case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
+      case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
 
     result

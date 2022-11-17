@@ -31,7 +31,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnector,
+class TaxEnrolmentCallbackController @Inject() (
+  val authConnector: AuthConnector,
   val runModeConfiguration: Configuration,
   cc: ControllerComponents,
   taxEnrolments: TaxEnrolmentConnector,
@@ -39,9 +40,10 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
   returnConnector: ReturnConnector,
   persistence: MongoPersistence,
   auditing: AuditConnector
-) extends BackendController(cc) with AuthorisedFunctions {
+) extends BackendController(cc)
+    with AuthorisedFunctions {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                = Logger(this.getClass)
   implicit val ec: ExecutionContext = cc.executionContext
 
   object CallbackProcessingException extends Exception("Unable to process tax-enrolments callback")
@@ -52,17 +54,18 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
       logger.info(s"Tax-enrolment callback triggered, body: $body")
       if (body.state == "SUCCEEDED") {
         (for {
-          dstNumber    <- taxEnrolments.getSubscription(formBundleNumber).map{
-                            _.getDSTNumber.getOrElse(throw CallbackProcessingException)}
-          reg          <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
-          period       <- returnConnector.getNextPendingPeriod(dstNumber)
-          _            <- emailConnector.sendConfirmationEmail(
-                            reg.contact,
-                            reg.companyReg.company.name,
-                            reg.ultimateParent.fold(CompanyName("unknown")){x => x.name},
-                            dstNumber,
-                            period
-                          )
+          dstNumber <- taxEnrolments.getSubscription(formBundleNumber).map {
+                         _.getDSTNumber.getOrElse(throw CallbackProcessingException)
+                       }
+          reg       <- persistence.pendingCallbacks.process(formBundleNumber, dstNumber)
+          period    <- returnConnector.getNextPendingPeriod(dstNumber)
+          _         <- emailConnector.sendConfirmationEmail(
+                         reg.contact,
+                         reg.companyReg.company.name,
+                         reg.ultimateParent.fold(CompanyName("unknown"))(x => x.name),
+                         dstNumber,
+                         period
+                       )
         } yield {
           auditing.sendExtendedEvent(
             AuditingHelper.buildCallbackAudit(
@@ -74,21 +77,20 @@ class TaxEnrolmentCallbackController @Inject()(  val authConnector: AuthConnecto
           )
           logger.info("Tax-enrolments callback, lookup and save of persistence successful")
           NoContent
-        }).recoverWith{
+        }).recoverWith {
           case e: Exception =>
             logger.warn(s"Error inside SUCCEEDED tax-enrolment callback processing: $e")
             Future(NoContent)
-          case _ =>
+          case _            =>
             Future(NoContent)
         }
       } else {
         auditing.sendExtendedEvent(
-          AuditingHelper.buildCallbackAudit(
-            body,
-            formBundleNumber,
-            "ERROR")
+          AuditingHelper.buildCallbackAudit(body, formBundleNumber, "ERROR")
         )
-        logger.error(s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]")
+        logger.error(
+          s"Got error from tax-enrolments callback for $formBundleNumber: [${body.errorResponse.getOrElse("")}]"
+        )
         Future.successful(NoContent)
       }
     }
@@ -101,6 +103,3 @@ case class CallbackNotification(state: String, errorResponse: Option[String])
 object CallbackNotification {
   implicit val format: Format[CallbackNotification] = Json.format[CallbackNotification]
 }
-
-
-

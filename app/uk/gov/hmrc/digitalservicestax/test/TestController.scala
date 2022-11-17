@@ -25,14 +25,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestController @Inject()(
+class TestController @Inject() (
   connector: TestConnector,
   cc: ControllerComponents,
   mcc: MessagesControllerComponents,
   val appConfig: AppConfig
-)(
-  implicit ec: ExecutionContext
-) extends BackendController(cc) with ExtraActions {
+)(implicit
+  ec: ExecutionContext
+) extends BackendController(cc)
+    with ExtraActions {
 
   def triggerTaxEnrolmentCallback(seed: String): Action[AnyContent] = Action.async { implicit request =>
     connector.trigger("trigger/callback/te", seed) >>

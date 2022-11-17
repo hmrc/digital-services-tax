@@ -51,9 +51,12 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
 
     stubFor(
       post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-        .willReturn(aResponse()
-          .withBody(Json.toJson(req).toString())
-          .withStatus(500)))
+        .willReturn(
+          aResponse()
+            .withBody(Json.toJson(req).toString())
+            .withStatus(500)
+        )
+    )
 
     val response = RosmTestConnector.retrieveROSMDetails("1234567890")
     whenReady(response.failed) { res =>
@@ -72,28 +75,31 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
 
     stubFor(
       post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-        .willReturn(aResponse()
-        .withBody(Json.toJson(req).toString())
-        .withStatus(429)))
+        .willReturn(
+          aResponse()
+            .withBody(Json.toJson(req).toString())
+            .withStatus(429)
+        )
+    )
 
     whenReady(RosmTestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
       Console.println(ex.getMessage)
     }
   }
 
- "retrieve ROSM details without ID" in {
+  "retrieve ROSM details without ID" in {
 
-   import RosmTestConnector.serviceURLWithoutId
+    import RosmTestConnector.serviceURLWithoutId
 
-   val req = arbitrary[RosmRegisterWithoutIDRequest].sample.value
+    val req = arbitrary[RosmRegisterWithoutIDRequest].sample.value
 
-   stubFor(
+    stubFor(
       post(urlPathEqualTo(s"${appConfig.desURL}/$serviceURLWithoutId"))
         .willReturn(
           aResponse()
             .withStatus(200)
         )
-   )
+    )
 
     val future = RosmTestConnector.retrieveROSMDetailsWithoutID(req)
     whenReady(future) { x =>
