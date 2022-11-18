@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-
 sealed trait BankAccount
 
 case class ForeignBankAccount(iban: IBAN) extends BankAccount

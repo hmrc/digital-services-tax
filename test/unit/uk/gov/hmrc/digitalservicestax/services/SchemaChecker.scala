@@ -25,11 +25,11 @@ import play.api.libs.json._
 case class SchemaChecker(schemaStream: java.io.InputStream) {
   val schemaText = scala.io.Source.fromInputStream(schemaStream).getLines().mkString
   schemaStream.close
-  val schema = JsonLoader.fromString(schemaText)
-  val validator = JsonSchemaFactory.byDefault.getValidator
+  val schema     = JsonLoader.fromString(schemaText)
+  val validator  = JsonSchemaFactory.byDefault.getValidator
 
   def errorsIn(json: JsValue): Option[ProcessingReport] = {
-    val jsonIn = JsonLoader.fromString(Json.prettyPrint(json))
+    val jsonIn                             = JsonLoader.fromString(Json.prettyPrint(json))
     val processingReport: ProcessingReport = validator.validate(schema, jsonIn)
     processingReport.some.filterNot(_.isSuccess)
   }
@@ -42,46 +42,46 @@ object SchemaChecker {
 
   def _1163 = GetReg
   object GetReg {
-    lazy val request = sch("/dst/1163-get-reg.request.schema.json")
+    lazy val request  = sch("/dst/1163-get-reg.request.schema.json")
     lazy val response = sch("/dst/1163-get-reg.response.schema.json")
   }
 
   def _1166 = GetFinancialData
   object GetFinancialData {
     lazy val responseError = sch("/dst/1166-get-financial-data.response-error.schema.json")
-    lazy val response = sch("/dst/1166-get-financial-data.response.schema.json")
+    lazy val response      = sch("/dst/1166-get-financial-data.response.schema.json")
   }
 
   def _1330 = GetObligation
   object GetObligation {
     lazy val responseError = sch("/dst/1330-get-obligation.response-error.schema.json")
-    lazy val response = sch("/dst/1330-get-obligation.response.schema.json")
+    lazy val response      = sch("/dst/1330-get-obligation.response.schema.json")
   }
 
   def _1335 = RegWithoutId
   object RegWithoutId {
-    lazy val request = sch("/dst/1335-reg-without-id.request.schema.json")
+    lazy val request       = sch("/dst/1335-reg-without-id.request.schema.json")
     lazy val responseError = sch("/dst/1335-reg-without-id.response-error.schema.json")
-    lazy val response = sch("/dst/1335-reg-without-id.response.schema.json")
+    lazy val response      = sch("/dst/1335-reg-without-id.response.schema.json")
   }
 
   def _1450 = PaymentTransactions
   object PaymentTransactions {
-    lazy val request = sch("/dst/1450-payment-transactions.request.schema.json")
+    lazy val request       = sch("/dst/1450-payment-transactions.request.schema.json")
     lazy val responseError = sch("/dst/1450-payment-transactions.response-error.schema.json")
   }
 
   def _1479 = EeittSubscribe
   object EeittSubscribe {
-    lazy val request = sch("/dst/1479-eeitt-subscribe.request.schema.json")
+    lazy val request       = sch("/dst/1479-eeitt-subscribe.request.schema.json")
     lazy val responseError = sch("/dst/1479-eeitt-subscribe.response-error.schema.json")
-    lazy val response = sch("/dst/1479-eeitt-subscribe.response.schema.json")
+    lazy val response      = sch("/dst/1479-eeitt-subscribe.response.schema.json")
   }
 
   def _1480 = EeittReturn
   object EeittReturn {
-    lazy val request = sch("/dst/1480-eeitt-return.request.schema.json")
+    lazy val request       = sch("/dst/1480-eeitt-return.request.schema.json")
     lazy val responseError = sch("/dst/1480-eeitt-return.response-error.schema.json")
-    lazy val response = sch("/dst/1480-eeitt-return.response.schema.json")
+    lazy val response      = sch("/dst/1480-eeitt-return.response.schema.json")
   }
- }
+}

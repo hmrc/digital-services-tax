@@ -26,22 +26,22 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class DstReturnSchemaSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
-  "A return API call" should "conform to the schema" in {
+  "A return API call"       should "conform to the schema" in {
     forAll { (period: Period, ret: Return) =>
-      val json = EeittInterface.returnRequestWriter("aoeu",period).writes(ret)
-      SchemaChecker.EeittReturn.request.errorsIn(json) should be (None)
+      val json = EeittInterface.returnRequestWriter("aoeu", period).writes(ret)
+      SchemaChecker.EeittReturn.request.errorsIn(json) should be(None)
 
-      //testing that the receivedAt timestamp seconds is in millis
+      // testing that the receivedAt timestamp seconds is in millis
       val receivedAtSeconds = json("receivedAt").as[String].split('.').last
-      receivedAtSeconds.size should be (4)
+      receivedAtSeconds.size should be(4)
     }
   }
 
   "A registration API call" should "conform to the schema" in {
     forAll { (subRequest: Registration) =>
       val json = EeittInterface.registrationWriter.writes(subRequest)
-      SchemaChecker.EeittSubscribe.request.errorsIn(json) shouldBe (None)
+      SchemaChecker.EeittSubscribe.request.errorsIn(json) shouldBe None
     }
   }
-  
+
 }

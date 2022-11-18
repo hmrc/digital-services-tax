@@ -22,9 +22,9 @@ import org.scalatest.matchers.should.Matchers
 class VolatilePersistenceSpec extends AnyFlatSpec with Matchers {
 
   "randomDstNumber" should "not give duplicates" in {
-    val many = (1 to 1000).map{_ => VolatilePersistence.randomDstNumber}
+    val many = (1 to 1000).map(_ => VolatilePersistence.randomDstNumber)
 
     many.distinct.size shouldBe (many.size)
   }
-  
+
 }

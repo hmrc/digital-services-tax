@@ -24,7 +24,11 @@ import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, Regist
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with BeforeAndAfterEach with ScalaCheckDrivenPropertyChecks {
+class PendingCallbacksSpec
+    extends FakeApplicationSetup
+    with ScalaFutures
+    with BeforeAndAfterEach
+    with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
@@ -32,7 +36,7 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
   "it fail to retrieve a non existing form bundle with a NoSuchElementException" in {
     forAll { formNo: FormBundleNumber =>
       whenReady(mongoPersistence.pendingCallbacks(formNo).failed) { ex =>
-        ex mustBe a [NoSuchElementException]
+        ex mustBe a[NoSuchElementException]
         ex.getMessage mustBe s"formBundle not found: $formNo"
       }
     }
@@ -41,7 +45,7 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
+        _     <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks(formNo)
       } yield dbReg
 
@@ -51,13 +55,12 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
     }
   }
 
-
   "it should confirm a registraion using the pending callbacks process" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.update(id, reg)
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
-        _ <- mongoPersistence.pendingCallbacks.process(formNo, reg.registrationNumber.value)
+        _          <- mongoPersistence.registrations.update(id, reg)
+        _          <- mongoPersistence.pendingCallbacks.update(formNo, id)
+        _          <- mongoPersistence.pendingCallbacks.process(formNo, reg.registrationNumber.value)
         formBundle <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield formBundle
 
@@ -70,7 +73,7 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
   "it should retrieve a pending callback id using the get method" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
+        _     <- mongoPersistence.pendingCallbacks.update(formNo, id)
         dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield dbReg
 
@@ -83,12 +86,11 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
   "it should update a pending callback ID by form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
-        dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, newId)
+        _          <- mongoPersistence.pendingCallbacks.update(formNo, id)
+        dbReg      <- mongoPersistence.pendingCallbacks.get(formNo)
+        _          <- mongoPersistence.pendingCallbacks.update(formNo, newId)
         postUpdate <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield dbReg -> postUpdate
-
 
       whenReady(chain) { case (dbRes, postUpdate) =>
         dbRes.value mustEqual id
@@ -100,12 +102,11 @@ class PendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with B
   "it should delete a pending callback by its form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- mongoPersistence.pendingCallbacks.update(formNo, id)
-        dbReg <- mongoPersistence.pendingCallbacks.get(formNo)
-        _ <- mongoPersistence.pendingCallbacks.delete(formNo)
+        _          <- mongoPersistence.pendingCallbacks.update(formNo, id)
+        dbReg      <- mongoPersistence.pendingCallbacks.get(formNo)
+        _          <- mongoPersistence.pendingCallbacks.delete(formNo)
         postUpdate <- mongoPersistence.pendingCallbacks.get(formNo)
       } yield dbReg -> postUpdate
-
 
       whenReady(chain) { case (dbRes, postUpdate) =>
         dbRes.value mustEqual id

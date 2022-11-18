@@ -21,11 +21,10 @@ import uk.gov.hmrc.digitalservicestax.data.UTR
 
 package object controllers {
 
-  def getUtrFromAuth(enrolments: Enrolments): Option[UTR] = {
+  def getUtrFromAuth(enrolments: Enrolments): Option[UTR] =
     enrolments
       .getEnrolment("IR-CT")
       .orElse(enrolments.getEnrolment("IR-SA"))
       .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
-  }
 
 }

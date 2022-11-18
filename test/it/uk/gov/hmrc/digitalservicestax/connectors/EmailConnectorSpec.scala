@@ -42,23 +42,21 @@ class EmailConnectorSpec extends FakeApplicationSetup with WiremockServer with S
 
   "should get no response back if des is not available" in {
     implicit def arbCompanyName: Arbitrary[CompanyName] = Arbitrary(CompanyName.gen)
-    val contactDetails = arbitrary[ContactDetails].sample.value
-    val companyName = arbitrary[CompanyName].sample.value
-    val parentRef = arbitrary[CompanyName].sample.value
-    val dstNumber = arbitrary[DSTRegNumber].sample.value
-    val period = arbitrary[Period].sample.value
+    val contactDetails                                  = arbitrary[ContactDetails].sample.value
+    val companyName                                     = arbitrary[CompanyName].sample.value
+    val parentRef                                       = arbitrary[CompanyName].sample.value
+    val dstNumber                                       = arbitrary[DSTRegNumber].sample.value
+    val period                                          = arbitrary[Period].sample.value
 
     stubFor(
       post(urlPathEqualTo("/hmrc/email"))
-        .willReturn(aResponse()
-        .withStatus(200)))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+        )
+    )
 
-    val response = EmailTestConnector.sendConfirmationEmail(
-      contactDetails,
-      companyName,
-      parentRef,
-      dstNumber,
-      period)
+    val response = EmailTestConnector.sendConfirmationEmail(contactDetails, companyName, parentRef, dstNumber, period)
 
     whenReady(response) { res => }
 
@@ -66,17 +64,17 @@ class EmailConnectorSpec extends FakeApplicationSetup with WiremockServer with S
 
   "should send a confirmation email for a submission received" in {
     val contactDetails = arbitrary[ContactDetails].sample.value
-    val companyName = arbitrary[CompanyName].sample.value
+    val companyName    = arbitrary[CompanyName].sample.value
 
     stubFor(
       post(urlPathEqualTo("/hmrc/email"))
-        .willReturn(aResponse()
-        .withStatus(200)))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+        )
+    )
 
-    val response = EmailTestConnector.sendSubmissionReceivedEmail(
-      contactDetails,
-      companyName,
-      None)
+    val response = EmailTestConnector.sendSubmissionReceivedEmail(contactDetails, companyName, None)
 
     whenReady(response) { res => }
 

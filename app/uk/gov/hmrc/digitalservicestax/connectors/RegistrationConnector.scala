@@ -31,12 +31,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RegistrationConnector @Inject()(
+class RegistrationConnector @Inject() (
   val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig,
   val auditing: AuditConnector
-) extends DesHelpers with AuditWrapper {
+) extends DesHelpers
+    with AuditWrapper {
 
   val registerPath = "cross-regime/subscription/DST"
 
@@ -44,17 +45,18 @@ class RegistrationConnector @Inject()(
     idType: String,
     idNumber: String,
     request: Registration
-  )(
-    implicit hc: HeaderCarrier,
+  )(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[RegistrationResponse] = {
     import services.EeittInterface.registrationWriter
 
     desPost[JsValue, Either[UpstreamErrorResponse, RegistrationResponse]](
-      s"${appConfig.desURL}/$registerPath/$idType/$idNumber", Json.toJson(request)
+      s"${appConfig.desURL}/$registerPath/$idType/$idNumber",
+      Json.toJson(request)
     )(implicitly, implicitly, addHeaders, implicitly).map {
       case Right(value) => value
-      case Left(e) => throw UpstreamErrorResponse(e.message, e.statusCode)
+      case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
   }
 

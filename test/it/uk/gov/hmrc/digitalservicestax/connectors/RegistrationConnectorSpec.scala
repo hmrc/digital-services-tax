@@ -32,7 +32,11 @@ import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockSer
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks with MockitoSugar {
+class RegistrationConnectorSpec
+    extends FakeApplicationSetup
+    with WiremockServer
+    with ScalaCheckDrivenPropertyChecks
+    with MockitoSugar {
 
   val auditing: AuditConnector = mock[AuditConnector]
 
@@ -53,14 +57,14 @@ class RegistrationConnectorSpec extends FakeApplicationSetup with WiremockServer
       arbitrary[FormBundleNumber].sample.value
     )
 
-    val idType = gen[ShortString].value
+    val idType   = gen[ShortString].value
     val idNumber = gen[ShortString].value
-    val reg = arbitrary[Registration].sample.value
+    val reg      = arbitrary[Registration].sample.value
 
     stubFor(
       post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
-        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString())))
-
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
+    )
 
     val response = RegTestConnector.send(idType, idNumber, reg)
     whenReady(response) { res =>

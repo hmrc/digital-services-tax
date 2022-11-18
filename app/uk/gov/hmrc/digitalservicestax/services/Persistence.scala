@@ -23,7 +23,7 @@ import uk.gov.hmrc.digitalservicestax.data._
 abstract class Persistence[F[_]: cats.Monad] {
 
   protected trait PendingCallbacks {
-    def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map{
+    def apply(formBundle: FormBundleNumber): F[InternalId] = get(formBundle).map {
       _.getOrElse(throw new NoSuchElementException(s"formBundle not found: $formBundle"))
     }
 
@@ -31,8 +31,9 @@ abstract class Persistence[F[_]: cats.Monad] {
     def reverseLookup(id: InternalId): F[Option[FormBundleNumber]]
     def delete(formBundle: FormBundleNumber): F[Unit]
     def update(formBundle: FormBundleNumber, internalId: InternalId): F[Unit]
-    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] =
-      {apply(formBundle) >>= (registrations.confirm(_, regId))} <* delete(formBundle)
+    def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] = {
+      apply(formBundle) >>= (registrations.confirm(_, regId))
+    } <* delete(formBundle)
   }
 
   def pendingCallbacks: PendingCallbacks
@@ -48,22 +49,22 @@ abstract class Persistence[F[_]: cats.Monad] {
     def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =
       for {
         existing <- apply(user)
-        updated  = existing.copy(registrationNumber = Some(registrationNumber))
+        updated   = existing.copy(registrationNumber = Some(registrationNumber))
         _        <- update(user, updated)
-      } yield (updated)
+      } yield updated
   }
 
   def registrations: Registrations
 
   protected trait Returns {
-    def apply(reg: Registration): F[Map[Period.Key, Return]] = get(reg)
-    def apply(reg: Registration, periodKey: Period.Key): F[Return] = get(reg, periodKey).map{
+    def apply(reg: Registration): F[Map[Period.Key, Return]]       = get(reg)
+    def apply(reg: Registration, periodKey: Period.Key): F[Return] = get(reg, periodKey).map {
       _.getOrElse(throw new NoSuchElementException(s"return not found: $reg/$periodKey"))
     }
 
     def get(reg: Registration): F[Map[Period.Key, Return]]
     def get(reg: Registration, period: Period.Key): F[Option[Return]] =
-      get(reg).map{_.get(period)}
+      get(reg).map(_.get(period))
 
     def update(reg: Registration, period: Period.Key, ret: Return): F[Unit]
 
@@ -72,4 +73,3 @@ abstract class Persistence[F[_]: cats.Monad] {
   def returns: Returns
 
 }
-

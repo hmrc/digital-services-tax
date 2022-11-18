@@ -36,7 +36,7 @@ trait AuditWrapper {
       }
 
     def auditSuccess(event: A => ExtendedDataEvent)(implicit ec: ExecutionContext): Future[A] =
-      in.flatMap { e => 
+      in.flatMap { e =>
         auditing.sendExtendedEvent(event(e)).map(_ => e)
       }
   }

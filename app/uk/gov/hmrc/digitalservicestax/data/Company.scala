@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.data
 
-case class Company (
+case class Company(
   name: CompanyName,
   address: Address
 )

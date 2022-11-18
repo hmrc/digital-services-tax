@@ -31,33 +31,33 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class RosmController @Inject()(
+class RosmController @Inject() (
   val authConnector: AuthConnector,
   rosmConnector: RosmConnector,
   val runModeConfiguration: Configuration,
   cc: ControllerComponents
-) extends BackendController(cc) with AuthorisedFunctions {
+) extends BackendController(cc)
+    with AuthorisedFunctions {
   val logger = Logger(this.getClass())
 
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
-
     authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
-
       getUtrFromAuth(enrolments).fold(Future.successful[Result](NotFound)) { utr =>
-
-        rosmConnector.retrieveROSMDetails(
-          utr
-        ).map {
-          case Some(r) =>
-            import data.BackendAndFrontendJson._
-            JsonSchemaChecker[data.Company](r.company, "rosm-response")
-            Ok(Json.toJson(r))
-          case _ =>
-            logger.warn(s"No record found for UTR $utr")
-            NotFound
-        }
+        rosmConnector
+          .retrieveROSMDetails(
+            utr
+          )
+          .map {
+            case Some(r) =>
+              import data.BackendAndFrontendJson._
+              JsonSchemaChecker[data.Company](r.company, "rosm-response")
+              Ok(Json.toJson(r))
+            case _       =>
+              logger.warn(s"No record found for UTR $utr")
+              NotFound
+          }
       }
 
     }
@@ -65,22 +65,25 @@ class RosmController @Inject()(
 
   def lookupWithIdCheckPostcode(utr: String, postcode: String): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway)) {
-      rosmConnector.retrieveROSMDetails(
-        utr
-      ).map {
-        case Some(r) if r.company.address.postalCode.replaceAll(" ", "") == postcode.replaceAll(" ", "") =>
-
-          import data.BackendAndFrontendJson._
-          JsonSchemaChecker[data.Company](r.company, "rosm-response")
-          Ok(Json.toJson(r))
-        case Some(r) =>
-          logger.warn(s"Record found for UTR $utr, but postcode is '${r.company.address.postalCode}' " +
-            s", not user supplied '${postcode}'.")
-          NotFound
-        case _ =>
-          logger.warn(s"No record found for UTR $utr")
-          NotFound
-      }
+      rosmConnector
+        .retrieveROSMDetails(
+          utr
+        )
+        .map {
+          case Some(r) if r.company.address.postalCode.replaceAll(" ", "") == postcode.replaceAll(" ", "") =>
+            import data.BackendAndFrontendJson._
+            JsonSchemaChecker[data.Company](r.company, "rosm-response")
+            Ok(Json.toJson(r))
+          case Some(r)                                                                                     =>
+            logger.warn(
+              s"Record found for UTR $utr, but postcode is '${r.company.address.postalCode}' " +
+                s", not user supplied '$postcode'."
+            )
+            NotFound
+          case _                                                                                           =>
+            logger.warn(s"No record found for UTR $utr")
+            NotFound
+        }
 
     }
   }

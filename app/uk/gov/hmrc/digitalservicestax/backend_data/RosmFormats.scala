@@ -21,7 +21,7 @@ import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 
 object RosmFormats {
 
-  implicit val rosmWithoutIDResponseFormat: Format[RosmWithoutIDResponse] = Json.format[RosmWithoutIDResponse]
+  implicit val rosmWithoutIDResponseFormat: Format[RosmWithoutIDResponse]                = Json.format[RosmWithoutIDResponse]
   implicit val rosmRegisterWithoutIDRequestFormat: OFormat[RosmRegisterWithoutIDRequest] =
     Json.format[RosmRegisterWithoutIDRequest]
 

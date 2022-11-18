@@ -35,28 +35,30 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import java.time.LocalDate
 import scala.collection.immutable.ListMap
 
-class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with EitherValues with OptionValues {
+class JsonSpec
+    extends AnyFlatSpec
+    with Matchers
+    with ScalaCheckDrivenPropertyChecks
+    with EitherValues
+    with OptionValues {
 
-  def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
+  def testJsonRoundtrip[T: Arbitrary: Format]: Assertion =
     forAll { sample: T =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
-      parsed.isSuccess shouldEqual true
+      parsed.isSuccess   shouldEqual true
       parsed.asOpt.value shouldEqual sample
     }
-  }
 
-
-  def testJsonRoundtrip[T : Format](gen: Gen[T]): Assertion = {
+  def testJsonRoundtrip[T: Format](gen: Gen[T]): Assertion =
     forAll(gen) { sample: T =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
-      parsed.isSuccess shouldEqual true
+      parsed.isSuccess   shouldEqual true
       parsed.asOpt.value shouldEqual sample
     }
-  }
 
   it should "serialize and de-serialise a Postcode instance" in {
     testJsonRoundtrip[Postcode]
@@ -64,38 +66,42 @@ class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyCh
 
   it should "purge none and empty values from a map of js values" in {
     val generated = JsString(gen[ShortString].value)
-    val source = JsObject(Seq(
-      "object_example" -> JsObject(Seq("bla" -> generated)),
-      "null-example" -> JsNull,
-      "empty-string-example" -> JsString(""),
-      "good-example" -> JsString("good")
-    ))
+    val source    = JsObject(
+      Seq(
+        "object_example"       -> JsObject(Seq("bla" -> generated)),
+        "null-example"         -> JsNull,
+        "empty-string-example" -> JsString(""),
+        "good-example"         -> JsString("good")
+      )
+    )
 
     val res = RosmRegisterWithoutIDRequest.purgeNullAndEmpty(source)
-    res.value should contain theSameElementsAs (JsObject(Seq(
-      "object_example" -> JsObject(Seq("bla" -> generated)),
-      "good-example" -> JsString("good")
-    )).value)
+    res.value should contain theSameElementsAs (JsObject(
+      Seq(
+        "object_example" -> JsObject(Seq("bla" -> generated)),
+        "good-example"   -> JsString("good")
+      )
+    ).value)
   }
 
   it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
     val parsed = Json.parse(s""" "124124125125125" """).validate[Postcode]
     parsed.isSuccess shouldEqual false
-    parsed shouldEqual JsError(s"Expected a valid postcode, got 124124125125125 instead")
+    parsed           shouldEqual JsError(s"Expected a valid postcode, got 124124125125125 instead")
   }
-
 
   it should "fail to validate a postcode from JSON if the source input is in incorrect format" in {
     val generated = gen[Int]
-    val parsed = Json.parse(s"""$generated""").validate[Postcode]
+    val parsed    = Json.parse(s"""$generated""").validate[Postcode]
     parsed.isSuccess shouldEqual false
-    parsed shouldEqual JsError(JsPath -> JsonValidationError(Seq(s"""Expected a valid postcode, got $generated instead""")))
+    parsed           shouldEqual JsError(
+      JsPath -> JsonValidationError(Seq(s"""Expected a valid postcode, got $generated instead"""))
+    )
   }
 
   it should "serialize and de-serialise a PhoneNumber instance" in {
     testJsonRoundtrip[PhoneNumber]
   }
-
 
   it should "serialize and de-serialise a NonEmptyString instance" in {
     testJsonRoundtrip[NonEmptyString]
@@ -139,7 +145,6 @@ class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyCh
 
   it should "fail to validate a percentage from a non numeric value" in {
     forAll(Sample.generator[ShortString]) { sample =>
-
       val parsed = Json.parse(s""" "${sample.value}" """).validate[Percent]
 
       parsed shouldEqual JsError(
@@ -152,9 +157,9 @@ class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyCh
     val arbRegWithParent: Arbitrary[Registration] = TestInstances.subGenWithParent
     forAll { (reg: Registration) =>
       val regJson: JsValue = Json.toJson(reg)(EeittInterface.registrationWriter)
-      val params = (regJson \ "registrationDetails" \ "regimeSpecificDetails").as[JsArray].value.toList
-      val param: JsValue = params.filter(js => (js \ "paramName").get.as[String] == "A_DST_GLOBAL_NAME").head
-      val name = (param \ "paramValue").get.as[String]
+      val params           = (regJson \ "registrationDetails" \ "regimeSpecificDetails").as[JsArray].value.toList
+      val param: JsValue   = params.filter(js => (js \ "paramName").get.as[String] == "A_DST_GLOBAL_NAME").head
+      val name             = (param \ "paramValue").get.as[String]
       name shouldEqual reg.ultimateParent.get.name
     }(implicitly, arbRegWithParent, implicitly, implicitly, implicitly, implicitly)
   }
@@ -180,9 +185,9 @@ class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyCh
   }
 
   it should "fail to parse an invalid LocalDate" in {
-    val source = JsString(gen[ShortString].value)
+    val source        = JsString(gen[ShortString].value)
     val expectionSpec = implicitly[Format[LocalDate]].reads(source)
-    val lastError = JsError(expectionSpec.asEither.left.value)
+    val lastError     = JsError(expectionSpec.asEither.left.value)
 
     val jsError = JsError(
       List(
@@ -200,7 +205,6 @@ class JsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyCh
   it should "serialize and de-serialise a Map[Activity, Percent]" in {
     testJsonRoundtrip[Map[Activity, Percent]](genActivityPercentMap)
   }
-
 
   it should "serialize and de-serialise a CompanyRegFormat" in {
     testJsonRoundtrip[CompanyRegWrapper]

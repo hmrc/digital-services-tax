@@ -25,7 +25,11 @@ import unit.uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFutures with BeforeAndAfterEach with ScalaCheckDrivenPropertyChecks {
+class VolatilePendingCallbacksSpec
+    extends FakeApplicationSetup
+    with ScalaFutures
+    with BeforeAndAfterEach
+    with ScalaCheckDrivenPropertyChecks {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
@@ -35,7 +39,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFuture
   "it should retrieve a pending callback id using the apply object" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.update(formNo, id)
+        _     <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks(formNo)
       } yield dbReg
 
@@ -48,7 +52,7 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFuture
   "it should retrieve a pending callback id using the get method" in {
     forAll { (formNo: FormBundleNumber, id: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.update(formNo, id)
+        _     <- volatile.pendingCallbacks.update(formNo, id)
         dbReg <- volatile.pendingCallbacks.get(formNo)
       } yield dbReg
 
@@ -61,9 +65,9 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFuture
   "it should confirm a registraion using the pending callbacks process" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- volatile.registrations.update(id, reg)
-        _ <- volatile.pendingCallbacks.update(formNo, id)
-        _ <- volatile.pendingCallbacks.process(formNo, reg.registrationNumber.value)
+        _          <- volatile.registrations.update(id, reg)
+        _          <- volatile.pendingCallbacks.update(formNo, id)
+        _          <- volatile.pendingCallbacks.process(formNo, reg.registrationNumber.value)
         formBundle <- volatile.pendingCallbacks.get(formNo)
       } yield formBundle
 
@@ -76,12 +80,11 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFuture
   "it should update a pending callback ID by form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.update(formNo, id)
-        dbReg <- volatile.pendingCallbacks.get(formNo)
-        _ <- volatile.pendingCallbacks.update(formNo, newId)
+        _          <- volatile.pendingCallbacks.update(formNo, id)
+        dbReg      <- volatile.pendingCallbacks.get(formNo)
+        _          <- volatile.pendingCallbacks.update(formNo, newId)
         postUpdate <- volatile.pendingCallbacks.get(formNo)
       } yield dbReg -> postUpdate
-
 
       whenReady(chain) { case (dbRes, postUpdate) =>
         dbRes.value mustEqual id
@@ -93,12 +96,11 @@ class VolatilePendingCallbacksSpec extends FakeApplicationSetup with ScalaFuture
   "it should delete a pending callback by its form number" in {
     forAll { (formNo: FormBundleNumber, id: InternalId, newId: InternalId) =>
       val chain = for {
-        _ <- volatile.pendingCallbacks.update(formNo, id)
-        dbReg <- volatile.pendingCallbacks.get(formNo)
-        _ <- volatile.pendingCallbacks.delete(formNo)
+        _          <- volatile.pendingCallbacks.update(formNo, id)
+        dbReg      <- volatile.pendingCallbacks.get(formNo)
+        _          <- volatile.pendingCallbacks.delete(formNo)
         postUpdate <- volatile.pendingCallbacks.get(formNo)
       } yield dbReg -> postUpdate
-
 
       whenReady(chain) { case (dbRes, postUpdate) =>
         dbRes.value mustEqual id

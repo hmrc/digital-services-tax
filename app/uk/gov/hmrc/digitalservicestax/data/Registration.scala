@@ -19,7 +19,7 @@ package data
 
 import java.time.LocalDate
 
-case class Registration (
+case class Registration(
   companyReg: CompanyRegWrapper,
   alternativeContact: Option[Address],
   ultimateParent: Option[Company],

@@ -30,35 +30,31 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
-  def testJsonRoundtrip[T : Arbitrary : Format]: Assertion = {
+  def testJsonRoundtrip[T: Arbitrary: Format]: Assertion =
     forAll { sample: T =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
-      parsed.isSuccess shouldEqual true
+      parsed.isSuccess   shouldEqual true
       parsed.asOpt.value shouldEqual sample
     }
-  }
 
-
-  def testJsonRoundtrip[T : Format](gen: Gen[T]): Assertion = {
+  def testJsonRoundtrip[T: Format](gen: Gen[T]): Assertion =
     forAll(gen) { sample: T =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
-      parsed.isSuccess shouldEqual true
+      parsed.isSuccess   shouldEqual true
       parsed.asOpt.value shouldEqual sample
     }
-  }
 
   it should "fail to parse a non JSObject" in {
     val json = Json.parse("null");
-    RosmJsonReader.reads(json) shouldBe a [JsError]
+    RosmJsonReader.reads(json) shouldBe a[JsError]
   }
 
   it should "fail to parse an empty organisation" in {
-    val json: JsValue = Json.parse(
-      """|{
+    val json: JsValue = Json.parse("""|{
          |  "safeId": "XE0001234567890",
          |  "sapNumber": "1234567890",
          |  "agentReferenceNumber": "AARN1234567",
@@ -89,8 +85,7 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
   }
 
   it should "parse a ForeignAddress from a JSON object if the country code in the source JSON is not GB" in {
-    val json: JsValue = Json.parse(
-    """|{
+    val json: JsValue = Json.parse("""|{
        |  "safeId": "XE0001234567890",
        |  "sapNumber": "1234567890",
        |  "agentReferenceNumber": "AARN1234567",
@@ -138,8 +133,7 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
     )
   }
 
-  val json: JsValue = Json.parse(
-    """|{
+  val json: JsValue = Json.parse("""|{
        |  "safeId": "XE0001234567890",
        |  "sapNumber": "1234567890",
        |  "agentReferenceNumber": "AARN1234567",
@@ -170,25 +164,27 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
        |""".stripMargin)
 
   "a rosm response" should "be readable" in {
-    RosmJsonReader.reads(json) should be (JsSuccess(
-      CompanyRegWrapper(
-        Company(
-          CompanyName("Trotters Trading"),
-          UkAddress(
-            AddressLine("100 SuttonStreet"),
-            AddressLine("Wokingham").some,
-            AddressLine("Surrey").some,
-            AddressLine("London").some,
-            Postcode("DH14 1EJ")
-          )
-        ),
-        None,
-        Some(SafeId("XE0001234567890"))
+    RosmJsonReader.reads(json) should be(
+      JsSuccess(
+        CompanyRegWrapper(
+          Company(
+            CompanyName("Trotters Trading"),
+            UkAddress(
+              AddressLine("100 SuttonStreet"),
+              AddressLine("Wokingham").some,
+              AddressLine("Surrey").some,
+              AddressLine("London").some,
+              Postcode("DH14 1EJ")
+            )
+          ),
+          None,
+          Some(SafeId("XE0001234567890"))
+        )
       )
-    ))
+    )
   }
 
-  it should "serialize and deserialize a Rosm object to and from JSON" in {
+  it                should "serialize and deserialize a Rosm object to and from JSON" in {
     val parsed = RosmJsonReader.reads(json)
     parsed.isSuccess shouldEqual true
 

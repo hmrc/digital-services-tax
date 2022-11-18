@@ -34,22 +34,35 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import java.time.LocalDate
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ControllerBaseSpec  extends PlaySpec with MockitoSugar with Results {
+trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
 
-   val mockAuthConnector: AuthConnector = mock[AuthConnector]
-   val mockRunModeConfiguration: Configuration = mock[Configuration]
-   val mockAppConfig: AppConfig = mock[AppConfig]
-   val mockPersistence: MongoPersistence = mock[MongoPersistence]
-   val mockConnector: ReturnConnector = mock[connectors.ReturnConnector]
-   val mockAuditing: AuditConnector = mock[AuditConnector]
-   val mockCompanyReg: CompanyRegWrapper = mock[CompanyRegWrapper]
-   val mockContact: ContactDetails = mock[ContactDetails]
-   val mockMcc: MessagesControllerComponents = mock[MessagesControllerComponents]
-   val mockEnrolments: Enrolments = mock[Enrolments]
+  val mockAuthConnector: AuthConnector        = mock[AuthConnector]
+  val mockRunModeConfiguration: Configuration = mock[Configuration]
+  val mockAppConfig: AppConfig                = mock[AppConfig]
+  val mockPersistence: MongoPersistence       = mock[MongoPersistence]
+  val mockConnector: ReturnConnector          = mock[connectors.ReturnConnector]
+  val mockAuditing: AuditConnector            = mock[AuditConnector]
+  val mockCompanyReg: CompanyRegWrapper       = mock[CompanyRegWrapper]
+  val mockContact: ContactDetails             = mock[ContactDetails]
+  val mockMcc: MessagesControllerComponents   = mock[MessagesControllerComponents]
+  val mockEnrolments: Enrolments              = mock[Enrolments]
 
-  val regObj: Registration = Registration(mockCompanyReg, None, None, mockContact, LocalDate.now().minusWeeks(1), LocalDate.now().plusMonths(3), Some(DSTRegNumber("ASDST1010101010")))
+  val regObj: Registration = Registration(
+    mockCompanyReg,
+    None,
+    None,
+    mockContact,
+    LocalDate.now().minusWeeks(1),
+    LocalDate.now().plusMonths(3),
+    Some(DSTRegNumber("ASDST1010101010"))
+  )
 
-  def loginReq[A]: LoggedInRequest[A] = new LoggedInRequest[A](InternalId("Int-aaff66"), mockEnrolments, "", FakeRequest().withBody(AnyContent().asInstanceOf[A]))
+  def loginReq[A]: LoggedInRequest[A] = new LoggedInRequest[A](
+    InternalId("Int-aaff66"),
+    mockEnrolments,
+    "",
+    FakeRequest().withBody(AnyContent().asInstanceOf[A])
+  )
 
   val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
@@ -64,6 +77,5 @@ trait ControllerBaseSpec  extends PlaySpec with MockitoSugar with Results {
   }
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-
 
 }

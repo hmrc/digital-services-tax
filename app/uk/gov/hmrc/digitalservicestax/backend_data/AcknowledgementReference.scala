@@ -20,5 +20,5 @@ import java.time.Instant
 
 object AcknowledgementReference {
   def generate(postcode: String): String =
-    postcode.map(_.toInt).mkString + Instant.now.toEpochMilli.toString.slice(0,32)
+    postcode.map(_.toInt).mkString + Instant.now.toEpochMilli.toString.slice(0, 32)
 }

@@ -31,31 +31,31 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Registered @Inject()(
+class Registered @Inject() (
   persistence: MongoPersistence
-)(implicit executionContext: ExecutionContext) extends RegisteredOrPending(persistence) {
+)(implicit executionContext: ExecutionContext)
+    extends RegisteredOrPending(persistence) {
   override def refine[A](
     request: LoggedInRequest[A]
   ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
     case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
       Left(Forbidden("Registration is not confirmed"))
-    case x => x
+    case x                                                                  => x
   }
 }
 
-class RegisteredOrPending @Inject()(
+class RegisteredOrPending @Inject() (
   persistence: MongoPersistence
-)(implicit val executionContext: ExecutionContext) extends
-    ActionRefiner[LoggedInRequest, RegisteredRequest]
-{
+)(implicit val executionContext: ExecutionContext)
+    extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
 
   def refine[A](
     request: LoggedInRequest[A]
-  ): Future[Either[Result,RegisteredRequest[A]]] =
+  ): Future[Either[Result, RegisteredRequest[A]]] =
     persistence.registrations.get(request.internalId).map {
       case Some(reg) if reg.registrationNumber.isDefined =>
         Right(RegisteredRequest(reg, request))
-      case _ =>
+      case _                                             =>
         Left(Forbidden("User is not registered"))
     }
 }
@@ -65,11 +65,13 @@ case class RegisteredRequest[A](
   authRequest: LoggedInRequest[A]
 ) extends WrappedRequest(authRequest.request)
 
-class LoggedInAction @Inject()(
+class LoggedInAction @Inject() (
   mcc: MessagesControllerComponents,
   val authConnector: AuthConnector
 )(implicit val executionContext: ExecutionContext)
-  extends ActionBuilder[LoggedInRequest, AnyContent] with ActionRefiner[Request, LoggedInRequest] with AuthorisedFunctions {
+    extends ActionBuilder[LoggedInRequest, AnyContent]
+    with ActionRefiner[Request, LoggedInRequest]
+    with AuthorisedFunctions {
 
   override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
     implicit val hc: HeaderCarrier =
@@ -79,21 +81,19 @@ class LoggedInAction @Inject()(
 
     val retrieval = allEnrolments and internalId and credentials
 
-    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) {
-      case enrolments ~ id ~ creds =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds =>
+      val providerId = creds.map(_.providerId)
 
-        val providerId = creds.map(_.providerId)
-
-        Future.successful(
-          (id.map(InternalId.of), providerId) match {
-            case (Some(Some(internalId)), Some(provider)) =>
-              Right(LoggedInRequest(internalId, enrolments, provider, request))
-            case (_, None) => Left(Forbidden("No provider ID"))
-            case (Some(None),_) => Left(Forbidden("Invalid Internal ID"))
-            case (None, _) => Left(Forbidden("No internal ID"))
-          }
-        )
-    } 
+      Future.successful(
+        (id.map(InternalId.of), providerId) match {
+          case (Some(Some(internalId)), Some(provider)) =>
+            Right(LoggedInRequest(internalId, enrolments, provider, request))
+          case (_, None)                                => Left(Forbidden("No provider ID"))
+          case (Some(None), _)                          => Left(Forbidden("Invalid Internal ID"))
+          case (None, _)                                => Left(Forbidden("No internal ID"))
+        }
+      )
+    }
   }
 
   override def parser: BodyParser[AnyContent] = mcc.parsers.anyContent
