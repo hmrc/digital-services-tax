@@ -276,7 +276,7 @@ object TestInstances {
     (
       Gen.alphaNumChar,
       arbitrary[String]
-    ).mapN((num, str) => s"$num$str").map(_.take(maxLen)).map { NonEmptyString.apply }
+    ).mapN((num, str) => s"$num$str").map(_.take(maxLen)).map(NonEmptyString.apply)
 
   implicit def arbNEString: Arbitrary[NonEmptyString]           = Arbitrary(neString())
   implicit def arbPostcode: Arbitrary[Postcode]                 = Arbitrary(Postcode.gen)
