@@ -79,7 +79,7 @@ class ReturnConnector @Inject() (val http: HttpClient, val mode: Mode, val appCo
     )
 
     JsonSchemaChecker(request, "return-submission")(writes)
-    println(Json.toJson(request)(writes).toString())
+    logger.warn(s"${Json.toJson(request)(writes).toString()}")
 
     val url    = s"${appConfig.desURL}/cross-regime/return/DST/zdst/$dstRegNo"
     import uk.gov.hmrc.http.HttpReadsInstances._
