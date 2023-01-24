@@ -37,11 +37,7 @@ class Registered @Inject() (
     extends RegisteredOrPending(persistence) {
   override def refine[A](
     request: LoggedInRequest[A]
-  ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request).map {
-    case Right(RegisteredRequest(reg, _)) if reg.registrationNumber.isEmpty =>
-      Left(Forbidden("Registration is not confirmed"))
-    case x                                                                  => x
-  }
+  ): Future[Either[Result, RegisteredRequest[A]]] = super.refine(request)
 }
 
 class RegisteredOrPending @Inject() (
@@ -83,7 +79,6 @@ class LoggedInAction @Inject() (
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds =>
       val providerId = creds.map(_.providerId)
-
       Future.successful(
         (id.map(InternalId.of), providerId) match {
           case (Some(Some(internalId)), Some(provider)) =>
