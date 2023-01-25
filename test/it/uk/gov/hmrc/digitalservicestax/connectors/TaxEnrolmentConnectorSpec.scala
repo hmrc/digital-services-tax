@@ -18,15 +18,15 @@ package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.samplers._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.Application
 import play.api.http.Status
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.http.HeaderCarrier
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 
@@ -40,7 +40,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       extends TaxEnrolmentConnector(
         httpClient,
         environment.mode,
-        appConfig
+        appConfig,
+        testConnector
       )
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
