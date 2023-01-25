@@ -31,7 +31,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.digitalservicestax.actions._
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, NonEmptyString, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
 import unit.uk.gov.hmrc.digitalservicestax.util.RetrievalOps._
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}

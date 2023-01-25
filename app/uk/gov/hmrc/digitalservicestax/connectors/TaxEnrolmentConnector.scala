@@ -20,7 +20,7 @@ import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
-import uk.gov.hmrc.digitalservicestax.test.TestConnector
+import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HttpClient, _}
 
 import javax.inject.{Inject, Singleton}
@@ -30,8 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class TaxEnrolmentConnector @Inject() (
   val http: HttpClient,
   val mode: Mode,
-  val appConfig: AppConfig,
-  testConnector: TestConnector
+  val appConfig: AppConfig
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
@@ -41,39 +40,25 @@ class TaxEnrolmentConnector @Inject() (
     ec: ExecutionContext
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-    if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        Result =>
-          logger.debug(
-            s"Tax Enrolments response is $Result"
-          )
-          Result
-      } recover {
-        case e: UnauthorizedException => handleError(e, formBundleNumber)
-        case e: BadRequestException   => handleError(e, formBundleNumber)
+        case responseMessage if is2xx(responseMessage.status) =>
+          responseMessage
+        case responseMessage =>
+          logger.error(s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}")
+          responseMessage
       }
-    } else Future.successful[HttpResponse](HttpResponse(418, ""))
   }
 
   def getSubscription(
     subscriptionId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
-    if (appConfig.taxEnrolmentsEnabled)
       http.GET[TaxEnrolmentsSubscription](
         s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
       )
-    else {
-      testConnector.getSubscription(subscriptionId)
-    }
   }
 
-  private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
-    logger.error(s"Tax enrolment returned $e for ${subscribeUrl(formBundleNumber)}")
-    HttpResponse(status = e.responseCode, json = Json.toJson(e.message), headers = Map.empty)
-  }
-
-  def subscribeUrl(subscriptionId: String) =
+  private def subscribeUrl(subscriptionId: String) =
     s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId/subscriber"
 
   private def requestBody(safeId: String, formBundleNumber: String): JsObject =

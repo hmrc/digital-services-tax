@@ -40,6 +40,5 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   val taxEnrolmentsCallbackUrl: String = servicesConfig.getConfString("tax-enrolments.callback", "")
   val taxEnrolmentsServiceName: String = servicesConfig.getConfString("tax-enrolments.serviceName", "")
-  val taxEnrolmentsEnabled: Boolean    = servicesConfig.getConfBool("tax-enrolments.enabled", true)
   val taxEnrolmentsUrl: String         = servicesConfig.baseUrl("tax-enrolments")
 }
