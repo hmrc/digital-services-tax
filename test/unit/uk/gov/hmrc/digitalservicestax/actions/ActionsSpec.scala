@@ -60,10 +60,10 @@ class ActionsSpec
     "execute an action against a registered user using LoggedInRequest" in {
       val action = new Registered(mongoPersistence)
 
-      val internal = arbitrary[InternalId].sample.value
+      val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
-      val reg = arbitrary[Registration].sample.value
+      val reg        = arbitrary[Registration].sample.value
 
       val req = LoggedInRequest(
         internal,
@@ -73,15 +73,15 @@ class ActionsSpec
       )
 
       val chain = for {
-        _ <- mongoPersistence.registrations.update(internal, reg)
+        _     <- mongoPersistence.registrations.update(internal, reg)
         block <- action.invokeBlock(
-          req,
-          { req: RegisteredRequest[_] =>
-            Future.successful(
-              Results.Ok(req.registration.registrationNumber.value)
-            )
-          }
-        )
+                   req,
+                   { req: RegisteredRequest[_] =>
+                     Future.successful(
+                       Results.Ok(req.registration.registrationNumber.value)
+                     )
+                   }
+                 )
       } yield block
 
       whenReady(chain) { resp =>
@@ -92,10 +92,10 @@ class ActionsSpec
     "return forbidden if there is no DST number on the registration" in {
       val action = new Registered(mongoPersistence)
 
-      val internal = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg = arbitrary[Registration].sample.value
+      val internal    = arbitrary[InternalId].sample.value
+      val enrolments  = arbitrary[Enrolments].sample.value
+      val providerId  = arbitrary[NonEmptyString].sample.value
+      val reg         = arbitrary[Registration].sample.value
       val regWithNoId = reg.copy(registrationNumber = None)
 
       val req = LoggedInRequest(
@@ -106,15 +106,15 @@ class ActionsSpec
       )
 
       val chain = for {
-        _ <- mongoPersistence.registrations.update(internal, regWithNoId)
+        _     <- mongoPersistence.registrations.update(internal, regWithNoId)
         block <- action.invokeBlock(
-          req,
-          { req: RegisteredRequest[_] =>
-            Future.successful(
-              Results.Ok(req.registration.registrationNumber.value)
-            )
-          }
-        )
+                   req,
+                   { req: RegisteredRequest[_] =>
+                     Future.successful(
+                       Results.Ok(req.registration.registrationNumber.value)
+                     )
+                   }
+                 )
       } yield block
 
       whenReady(chain) { resp =>
@@ -122,10 +122,10 @@ class ActionsSpec
       }
     }
 
-  "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
-    val action = new Registered(mongoPersistence)
+    "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
+      val action = new Registered(mongoPersistence)
 
-      val internal = arbitrary[InternalId].sample.value
+      val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
 
@@ -141,13 +141,13 @@ class ActionsSpec
       }
     }
 
-  "should execute an action against a registered user using Registered or pending request" in {
-    val action = new RegisteredOrPending(mongoPersistence)
+    "should execute an action against a registered user using Registered or pending request" in {
+      val action = new RegisteredOrPending(mongoPersistence)
 
-      val internal = arbitrary[InternalId].sample.value
+      val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
-      val reg = arbitrary[Registration].sample.value
+      val reg        = arbitrary[Registration].sample.value
 
       val loggedInReq = LoggedInRequest(
         internal,
@@ -157,15 +157,15 @@ class ActionsSpec
       )
 
       val chain = for {
-        _ <- mongoPersistence.registrations.update(internal, reg)
+        _     <- mongoPersistence.registrations.update(internal, reg)
         block <- action.invokeBlock(
-          loggedInReq,
-          { req: RegisteredRequest[_] =>
-            Future.successful(
-              Results.Ok(req.registration.registrationNumber.value)
-            )
-          }
-        )
+                   loggedInReq,
+                   { req: RegisteredRequest[_] =>
+                     Future.successful(
+                       Results.Ok(req.registration.registrationNumber.value)
+                     )
+                   }
+                 )
       } yield block
 
       whenReady(chain) { resp =>
@@ -180,51 +180,60 @@ class ActionsSpec
 
     "return status FORBIDDEN when internalId is `None`" in {
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
-      val retrieval: AuthRetrievals = Enrolments(Set.empty) ~ None ~ Some(Credentials("providerId", "providerType"))
-      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(retrieval)
+      val retrieval: AuthRetrievals        = Enrolments(Set.empty) ~ None ~ Some(Credentials("providerId", "providerType"))
+      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
+        retrieval
+      )
 
       val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
 
       val controller = new Harness(action)
-      val result = controller.onPageLoad()(FakeRequest("", ""))
+      val result     = controller.onPageLoad()(FakeRequest("", ""))
       status(result) mustBe FORBIDDEN
     }
 
     "return status FORBIDDEN when credential is 'None'" in {
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
-      val retrieval: AuthRetrievals = Enrolments(Set.empty) ~ Some("Id") ~ None
-      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(retrieval)
+      val retrieval: AuthRetrievals        = Enrolments(Set.empty) ~ Some("Id") ~ None
+      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
+        retrieval
+      )
 
       val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
 
       val controller = new Harness(action)
-      val result = controller.onPageLoad()(FakeRequest("", ""))
+      val result     = controller.onPageLoad()(FakeRequest("", ""))
       status(result) mustBe FORBIDDEN
     }
 
     "return status FORBIDDEN when enrolment is empty" in {
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
-      val retrieval: AuthRetrievals = Enrolments(Set.empty) ~ Some("Id") ~ Some(Credentials("providerId", "providerType"))
-      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(retrieval)
+      val retrieval: AuthRetrievals        =
+        Enrolments(Set.empty) ~ Some("Id") ~ Some(Credentials("providerId", "providerType"))
+      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
+        retrieval
+      )
 
       val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
 
       val controller = new Harness(action)
-      val result = controller.onPageLoad()(FakeRequest("", ""))
+      val result     = controller.onPageLoad()(FakeRequest("", ""))
       status(result) mustBe FORBIDDEN
     }
 
-
     "return status OK for valid input" in {
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
-      val enrolment: Enrolment = Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567")), "Activated")
-      val retrieval: AuthRetrievals = Enrolments(Set(enrolment)) ~ Some("Int-7e341-48319ddb53") ~ Some(Credentials("providerId", "providerType"))
-      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(retrieval)
+      val enrolment: Enrolment             = Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567")), "Activated")
+      val retrieval: AuthRetrievals        =
+        Enrolments(Set(enrolment)) ~ Some("Int-7e341-48319ddb53") ~ Some(Credentials("providerId", "providerType"))
+      when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
+        retrieval
+      )
 
       val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
 
       val controller = new Harness(action)
-      val result = controller.onPageLoad()(FakeRequest("", ""))
+      val result     = controller.onPageLoad()(FakeRequest("", ""))
       status(result) mustBe OK
     }
 

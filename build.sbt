@@ -20,10 +20,10 @@ lazy val scoverageSettings = {
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .settings(
-    majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test,
-    scalacOptions                     += "-Wconf:src=routes/.*:s",
-    scalacOptions                     += "-Wconf:cat=unused-imports&src=html/.*:s",
+    majorVersion := 0,
+    libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    scalacOptions += "-Wconf:src=routes/.*:s",
+    scalacOptions += "-Wconf:cat=unused-imports&src=html/.*:s"
   )
   .settings(
     // To resolve a bug with version 2.x.x of the scoverage plugin - https://github.com/sbt/sbt/issues/6997
@@ -33,7 +33,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings ++ unitTestSettings)
-  .settings(resolvers ++= Seq(Resolver.jcenterRepo,  Resolver.bintrayRepo("wolfendale", "maven")))
+  .settings(resolvers ++= Seq(Resolver.jcenterRepo, Resolver.bintrayRepo("wolfendale", "maven")))
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
 
 // If you want integration tests in the test package you need to extend Test config ...

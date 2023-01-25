@@ -40,22 +40,24 @@ class TaxEnrolmentConnector @Inject() (
     ec: ExecutionContext
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-      http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        case responseMessage if is2xx(responseMessage.status) =>
-          responseMessage
-        case responseMessage =>
-          logger.error(s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}")
-          responseMessage
-      }
+    http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
+      case responseMessage if is2xx(responseMessage.status) =>
+        responseMessage
+      case responseMessage                                  =>
+        logger.error(
+          s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}"
+        )
+        responseMessage
+    }
   }
 
   def getSubscription(
     subscriptionId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
-      http.GET[TaxEnrolmentsSubscription](
-        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
-      )
+    http.GET[TaxEnrolmentsSubscription](
+      s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
+    )
   }
 
   private def subscribeUrl(subscriptionId: String) =
