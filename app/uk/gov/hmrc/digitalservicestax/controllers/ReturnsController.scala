@@ -17,13 +17,10 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
-import java.time.LocalDate
-
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import play.api.{Configuration, Logger}
+import play.api.{Configuration, Logging}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
@@ -32,6 +29,8 @@ import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.LocalDate
+import javax.inject.{Inject, Singleton}
 import scala.concurrent._
 
 @Singleton()
@@ -45,9 +44,8 @@ class ReturnsController @Inject() (
   registered: Registered,
   loggedIn: LoggedInAction
 ) extends BackendController(cc)
-    with AuthorisedFunctions {
-
-  val logger = Logger(this.getClass())
+    with AuthorisedFunctions
+    with Logging {
 
   implicit val ec: ExecutionContext = cc.executionContext
 

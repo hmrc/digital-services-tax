@@ -65,6 +65,11 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
     }
   }
 
+  "should return DSTRegNumber as None when identifiers is 'None'" in {
+    val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "Id", "state", None)
+    enrolment.getDSTNumber mustBe None
+  }
+
   "create a new subscription for a tax enrolment" in {
     val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value

@@ -21,6 +21,7 @@ import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
+import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HttpClient, _}
 
 import javax.inject.{Inject, Singleton}
@@ -43,11 +44,13 @@ class TaxEnrolmentConnector @Inject() (
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        Result =>
-          logger.debug(
-            s"Tax Enrolments response is $Result"
+        case responseMessage if is2xx(responseMessage.status) =>
+          responseMessage
+        case responseMessage                                  =>
+          logger.error(
+            s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}"
           )
-          Result
+          responseMessage
       } recover {
         case e: UnauthorizedException => handleError(e, formBundleNumber)
         case e: BadRequestException   => handleError(e, formBundleNumber)
