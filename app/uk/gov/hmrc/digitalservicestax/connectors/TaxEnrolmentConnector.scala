@@ -71,6 +71,15 @@ class TaxEnrolmentConnector @Inject() (
     }
   }
 
+  def getSubscriptionByGroupId(
+    groupId: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+    import uk.gov.hmrc.http.HttpReads.Implicits._
+    http.GET[TaxEnrolmentsSubscription](
+      s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
+    )
+  }
+
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
     logger.error(s"Tax enrolment returned $e for ${subscribeUrl(formBundleNumber)}")
     HttpResponse(status = e.responseCode, json = Json.toJson(e.message), headers = Map.empty)
@@ -90,7 +99,6 @@ class TaxEnrolmentConnector @Inject() (
 
 case class TaxEnrolmentsSubscription(
   identifiers: Option[Seq[Identifier]],
-  etmpId: String,
   state: String,
   errorResponse: Option[String]
 ) {
@@ -99,6 +107,12 @@ case class TaxEnrolmentsSubscription(
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
 
+  def getDSTNumberWithSucceededState: Option[DSTRegNumber] =
+    if (state.equalsIgnoreCase("SUCCEEDED"))
+      identifiers.getOrElse(Nil).collectFirst {
+        case Identifier(key, value) if key.equalsIgnoreCase("DSTRefNumber") => DSTRegNumber(value)
+      }
+    else None
 }
 
 object TaxEnrolmentsSubscription {

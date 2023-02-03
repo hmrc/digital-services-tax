@@ -37,7 +37,7 @@ class TestConnector @Inject() (
     subscriptionId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
     http.GET[DstRegNoWrapper](s"${appConfig.desURL}/get-subscription/$subscriptionId").map { x =>
-      TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", "FOOBAR", None)
+      TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", None)
     }
 
 }

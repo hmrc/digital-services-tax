@@ -45,7 +45,11 @@ Returns a list of all returns held on ETMP.
 ###POST /tax-enrolment-callback/:subscriptionId
 
 Handles the callback from tax enrolments when the registration is activated.    
-   
+
+###GET /tax-enrolment/groupId/:groupId
+
+Returns the Dst reference number if exists for the group/organisation.
+
 See [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidissuer) and [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidsubscriber) for details
 
 ## Running from source
