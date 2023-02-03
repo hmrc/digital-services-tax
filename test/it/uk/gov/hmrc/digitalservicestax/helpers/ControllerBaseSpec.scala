@@ -16,6 +16,8 @@
 
 package it.uk.gov.hmrc.digitalservicestax.helpers
 
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.doReturn
 import org.scalatestplus.mockito._
 import org.scalatestplus.play._
 import play.api.Configuration
@@ -26,7 +28,7 @@ import uk.gov.hmrc.auth.core.{AuthConnector, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, Registered, RegisteredRequest}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
-import uk.gov.hmrc.digitalservicestax.connectors.ReturnConnector
+import uk.gov.hmrc.digitalservicestax.connectors.{ReturnConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -36,16 +38,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
 
-  val mockAuthConnector: AuthConnector        = mock[AuthConnector]
-  val mockRunModeConfiguration: Configuration = mock[Configuration]
-  val mockAppConfig: AppConfig                = mock[AppConfig]
-  val mockPersistence: MongoPersistence       = mock[MongoPersistence]
-  val mockConnector: ReturnConnector          = mock[connectors.ReturnConnector]
-  val mockAuditing: AuditConnector            = mock[AuditConnector]
-  val mockCompanyReg: CompanyRegWrapper       = mock[CompanyRegWrapper]
-  val mockContact: ContactDetails             = mock[ContactDetails]
-  val mockMcc: MessagesControllerComponents   = mock[MessagesControllerComponents]
-  val mockEnrolments: Enrolments              = mock[Enrolments]
+  val mockAuthConnector: AuthConnector                  = mock[AuthConnector]
+  val mockRunModeConfiguration: Configuration           = mock[Configuration]
+  val mockAppConfig: AppConfig                          = mock[AppConfig]
+  val mockPersistence: MongoPersistence                 = mock[MongoPersistence]
+  val mockConnector: ReturnConnector                    = mock[connectors.ReturnConnector]
+  val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
+  val mockAuditing: AuditConnector                      = mock[AuditConnector]
+  val mockCompanyReg: CompanyRegWrapper                 = mock[CompanyRegWrapper]
+  val mockContact: ContactDetails                       = mock[ContactDetails]
+  val mockMcc: MessagesControllerComponents             = mock[MessagesControllerComponents]
+  val mockEnrolments: Enrolments                        = mock[Enrolments]
 
   val regObj: Registration = Registration(
     mockCompanyReg,
@@ -77,5 +80,10 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
   }
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+  def mockAuth(response: Future[Unit] = Future.successful()): Future[Nothing] = {
+    doReturn(response, Nil: _*).when(mockAuthConnector)
+      .authorise(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any())
+  }
 
 }

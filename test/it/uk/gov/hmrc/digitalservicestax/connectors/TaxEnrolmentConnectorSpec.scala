@@ -66,7 +66,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "should return DSTRegNumber as None when identifiers is 'None'" in {
-    val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "Id", "state", None)
+    val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
     enrolment.getDSTNumber mustBe None
   }
 
@@ -89,6 +89,49 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
     }
   }
 
+  "getSubscriptionByGroupId" should {
+    "retrieve the latest DST period for a groupId" in {
+      val groupId = gen[ShortString].value
+      val enrolment = gen[TaxEnrolmentsSubscription]
+
+      stubFor(
+        get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(Json.toJson(enrolment).toString())
+          )
+      )
+
+      val response = TaxTestConnector.getSubscriptionByGroupId(groupId)
+      whenReady(response) { res =>
+        res mustEqual enrolment
+      }
+    }
+
+    "getDSTNumberWithSucceededState should return DSTRegNumber as None when identifiers is 'None'" in {
+      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
+      enrolment.getDSTNumberWithSucceededState mustBe None
+    }
+
+    "getDSTNumberWithSucceededState should return DSTRegNumber when identifiers is DST and state is succeeded" in {
+      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(
+        Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "SUCCEEDED", None)
+      enrolment.getDSTNumberWithSucceededState mustBe Some(DSTRegNumber("XYDST0000000000"))
+    }
+
+    "getDSTNumberWithSucceededState should return None when identifiers is DST and state is pending" in {
+      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(
+        Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "PENDING", None)
+      enrolment.getDSTNumberWithSucceededState mustBe None
+    }
+
+    "getDSTNumberWithSucceededState should return None when identifiers is not DST" in {
+      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(
+        Some(Seq(Identifier("warehouseId", "123456789"))), "PENDING", None)
+      enrolment.getDSTNumberWithSucceededState mustBe None
+    }
+  }
   "handle an unauthorised exception" in {
     val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value
@@ -130,7 +173,6 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       Some(
         List(Identifier("DstRefNo", DSTRegNumber("ASDST1010101010")))
       ),
-      "etmpId",
       "state",
       None
     ).getDSTNumber

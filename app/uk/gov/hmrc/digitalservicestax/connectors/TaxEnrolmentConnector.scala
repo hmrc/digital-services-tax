@@ -28,39 +28,39 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TaxEnrolmentConnector @Inject() (
-  val http: HttpClient,
-  val mode: Mode,
-  val appConfig: AppConfig,
-  testConnector: TestConnector
-) extends DesHelpers {
+class TaxEnrolmentConnector @Inject()(
+                                       val http: HttpClient,
+                                       val mode: Mode,
+                                       val appConfig: AppConfig,
+                                       testConnector: TestConnector
+                                     ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
 
   def subscribe(safeId: String, formBundleNumber: String)(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
+                                                          hc: HeaderCarrier,
+                                                          ec: ExecutionContext
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         case responseMessage if is2xx(responseMessage.status) =>
           responseMessage
-        case responseMessage                                  =>
+        case responseMessage =>
           logger.error(
             s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}"
           )
           responseMessage
       } recover {
         case e: UnauthorizedException => handleError(e, formBundleNumber)
-        case e: BadRequestException   => handleError(e, formBundleNumber)
+        case e: BadRequestException => handleError(e, formBundleNumber)
       }
     } else Future.successful[HttpResponse](HttpResponse(418, ""))
   }
 
   def getSubscription(
-    subscriptionId: String
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+                       subscriptionId: String
+                     )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
       http.GET[TaxEnrolmentsSubscription](
@@ -69,6 +69,15 @@ class TaxEnrolmentConnector @Inject() (
     else {
       testConnector.getSubscription(subscriptionId)
     }
+  }
+
+  def getSubscriptionByGroupId(
+                                groupId: String
+                              )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+    import uk.gov.hmrc.http.HttpReads.Implicits._
+    http.GET[TaxEnrolmentsSubscription](
+      s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
+    )
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
@@ -82,23 +91,29 @@ class TaxEnrolmentConnector @Inject() (
   private def requestBody(safeId: String, formBundleNumber: String): JsObject =
     Json.obj(
       "serviceName" -> appConfig.taxEnrolmentsServiceName,
-      "callback"    -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
-      "etmpId"      -> safeId
+      "callback" -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
+      "etmpId" -> safeId
     )
 
 }
 
 case class TaxEnrolmentsSubscription(
-  identifiers: Option[Seq[Identifier]],
-  etmpId: String,
-  state: String,
-  errorResponse: Option[String]
-) {
+                                      identifiers: Option[Seq[Identifier]],
+                                      state: String,
+                                      errorResponse: Option[String]
+                                    ) {
   def getDSTNumber: Option[DSTRegNumber] =
     identifiers.getOrElse(Nil).collectFirst {
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
 
+  def getDSTNumberWithSucceededState: Option[DSTRegNumber] = {
+    if (state.equalsIgnoreCase("SUCCEEDED"))
+      identifiers.getOrElse(Nil).collectFirst {
+        case Identifier(key, value) if (key.equalsIgnoreCase("DSTRefNumber")) => DSTRegNumber(value)
+      }
+    else None
+  }
 }
 
 object TaxEnrolmentsSubscription {
