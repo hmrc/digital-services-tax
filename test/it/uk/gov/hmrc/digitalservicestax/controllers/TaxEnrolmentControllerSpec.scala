@@ -35,11 +35,13 @@ class TaxEnrolmentControllerSpec extends ControllerBaseSpec {
   "Tax enrolments controller" must {
 
     "return 200 when tax enrolments connecter returns DstRegNumber" in {
-      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(
-        Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "SUCCEEDED", None)
+      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
+        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "SUCCEEDED", None)
 
       mockAuth()
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(taxEnrolmentsSubscription)
+      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
+        taxEnrolmentsSubscription
+      )
 
       val result: Future[Result] = TestTaxEnrolmentController.getSubscription("123456").apply(FakeRequest())
       val resultStatus           = status(result)
@@ -52,11 +54,13 @@ class TaxEnrolmentControllerSpec extends ControllerBaseSpec {
     }
 
     "return 404 when tax enrolments connecter does not return DstRegNumber" in {
-      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(
-        Some(Seq(Identifier("Dummy", "DummyValue"))), "SUCCEEDED", None)
+      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
+        TaxEnrolmentsSubscription(Some(Seq(Identifier("Dummy", "DummyValue"))), "SUCCEEDED", None)
 
       mockAuth()
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(taxEnrolmentsSubscription)
+      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
+        taxEnrolmentsSubscription
+      )
 
       val result: Future[Result] = TestTaxEnrolmentController.getSubscription("123456").apply(FakeRequest())
       val resultStatus           = status(result)
@@ -68,7 +72,9 @@ class TaxEnrolmentControllerSpec extends ControllerBaseSpec {
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "ERROR", Some("error"))
 
       mockAuth()
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(taxEnrolmentsSubscription)
+      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
+        taxEnrolmentsSubscription
+      )
 
       val result: Future[Result] = TestTaxEnrolmentController.getSubscription("123456").apply(FakeRequest())
       val resultStatus           = status(result)

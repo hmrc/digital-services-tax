@@ -81,9 +81,9 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  def mockAuth(response: Future[Unit] = Future.successful()): Future[Nothing] = {
-    doReturn(response, Nil: _*).when(mockAuthConnector)
+  def mockAuth(response: Future[Unit] = Future.successful()): Future[Nothing] =
+    doReturn(response, Nil: _*)
+      .when(mockAuthConnector)
       .authorise(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any())
-  }
 
 }

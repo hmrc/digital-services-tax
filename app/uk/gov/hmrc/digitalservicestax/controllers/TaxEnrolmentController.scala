@@ -26,38 +26,41 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TaxEnrolmentController @Inject()(
-                                        val authConnector: AuthConnector,
-                                        cc: ControllerComponents,
-                                        taxEnrolments: TaxEnrolmentConnector,
-                                      ) extends BackendController(cc)
-  with AuthorisedFunctions {
+class TaxEnrolmentController @Inject() (
+  val authConnector: AuthConnector,
+  cc: ControllerComponents,
+  taxEnrolments: TaxEnrolmentConnector
+) extends BackendController(cc)
+    with AuthorisedFunctions {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                = Logger(this.getClass)
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def getSubscription(groupId: String): Action[AnyContent] =Action.async { implicit request =>
+  def getSubscription(groupId: String): Action[AnyContent] = Action.async { implicit request =>
     authorised() {
-      taxEnrolments.getSubscriptionByGroupId(groupId).map { taxEnrolmentSubscription =>
-        if(taxEnrolmentSubscription.errorResponse.isDefined) {
-          logger.error(
-            s"Error response received while getting Tax enrolment subscription by groupId: " +
-              s"${taxEnrolmentSubscription.errorResponse.get}")
-          InternalServerError
-        } else {
-          taxEnrolmentSubscription.getDSTNumberWithSucceededState match {
-            case Some(dstNumber) => Ok(dstNumber)
-            case _ => NotFound
+      taxEnrolments
+        .getSubscriptionByGroupId(groupId)
+        .map { taxEnrolmentSubscription =>
+          if (taxEnrolmentSubscription.errorResponse.isDefined) {
+            logger.error(
+              s"Error response received while getting Tax enrolment subscription by groupId: " +
+                s"${taxEnrolmentSubscription.errorResponse.get}"
+            )
+            InternalServerError
+          } else {
+            taxEnrolmentSubscription.getDSTNumberWithSucceededState match {
+              case Some(dstNumber) => Ok(dstNumber)
+              case _               => NotFound
+            }
           }
         }
-      }.recoverWith{
-        case ex: Exception => {
+        .recoverWith { case ex: Exception =>
           logger.error(
             s"Unexpected error response received while getting Tax enrolment subscription by groupId: " +
-              s"${ex.getMessage}")
+              s"${ex.getMessage}"
+          )
           Future(InternalServerError)
         }
-      }
     }
   }
 }
