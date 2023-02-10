@@ -75,14 +75,14 @@ class LoggedInAction @Inject() (
         request
       )
 
-    val retrieval = allEnrolments and internalId and credentials
+    val retrieval = allEnrolments and internalId and credentials and groupIdentifier
 
-    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId=>
       val providerId = creds.map(_.providerId)
       Future.successful(
         (id.map(InternalId.of), providerId) match {
           case (Some(Some(internalId)), Some(provider)) =>
-            Right(LoggedInRequest(internalId, enrolments, provider, request))
+            Right(LoggedInRequest(internalId, enrolments, provider, groupId, request))
           case (_, None)                                => Left(Forbidden("No provider ID"))
           case (Some(None), _)                          => Left(Forbidden("Invalid Internal ID"))
           case (None, _)                                => Left(Forbidden("No internal ID"))
@@ -98,6 +98,7 @@ case class LoggedInRequest[A](
   internalId: InternalId,
   enrolments: Enrolments,
   providerId: String,
+  groupId: Option[String],
   request: Request[A]
 ) extends WrappedRequest(request) {
 

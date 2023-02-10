@@ -20,7 +20,7 @@ import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, Registration}
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -50,6 +50,14 @@ class RegistationPersistenceSpec
     }
   }
 
+  "it should safely return none for a non existing registration id1" in {
+    forAll { id: DSTRegNumber =>
+      whenReady(mongoPersistence.registrations.getByRegistrationNumber(id)) { maybeReg =>
+        maybeReg mustBe empty
+      }
+    }
+  }
+
   "it should retrieve a registration using the apply object" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
@@ -59,6 +67,19 @@ class RegistationPersistenceSpec
 
       whenReady(chain) { dbRes =>
         dbRes mustEqual reg
+      }
+    }
+  }
+
+  "it should retrieve a registration using the apply object for the input registrationId" in {
+    forAll { (id: InternalId, reg: Registration) =>
+      val chain = for {
+        _ <- mongoPersistence.registrations.update(id, reg)
+        dbReg <- mongoPersistence.registrations.getByRegistrationNumber(reg.registrationNumber.get)
+      } yield dbReg
+
+      whenReady(chain) { dbRes =>
+        dbRes mustBe Some(reg)
       }
     }
   }
@@ -83,6 +104,22 @@ class RegistationPersistenceSpec
         dbReg      <- mongoPersistence.registrations.get(id)
         _          <- mongoPersistence.registrations.update(id, updated)
         postUpdate <- mongoPersistence.registrations.get(id)
+      } yield dbReg -> postUpdate
+
+      whenReady(chain) { case (dbRes, postUpdate) =>
+        dbRes.value mustEqual reg
+        postUpdate.value mustEqual updated
+      }
+    }
+  }
+
+  "it should update a registration by registrationNumber" in {
+    forAll { (id: InternalId, reg: Registration, updated: Registration) =>
+      val chain = for {
+        _ <- mongoPersistence.registrations.update(id, reg)
+        dbReg <- mongoPersistence.registrations.getByRegistrationNumber(reg.registrationNumber.get)
+        _ <- mongoPersistence.registrations.update(id, updated)
+        postUpdate <- mongoPersistence.registrations.getByRegistrationNumber(updated.registrationNumber.get)
       } yield dbReg -> postUpdate
 
       whenReady(chain) { case (dbRes, postUpdate) =>

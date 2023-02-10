@@ -39,7 +39,7 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
         connector = mockConnector,
         auditing = mockAuditing,
         registered = mockRegistered,
-        loggedIn = loginReturn
+        loggedIn = loginReturn()
       )
 
   private val startAmendable1 = LocalDate.now().minusYears(2).minusWeeks(1)
