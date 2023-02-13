@@ -46,7 +46,7 @@ class TaxEnrolmentService @Inject() (appConfig: AppConfig, taxEnrolmentConnector
 
               taxEnrolmentSubscription.getDSTNumberWithSucceededState match {
                 case Some(dstRegNumber) =>
-                  persistence.registrations.getByRegistrationNumber(dstRegNumber)
+                  persistence.registrations.findByRegistrationNumber(dstRegNumber)
                 case _                  => Future(None)
               }
             }

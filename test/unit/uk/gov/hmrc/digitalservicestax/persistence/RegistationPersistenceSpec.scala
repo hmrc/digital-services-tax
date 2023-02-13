@@ -52,7 +52,7 @@ class RegistationPersistenceSpec
 
   "it should safely return none for a non existing registration id1" in {
     forAll { id: DSTRegNumber =>
-      whenReady(mongoPersistence.registrations.getByRegistrationNumber(id)) { maybeReg =>
+      whenReady(mongoPersistence.registrations.findByRegistrationNumber(id)) { maybeReg =>
         maybeReg mustBe empty
       }
     }
@@ -75,7 +75,7 @@ class RegistationPersistenceSpec
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
         _ <- mongoPersistence.registrations.update(id, reg)
-        dbReg <- mongoPersistence.registrations.getByRegistrationNumber(reg.registrationNumber.get)
+        dbReg <- mongoPersistence.registrations.findByRegistrationNumber(reg.registrationNumber.get)
       } yield dbReg
 
       whenReady(chain) { dbRes =>
@@ -117,9 +117,9 @@ class RegistationPersistenceSpec
     forAll { (id: InternalId, reg: Registration, updated: Registration) =>
       val chain = for {
         _ <- mongoPersistence.registrations.update(id, reg)
-        dbReg <- mongoPersistence.registrations.getByRegistrationNumber(reg.registrationNumber.get)
+        dbReg <- mongoPersistence.registrations.findByRegistrationNumber(reg.registrationNumber.get)
         _ <- mongoPersistence.registrations.update(id, updated)
-        postUpdate <- mongoPersistence.registrations.getByRegistrationNumber(updated.registrationNumber.get)
+        postUpdate <- mongoPersistence.registrations.findByRegistrationNumber(updated.registrationNumber.get)
       } yield dbReg -> postUpdate
 
       whenReady(chain) { case (dbRes, postUpdate) =>

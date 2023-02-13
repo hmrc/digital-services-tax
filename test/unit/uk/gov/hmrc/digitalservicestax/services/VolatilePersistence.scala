@@ -49,7 +49,8 @@ trait VolatilePersistence extends Persistence[Id] {
     def update(user: InternalId, reg: Registration): Unit =
       _data = _data + (user -> ((reg, LocalDateTime.now)))
 
-    override def getByRegistrationNumber(registrationNumber: DSTRegNumber): Id[Option[Registration]] = ???
+    override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Id[Option[Registration]] =
+      _data.find(_._2._1.registrationNumber.contains(registrationNumber)).map(_._2._1)
   }
 
   val returns = new Returns {

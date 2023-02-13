@@ -36,7 +36,12 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.Future
 
-class RegistrationsControllerSpec extends ControllerBaseSpec with GuiceOneServerPerSuite with BeforeAndAfterEach with ScalaFutures with IntegrationPatience {
+class RegistrationsControllerSpec
+    extends ControllerBaseSpec
+    with GuiceOneServerPerSuite
+    with BeforeAndAfterEach
+    with ScalaFutures
+    with IntegrationPatience {
 
   val mockTaxEnrolmentService: TaxEnrolmentService = mock[TaxEnrolmentService]
   val mongoPersistence: MongoPersistence           = app.injector.instanceOf[MongoPersistence]
@@ -89,15 +94,17 @@ class RegistrationsControllerSpec extends ControllerBaseSpec with GuiceOneServer
 
       when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(None)
 
-      for {
+      val chain = for {
         r <- mongoPersistence.registrations.update(internalId, registration)
       } yield r
 
-      val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
-      val resultStatus           = status(result)
+      whenReady(chain) { _ =>
+        val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
+        val resultStatus           = status(result)
 
-      resultStatus mustBe 200
-      contentAsString(result) mustBe s"${Json.toJson(registration)}"
+        resultStatus mustBe 200
+        contentAsString(result) mustBe s"${Json.toJson(registration)}"
+      }
     }
 
     "return 200 with registration data when registrationNumber is empty and FormBundleNumber is defined" in {
@@ -107,16 +114,18 @@ class RegistrationsControllerSpec extends ControllerBaseSpec with GuiceOneServer
 
       when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(None)
 
-      for {
+      val chain = for {
         r <- mongoPersistence.registrations.update(internalId, registration)
         m <- mongoPersistence.pendingCallbacks.update(formBundleNumber, internalId)
       } yield m
 
-      val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
-      val resultStatus           = status(result)
+      whenReady(chain) { _ =>
+        val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
+        val resultStatus           = status(result)
 
-      resultStatus mustBe 200
-      contentAsString(result) mustBe s"${Json.toJson(registration)}"
+        resultStatus mustBe 200
+        contentAsString(result) mustBe s"${Json.toJson(registration)}"
+      }
 
     }
 

@@ -20,7 +20,7 @@ import org.scalactic.anyvals.PosInt
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, Registration}
 import unit.uk.gov.hmrc.digitalservicestax.services.FutureVolatilePersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -45,6 +45,19 @@ class VolatileRegistationPersistenceSpec
 
       whenReady(chain) { dbRes =>
         dbRes mustEqual reg
+      }
+    }
+  }
+
+  "it should retrieve a registration using dstRegistrationNumber" in {
+    forAll { (id: InternalId, reg: Registration) =>
+      val chain = for {
+        _     <- volatile.registrations.update(id, reg)
+        dbReg <- volatile.registrations.findByRegistrationNumber(reg.registrationNumber.get)
+      } yield dbReg
+
+      whenReady(chain) { dbRes =>
+        dbRes.value mustBe reg
       }
     }
   }
@@ -90,6 +103,16 @@ class VolatileRegistationPersistenceSpec
         dbRes.value mustEqual reg
         postUpdate.value mustEqual updated
       }
+    }
+  }
+
+  "it should return 'None' when record with no record exists for the input dst registration number" in {
+    val chain = for {
+      r <- volatile.registrations.findByRegistrationNumber(DSTRegNumber("DCDST1234567829"))
+    } yield r
+
+    whenReady(chain) { r =>
+      r mustBe None
     }
   }
 }
