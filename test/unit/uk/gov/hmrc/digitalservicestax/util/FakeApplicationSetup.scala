@@ -28,7 +28,7 @@ import play.api.{Application, Configuration, Environment}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -47,9 +47,9 @@ trait FakeApplicationSetup
     with ScalaFutures
     with CleanMongoCollectionSupport {
 
-  implicit lazy val actorSystem: ActorSystem = app.actorSystem
-  implicit lazy val ec: ExecutionContext     = scala.concurrent.ExecutionContext.Implicits.global
-
+  implicit lazy val actorSystem: ActorSystem   = app.actorSystem
+  implicit lazy val ec: ExecutionContext       = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val hc: HeaderCarrier               = HeaderCarrier()
   implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 100.millis)
   implicit val clock: Clock                    = Clock.systemDefaultZone()
   implicit val c                               = this.mongoComponent

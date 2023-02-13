@@ -38,7 +38,6 @@ class TaxEnrolmentServiceSpec
     with OptionValues
     with BeforeAndAfterEach
     with ScalaCheckDrivenPropertyChecks {
-  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
   val mockAppConfig: AppConfig                          = mock[AppConfig]

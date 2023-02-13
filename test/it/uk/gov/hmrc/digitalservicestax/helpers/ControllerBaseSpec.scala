@@ -30,7 +30,8 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import java.time.LocalDate
@@ -47,11 +48,14 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
   val mockRosmConnector: RosmConnector                  = mock[connectors.RosmConnector]
   val mockEmailConnector: EmailConnector                = mock[connectors.EmailConnector]
   val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
+  val mockTaxEnrolmentService: TaxEnrolmentService      = mock[TaxEnrolmentService]
   val mockAuditing: AuditConnector                      = mock[AuditConnector]
   val mockCompanyReg: CompanyRegWrapper                 = mock[CompanyRegWrapper]
   val mockContact: ContactDetails                       = mock[ContactDetails]
   val mockMcc: MessagesControllerComponents             = mock[MessagesControllerComponents]
   val mockEnrolments: Enrolments                        = mock[Enrolments]
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val regObj: Registration = Registration(
     mockCompanyReg,
@@ -84,14 +88,7 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
     override def parser: BodyParser[AnyContent] = stubBodyParser()
   }
 
-  /*  val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
-    override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
-      Future.successful(Right(loginReq[A]))
-
-    override def parser: BodyParser[AnyContent] = stubBodyParser()
-  }*/
-
-  val mockRegistered: Registered = new Registered(mockPersistence) {
+  val mockRegistered: Registered = new Registered(mockPersistence, mockTaxEnrolmentService) {
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
   }

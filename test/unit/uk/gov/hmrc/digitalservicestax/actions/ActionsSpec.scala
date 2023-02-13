@@ -32,6 +32,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
+import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
 import unit.uk.gov.hmrc.digitalservicestax.util.RetrievalOps._
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
@@ -44,6 +45,8 @@ class ActionsSpec
     with EitherValues
     with MockitoSugar
     with ScalaCheckDrivenPropertyChecks {
+
+  val mockTaxEnrolmentService: TaxEnrolmentService = mock[TaxEnrolmentService]
 
   class Harness(authAction: LoggedInAction) {
     def onPageLoad(): Action[AnyContent] = authAction { _ =>
@@ -58,7 +61,7 @@ class ActionsSpec
 
   "Registered" should {
     "execute an action against a registered user using LoggedInRequest" in {
-      val action = new Registered(mongoPersistence)
+      val action = new Registered(mongoPersistence, mockTaxEnrolmentService)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -90,8 +93,43 @@ class ActionsSpec
       }
     }
 
+    "execute an action against a registered user using LoggedInRequest when taxEnrolmentService return registration" in {
+      val action = new Registered(mongoPersistence, mockTaxEnrolmentService)
+
+      val internal   = arbitrary[InternalId].sample.value
+      val enrolments = arbitrary[Enrolments].sample.value
+      val providerId = arbitrary[NonEmptyString].sample.value
+      val reg        = arbitrary[Registration].sample.value
+
+      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())).thenReturn(Future.successful(Some(reg)))
+
+      val req = LoggedInRequest(
+        internal,
+        enrolments,
+        providerId,
+        Some("groupId"),
+        FakeRequest()
+      )
+
+      val chain = for {
+        _     <- mongoPersistence.registrations.update(internal, reg)
+        block <- action.invokeBlock(
+                   req,
+                   { req: RegisteredRequest[_] =>
+                     Future.successful(
+                       Results.Ok(req.registration.registrationNumber.value)
+                     )
+                   }
+                 )
+      } yield block
+
+      whenReady(chain) { resp =>
+        resp.header.status mustEqual Status.OK
+      }
+    }
+
     "return forbidden if there is no DST number on the registration" in {
-      val action = new Registered(mongoPersistence)
+      val action = new Registered(mongoPersistence, mockTaxEnrolmentService)
 
       val internal    = arbitrary[InternalId].sample.value
       val enrolments  = arbitrary[Enrolments].sample.value
@@ -125,7 +163,9 @@ class ActionsSpec
     }
 
     "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
-      val action = new Registered(mongoPersistence)
+      val action = new Registered(mongoPersistence, mockTaxEnrolmentService)
+
+      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())).thenReturn(Future.successful(None))
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -145,7 +185,7 @@ class ActionsSpec
     }
 
     "should execute an action against a registered user using Registered or pending request" in {
-      val action = new RegisteredOrPending(mongoPersistence)
+      val action = new RegisteredOrPending(mongoPersistence, mockTaxEnrolmentService)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value

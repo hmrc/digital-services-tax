@@ -31,7 +31,7 @@ import uk.gov.hmrc.digitalservicestax.actions.LoggedInAction
 import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber, InternalId, Registration}
-import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.Future
@@ -43,8 +43,7 @@ class RegistrationsControllerSpec
     with ScalaFutures
     with IntegrationPatience {
 
-  val mockTaxEnrolmentService: TaxEnrolmentService = mock[TaxEnrolmentService]
-  val mongoPersistence: MongoPersistence           = app.injector.instanceOf[MongoPersistence]
+  val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
 
   def controller(loginAction: LoggedInAction = loginReturn()): RegistrationsController =
     new RegistrationsController(
