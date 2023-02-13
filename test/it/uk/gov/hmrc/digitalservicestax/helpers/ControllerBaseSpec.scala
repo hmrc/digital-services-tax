@@ -73,14 +73,18 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
 
   def loginReturn(internalId: InternalId = InternalId("Int-aaff66")) = new LoggedInAction(mockMcc, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
-      Future.successful(Right(loginReq[A].copy(
-        internalId = internalId
-      )))
+      Future.successful(
+        Right(
+          loginReq[A].copy(
+            internalId = internalId
+          )
+        )
+      )
 
     override def parser: BodyParser[AnyContent] = stubBodyParser()
   }
 
-/*  val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
+  /*  val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
       Future.successful(Right(loginReq[A]))
 

@@ -184,7 +184,8 @@ class ActionsSpec
 
     "return status FORBIDDEN when internalId is `None`" in {
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
-      val retrieval: AuthRetrievals        = Enrolments(Set.empty) ~ None ~ Some(Credentials("providerId", "providerType")) ~ None
+      val retrieval: AuthRetrievals        =
+        Enrolments(Set.empty) ~ None ~ Some(Credentials("providerId", "providerType")) ~ None
       when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
         retrieval
       )
@@ -229,7 +230,9 @@ class ActionsSpec
       val mockAuthConnector: AuthConnector = mock[AuthConnector]
       val enrolment: Enrolment             = Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567")), "Activated")
       val retrieval: AuthRetrievals        =
-        Enrolments(Set(enrolment)) ~ Some("Int-7e341-48319ddb53") ~ Some(Credentials("providerId", "providerType")) ~ None
+        Enrolments(Set(enrolment)) ~ Some("Int-7e341-48319ddb53") ~ Some(
+          Credentials("providerId", "providerType")
+        ) ~ None
       when(mockAuthConnector.authorise[AuthRetrievals](any(), any())(any(), any())) thenReturn Future.successful(
         retrieval
       )

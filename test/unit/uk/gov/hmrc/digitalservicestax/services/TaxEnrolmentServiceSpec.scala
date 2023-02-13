@@ -54,17 +54,20 @@ class TaxEnrolmentServiceSpec
     "return DstRegNumber when tax enrolments connector returns taxEnrolmentsSubscription" in {
 
       val registration                                         = arbitrary[Registration].sample.value
-      val internal   = arbitrary[InternalId].sample.value
-      val dstNumber = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
+      val internal                                             = arbitrary[InternalId].sample.value
+      val dstNumber                                            = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
         TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", dstNumber))), "SUCCEEDED", None)
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any[String]())(any[HeaderCarrier](), any[ExecutionContext]())) thenReturn Future.successful(
+      when(
+        mockTaxEnrolmentsConnector
+          .getSubscriptionByGroupId(any[String]())(any[HeaderCarrier](), any[ExecutionContext]())
+      ) thenReturn Future.successful(
         taxEnrolmentsSubscription
       )
-       for {
+      for {
         r <- mongoPersistence.registrations.update(internal, registration)
       } yield r
 

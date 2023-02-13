@@ -159,12 +159,11 @@ class MongoPersistence @Inject() (
         .map(_.data)
         .headOption()
 
-    override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[Registration]] = {
+    override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[Registration]] =
       repo.collection
         .find(Filters.equal("data.registrationNumber", registrationNumber))
         .map(_.data)
         .headOption()
-    }
   }
 
   def returns = new Returns {

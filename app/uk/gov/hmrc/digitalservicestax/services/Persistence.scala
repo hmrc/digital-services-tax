@@ -45,7 +45,7 @@ abstract class Persistence[F[_]: cats.Monad] {
 
     def get(user: InternalId): F[Option[Registration]]
 
-    def findByRegistrationNumber(registrationNumber: DSTRegNumber):F[Option[Registration]]
+    def findByRegistrationNumber(registrationNumber: DSTRegNumber): F[Option[Registration]]
     def update(user: InternalId, reg: Registration): F[Unit]
 
     def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =

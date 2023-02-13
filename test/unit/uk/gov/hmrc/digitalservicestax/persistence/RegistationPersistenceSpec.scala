@@ -74,7 +74,7 @@ class RegistationPersistenceSpec
   "it should retrieve a registration using the apply object for the input registrationId" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.update(id, reg)
+        _     <- mongoPersistence.registrations.update(id, reg)
         dbReg <- mongoPersistence.registrations.findByRegistrationNumber(reg.registrationNumber.get)
       } yield dbReg
 
@@ -116,9 +116,9 @@ class RegistationPersistenceSpec
   "it should update a registration by registrationNumber" in {
     forAll { (id: InternalId, reg: Registration, updated: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.update(id, reg)
-        dbReg <- mongoPersistence.registrations.findByRegistrationNumber(reg.registrationNumber.get)
-        _ <- mongoPersistence.registrations.update(id, updated)
+        _          <- mongoPersistence.registrations.update(id, reg)
+        dbReg      <- mongoPersistence.registrations.findByRegistrationNumber(reg.registrationNumber.get)
+        _          <- mongoPersistence.registrations.update(id, updated)
         postUpdate <- mongoPersistence.registrations.findByRegistrationNumber(updated.registrationNumber.get)
       } yield dbReg -> postUpdate
 

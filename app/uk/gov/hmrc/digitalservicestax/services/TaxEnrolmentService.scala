@@ -25,12 +25,15 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class TaxEnrolmentService @Inject() (appConfig: AppConfig, taxEnrolmentConnector: TaxEnrolmentConnector, persistence: MongoPersistence)
-    extends Logging {
+class TaxEnrolmentService @Inject() (
+  appConfig: AppConfig,
+  taxEnrolmentConnector: TaxEnrolmentConnector,
+  persistence: MongoPersistence
+) extends Logging {
 
   def getDSTRegistration(
     groupId: Option[String]
-  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[Registration]] = {
+  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[Registration]] =
     (groupId, appConfig.dstNewSolutionFeatureFlag) match {
       case (Some(groupId), true) =>
         taxEnrolmentConnector
@@ -43,7 +46,6 @@ class TaxEnrolmentService @Inject() (appConfig: AppConfig, taxEnrolmentConnector
               )
               Future.successful(None)
             } else {
-
               taxEnrolmentSubscription.getDSTNumberWithSucceededState match {
                 case Some(dstRegNumber) =>
                   persistence.registrations.findByRegistrationNumber(dstRegNumber)
@@ -58,7 +60,6 @@ class TaxEnrolmentService @Inject() (appConfig: AppConfig, taxEnrolmentConnector
             )
             Future.successful(None)
           }
-      case _             => Future(None)
+      case _                     => Future(None)
     }
-  }
 }
