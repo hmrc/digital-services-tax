@@ -39,7 +39,7 @@ class RegistrationConnector @Inject() (
 ) extends DesHelpers
     with AuditWrapper {
 
-  val registerPath = "cross-regime/subscription/DST"
+  private val registerPath = "cross-regime/subscription/DST"
 
   def send(
     idType: String,

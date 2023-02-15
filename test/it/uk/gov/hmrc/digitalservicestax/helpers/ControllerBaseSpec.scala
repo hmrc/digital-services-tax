@@ -28,9 +28,10 @@ import uk.gov.hmrc.auth.core.{AuthConnector, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, Registered, RegisteredRequest}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
-import uk.gov.hmrc.digitalservicestax.connectors.{ReturnConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import java.time.LocalDate
@@ -43,12 +44,18 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
   val mockAppConfig: AppConfig                          = mock[AppConfig]
   val mockPersistence: MongoPersistence                 = mock[MongoPersistence]
   val mockConnector: ReturnConnector                    = mock[connectors.ReturnConnector]
+  val mockRegistrationConnector: RegistrationConnector  = mock[connectors.RegistrationConnector]
+  val mockRosmConnector: RosmConnector                  = mock[connectors.RosmConnector]
+  val mockEmailConnector: EmailConnector                = mock[connectors.EmailConnector]
   val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
+  val mockTaxEnrolmentService: TaxEnrolmentService      = mock[TaxEnrolmentService]
   val mockAuditing: AuditConnector                      = mock[AuditConnector]
   val mockCompanyReg: CompanyRegWrapper                 = mock[CompanyRegWrapper]
   val mockContact: ContactDetails                       = mock[ContactDetails]
   val mockMcc: MessagesControllerComponents             = mock[MessagesControllerComponents]
   val mockEnrolments: Enrolments                        = mock[Enrolments]
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val regObj: Registration = Registration(
     mockCompanyReg,
@@ -64,17 +71,25 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
     InternalId("Int-aaff66"),
     mockEnrolments,
     "",
+    Some("groupId"),
     FakeRequest().withBody(AnyContent().asInstanceOf[A])
   )
 
-  val loginReturn: LoggedInAction = new LoggedInAction(mockMcc, mockAuthConnector) {
-    override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
-      Future.successful(Right(loginReq[A]))
+  def loginReturn(internalId: InternalId = InternalId("Int-aaff66")) =
+    new LoggedInAction(mockMcc, mockAppConfig, mockAuthConnector) {
+      override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
+        Future.successful(
+          Right(
+            loginReq[A].copy(
+              internalId = internalId
+            )
+          )
+        )
 
-    override def parser: BodyParser[AnyContent] = stubBodyParser()
-  }
+      override def parser: BodyParser[AnyContent] = stubBodyParser()
+    }
 
-  val mockRegistered: Registered = new Registered(mockPersistence) {
+  val mockRegistered: Registered = new Registered(mockPersistence, mockTaxEnrolmentService) {
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
   }

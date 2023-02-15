@@ -158,6 +158,12 @@ class MongoPersistence @Inject() (
         .find(Filters.equal("session", user))
         .map(_.data)
         .headOption()
+
+    override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[Registration]] =
+      repo.collection
+        .find(Filters.equal("data.registrationNumber", registrationNumber))
+        .map(_.data)
+        .headOption()
   }
 
   def returns = new Returns {

@@ -44,4 +44,8 @@ class AppConfigSpec extends FakeApplicationSetup {
     dt shouldBe a[TemporalAccessor]
   }
 
+  "should load the feature flag dstNewSolutionFeatureFlag" in {
+    appConfig.dstNewSolutionFeatureFlag mustEqual true
+  }
+
 }

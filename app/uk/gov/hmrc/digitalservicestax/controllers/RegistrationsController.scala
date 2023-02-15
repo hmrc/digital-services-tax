@@ -18,17 +18,15 @@ package uk.gov.hmrc.digitalservicestax
 package controllers
 
 import cats.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
-import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
-import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence, TaxEnrolmentService}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -38,20 +36,17 @@ import scala.concurrent._
 @Singleton
 class RegistrationsController @Inject() (
   val authConnector: AuthConnector,
-  val runModeConfiguration: Configuration,
-  val appConfig: AppConfig,
   cc: ControllerComponents,
   registrationConnector: RegistrationConnector,
   rosmConnector: RosmConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
   emailConnector: EmailConnector,
   persistence: MongoPersistence,
+  taxEnrolmentService: TaxEnrolmentService,
   val auditing: AuditConnector,
-  loggedIn: LoggedInAction,
-  val http: HttpClient
+  loggedIn: LoggedInAction
 ) extends BackendController(cc)
     with AuthorisedFunctions
-    with DesHelpers
     with AuditWrapper {
 
   val logger: Logger = Logger(this.getClass)
@@ -98,16 +93,20 @@ class RegistrationsController @Inject() (
     for {
       a <- persistence.registrations.get(request.internalId)
       b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
-    } yield (a, b) match {
-      case (Some(r), _) if r.registrationNumber.isDefined =>
+      c <- if (a.isEmpty) { taxEnrolmentService.getDSTRegistration(request.groupId) }
+           else Future(None)
+    } yield (a, b, c) match {
+      case (Some(r), _, _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
-      case (Some(r), p) if p.nonEmpty                     =>
+      case (Some(r), p, _) if p.nonEmpty                     =>
         if (r.registrationNumber.isEmpty) {
           logger.info(s"no registration number found in registration details")
         }
         logger.info(s"pending registration")
         Ok(Json.toJson(r))
-      case _                                              =>
+      case (None, _, Some(r))                                =>
+        Ok(Json.toJson(r))
+      case _                                                 =>
         logger.info("no pending registration")
         NotFound
     }
