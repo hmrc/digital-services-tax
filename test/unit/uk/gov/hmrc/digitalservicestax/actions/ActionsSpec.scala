@@ -230,7 +230,7 @@ class ActionsSpec
         retrieval
       )
 
-      val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
+      val action = new LoggedInAction(stubMessagesControllerComponents(), appConfig, mockAuthConnector)
 
       val controller = new Harness(action)
       val result     = controller.onPageLoad()(FakeRequest("", ""))
@@ -244,7 +244,7 @@ class ActionsSpec
         retrieval
       )
 
-      val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
+      val action = new LoggedInAction(stubMessagesControllerComponents(), appConfig, mockAuthConnector)
 
       val controller = new Harness(action)
       val result     = controller.onPageLoad()(FakeRequest("", ""))
@@ -259,7 +259,7 @@ class ActionsSpec
         retrieval
       )
 
-      val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
+      val action = new LoggedInAction(stubMessagesControllerComponents(), appConfig, mockAuthConnector)
 
       val controller = new Harness(action)
       val result     = controller.onPageLoad()(FakeRequest("", ""))
@@ -277,7 +277,7 @@ class ActionsSpec
         retrieval
       )
 
-      val action = new LoggedInAction(stubMessagesControllerComponents(), mockAuthConnector)
+      val action = new LoggedInAction(stubMessagesControllerComponents(), appConfig, mockAuthConnector)
 
       val controller = new Harness(action)
       val result     = controller.onPageLoad()(FakeRequest("", ""))

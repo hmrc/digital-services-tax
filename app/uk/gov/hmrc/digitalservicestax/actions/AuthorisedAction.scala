@@ -17,12 +17,14 @@
 package uk.gov.hmrc.digitalservicestax
 package actions
 
+import play.api.Logging
 import play.api.mvc.Results.Forbidden
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -78,11 +80,13 @@ case class RegisteredRequest[A](
 
 class LoggedInAction @Inject() (
   mcc: MessagesControllerComponents,
+  appConfig: AppConfig,
   val authConnector: AuthConnector
 )(implicit val executionContext: ExecutionContext)
     extends ActionBuilder[LoggedInRequest, AnyContent]
     with ActionRefiner[Request, LoggedInRequest]
-    with AuthorisedFunctions {
+    with AuthorisedFunctions
+    with Logging {
 
   override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
     implicit val hc: HeaderCarrier =
@@ -97,6 +101,9 @@ class LoggedInAction @Inject() (
       Future.successful(
         (id.map(InternalId.of), providerId) match {
           case (Some(Some(internalId)), Some(provider)) =>
+            if (appConfig.dstNewSolutionFeatureFlag) {
+              logger.info("DST user logged in")
+            }
             Right(LoggedInRequest(internalId, enrolments, provider, groupId, request))
           case (_, None)                                => Left(Forbidden("No provider ID"))
           case (Some(None), _)                          => Left(Forbidden("Invalid Internal ID"))

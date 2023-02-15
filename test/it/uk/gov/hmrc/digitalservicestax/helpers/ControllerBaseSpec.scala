@@ -75,7 +75,7 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
     FakeRequest().withBody(AnyContent().asInstanceOf[A])
   )
 
-  def loginReturn(internalId: InternalId = InternalId("Int-aaff66")) = new LoggedInAction(mockMcc, mockAuthConnector) {
+  def loginReturn(internalId: InternalId = InternalId("Int-aaff66")) = new LoggedInAction(mockMcc, mockAppConfig, mockAuthConnector) {
     override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
       Future.successful(
         Right(
