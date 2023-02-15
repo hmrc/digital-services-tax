@@ -9,7 +9,6 @@ GET  /registration                                        uk.gov.hmrc.digitalser
 
 # the readme says this should be a GET, but we're receiving a POST...
 POST /tax-enrolment-callback/:subscriptionId              uk.gov.hmrc.digitalservicestax.controllers.TaxEnrolmentCallbackController.callback(subscriptionId)
-GET /tax-enrolment/groupId/:groupId                       uk.gov.hmrc.digitalservicestax.controllers.TaxEnrolmentController.getSubscription(groupId)
 
 POST /returns/:periodKey            		              uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.submitReturn(periodKey: String)
 GET  /returns/outstanding                                 uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupOutstandingReturns()
