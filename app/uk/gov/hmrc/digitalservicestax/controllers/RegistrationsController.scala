@@ -93,7 +93,8 @@ class RegistrationsController @Inject() (
     for {
       a <- persistence.registrations.get(request.internalId)
       b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
-      c <- if (a.isEmpty) {taxEnrolmentService.getDSTRegistration(request.groupId)} else Future(None)
+      c <- if (a.isEmpty) { taxEnrolmentService.getDSTRegistration(request.groupId) }
+           else Future(None)
     } yield (a, b, c) match {
       case (Some(r), _, _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
