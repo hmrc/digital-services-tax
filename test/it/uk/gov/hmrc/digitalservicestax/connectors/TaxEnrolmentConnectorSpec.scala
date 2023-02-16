@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.samplers._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 import uk.gov.hmrc.http.HeaderCarrier
@@ -91,21 +91,28 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
 
   "getSubscriptionByGroupId" should {
     "retrieve the latest DST period for a groupId" in {
-      val groupId   = gen[ShortString].value
-      val enrolment = gen[TaxEnrolmentsSubscription]
+      val groupId            = gen[ShortString].value
+      val enrolment: JsValue = Json.parse(
+        """[{"created":1676542914173,
+          "serviceName":"HMRC-DST-ORG",
+          "identifiers":[{"key":"DSTRefNumber","value":"XZDST0000000694"}],
+          "state":"SUCCEEDED","etmpId":"XS0000100406365","groupIdentifier":"5551C230-68B2-4D12-A67F-6C1B6A74D53A"}]""".stripMargin
+      )
 
       stubFor(
         get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
           .willReturn(
             aResponse()
               .withStatus(200)
-              .withBody(Json.toJson(enrolment).toString())
+              .withBody(enrolment.toString())
           )
       )
+      val expectedResult =
+        Some(TaxEnrolmentsSubscription(Some(List(Identifier("DSTRefNumber", "XZDST0000000694"))), "SUCCEEDED", None))
 
       val response = TaxTestConnector.getSubscriptionByGroupId(groupId)
       whenReady(response) { res =>
-        res mustEqual enrolment
+        res mustBe expectedResult
       }
     }
 

@@ -73,11 +73,13 @@ class TaxEnrolmentConnector @Inject() (
 
   def getSubscriptionByGroupId(
     groupId: String
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TaxEnrolmentsSubscription]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
-    http.GET[TaxEnrolmentsSubscription](
-      s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
-    )
+    http
+      .GET[Seq[TaxEnrolmentsSubscription]](
+        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
+      )
+      .map(_.find(_.getDSTNumberWithSucceededState.isDefined))
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {

@@ -64,7 +64,7 @@ class TaxEnrolmentServiceSpec
         mockTaxEnrolmentsConnector
           .getSubscriptionByGroupId(any[String]())(any[HeaderCarrier](), any[ExecutionContext]())
       ) thenReturn Future.successful(
-        taxEnrolmentsSubscription
+        Some(taxEnrolmentsSubscription)
       )
       for {
         r <- mongoPersistence.registrations.update(internal, registration)
@@ -80,7 +80,7 @@ class TaxEnrolmentServiceSpec
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
       when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        taxEnrolmentsSubscription
+        Some(taxEnrolmentsSubscription)
       )
 
       val result = dstService.getDSTRegistration(Some("1234"))
@@ -93,7 +93,7 @@ class TaxEnrolmentServiceSpec
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
       when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        taxEnrolmentsSubscription
+        Some(taxEnrolmentsSubscription)
       )
 
       val result = dstService.getDSTRegistration(Some("1234"))
