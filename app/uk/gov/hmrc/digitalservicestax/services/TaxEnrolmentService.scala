@@ -54,7 +54,7 @@ class TaxEnrolmentService @Inject() (
                 }
               }
             case _                              =>
-              logger.error(s"Failed to get the response from Tax enrolment subscription by groupId")
+              logger.info(s"Failed to get the response from Tax enrolment subscription by groupId")
               Future.successful(None)
           }
           .recoverWith { case ex: Exception =>
