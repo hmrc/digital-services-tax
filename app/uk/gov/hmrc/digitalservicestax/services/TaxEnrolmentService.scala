@@ -38,20 +38,24 @@ class TaxEnrolmentService @Inject() (
       case (Some(groupId), true) =>
         taxEnrolmentConnector
           .getSubscriptionByGroupId(groupId)
-          .flatMap { taxEnrolmentSubscription =>
-            if (taxEnrolmentSubscription.errorResponse.isDefined) {
-              logger.error(
-                s"Error response received while getting Tax enrolment subscription by groupId: " +
-                  s"${taxEnrolmentSubscription.errorResponse.getOrElse("")}"
-              )
-              Future.successful(None)
-            } else {
-              taxEnrolmentSubscription.getDSTNumberWithSucceededState match {
-                case Some(dstRegNumber) =>
-                  persistence.registrations.findByRegistrationNumber(dstRegNumber)
-                case _                  => Future(None)
+          .flatMap {
+            case Some(taxEnrolmentSubscription) =>
+              if (taxEnrolmentSubscription.errorResponse.isDefined) {
+                logger.error(
+                  s"Error response received while getting Tax enrolment subscription by groupId: " +
+                    s"${taxEnrolmentSubscription.errorResponse.getOrElse("")}"
+                )
+                Future.successful(None)
+              } else {
+                taxEnrolmentSubscription.getDSTNumber match {
+                  case Some(dstRegNumber) =>
+                    persistence.registrations.findByRegistrationNumber(dstRegNumber)
+                  case _                  => Future.successful(None)
+                }
               }
-            }
+            case _                              =>
+              logger.error(s"Failed to get the response from Tax enrolment subscription by groupId")
+              Future.successful(None)
           }
           .recoverWith { case ex: Exception =>
             logger.error(
