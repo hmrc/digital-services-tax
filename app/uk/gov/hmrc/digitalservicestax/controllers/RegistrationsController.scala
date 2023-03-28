@@ -23,6 +23,7 @@ import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
+import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
@@ -43,6 +44,7 @@ class RegistrationsController @Inject() (
   emailConnector: EmailConnector,
   persistence: MongoPersistence,
   taxEnrolmentService: TaxEnrolmentService,
+  appConfig: AppConfig,
   val auditing: AuditConnector,
   loggedIn: LoggedInAction
 ) extends BackendController(cc)
@@ -91,22 +93,19 @@ class RegistrationsController @Inject() (
 
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request: LoggedInRequest[AnyContent] =>
     for {
-      a <- persistence.registrations.get(request.internalId)
+      a <- if (appConfig.dstNewSolutionFeatureFlag) taxEnrolmentService.getDSTRegistration(request.groupId)
+           else persistence.registrations.get(request.internalId)
       b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
-      c <- if (a.isEmpty) { taxEnrolmentService.getDSTRegistration(request.groupId) }
-           else Future(None)
-    } yield (a, b, c) match {
-      case (Some(r), _, _) if r.registrationNumber.isDefined =>
+    } yield (a, b) match {
+      case (Some(r), _) if r.registrationNumber.isDefined =>
         Ok(Json.toJson(r))
-      case (Some(r), p, _) if p.nonEmpty                     =>
+      case (Some(r), p) if p.nonEmpty                     =>
         if (r.registrationNumber.isEmpty) {
           logger.info(s"no registration number found in registration details")
         }
         logger.info(s"pending registration")
         Ok(Json.toJson(r))
-      case (None, _, Some(r))                                =>
-        Ok(Json.toJson(r))
-      case _                                                 =>
+      case _                                              =>
         logger.info("no pending registration")
         NotFound
     }

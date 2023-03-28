@@ -56,7 +56,8 @@ class RegistrationsControllerSpec
       persistence = mongoPersistence,
       taxEnrolmentService = mockTaxEnrolmentService,
       auditing = mockAuditing,
-      loggedIn = loginAction
+      loggedIn = loginAction,
+      appConfig = mockAppConfig
     )
 
   override def beforeEach(): Unit = {
@@ -66,32 +67,12 @@ class RegistrationsControllerSpec
 
   "RegistrationsController" must {
 
-    "return 200 with registration data when get registration for the internalId is 'None' and for the groupId has data" in {
-
-      val registration = Arbitrary.arbitrary[Registration].sample.value
-
-      mockAuth()
-
-      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(
-        Some(registration)
-      )
-
-      val result: Future[Result] = controller().lookupRegistration().apply(FakeRequest())
-      val resultStatus           = status(result)
-
-      resultStatus mustBe 200
-      contentAsString(
-        result
-      ) mustBe s"${Json.toJson(registration)}"
-
-    }
-
-    "return 200 with registration data when registrationNumber has data" in {
+    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber has data" in {
       val dstNumber    = Arbitrary.arbitrary[DSTRegNumber].sample.value
       val registration = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = Some(dstNumber))
       val internalId   = Arbitrary.arbitrary[InternalId].sample.value
 
-      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(None)
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
       val chain = for {
         r <- mongoPersistence.registrations.update(internalId, registration)
@@ -106,12 +87,12 @@ class RegistrationsControllerSpec
       }
     }
 
-    "return 200 with registration data when registrationNumber is empty and FormBundleNumber is defined" in {
+    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber is empty and FormBundleNumber is defined" in {
       val registration     = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = None)
       val internalId       = Arbitrary.arbitrary[InternalId].sample.value
       val formBundleNumber = Arbitrary.arbitrary[FormBundleNumber].sample.value
 
-      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(None)
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
       val chain = for {
         r <- mongoPersistence.registrations.update(internalId, registration)
@@ -128,8 +109,67 @@ class RegistrationsControllerSpec
 
     }
 
-    "return 404 when tax enrolments connector does not return DstRegNumber" in {
+    "return 200 with registration data when dstNewSolutionFeatureFlag is true and registration details with registrationNumber exists" in {
+      val dstNumber    = Arbitrary.arbitrary[DSTRegNumber].sample.value
+      val registration = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = Some(dstNumber))
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
+      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(
+        Some(registration)
+      )
+
+      val result: Future[Result] = controller().lookupRegistration().apply(FakeRequest())
+      val resultStatus           = status(result)
+
+      resultStatus mustBe 200
+      contentAsString(
+        result
+      ) mustBe s"${Json.toJson(registration)}"
+    }
+
+    "return 200 with registration data when dstNewSolutionFeatureFlag is true and registrationNumber is empty and FormBundleNumber is defined" in {
+      val registration     = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = None)
+      val internalId       = Arbitrary.arbitrary[InternalId].sample.value
+      val formBundleNumber = Arbitrary.arbitrary[FormBundleNumber].sample.value
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
+      val chain = for {
+        m <- mongoPersistence.pendingCallbacks.update(formBundleNumber, internalId)
+      } yield m
+
+      when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(
+        Some(registration)
+      )
+
+      whenReady(chain) { _ =>
+        val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
+        val resultStatus           = status(result)
+
+        resultStatus mustBe 200
+        contentAsString(result) mustBe s"${Json.toJson(registration)}"
+      }
+
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is false and no registration data in DB" in {
+
       mockAuth()
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
+
+      val result: Future[Result] = controller().lookupRegistration().apply(FakeRequest())
+      val resultStatus           = status(result)
+
+      resultStatus mustBe 404
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is true and tax enrolments connector does not return DstRegNumber" in {
+      mockAuth()
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
       when(mockTaxEnrolmentService.getDSTRegistration(any())(any(), any())) thenReturn Future.successful(
         None
       )
@@ -138,6 +178,5 @@ class RegistrationsControllerSpec
 
       resultStatus mustBe 404
     }
-
   }
 }
