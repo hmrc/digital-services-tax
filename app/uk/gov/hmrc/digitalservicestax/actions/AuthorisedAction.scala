@@ -102,7 +102,7 @@ class LoggedInAction @Inject() (
         (id.map(InternalId.of), providerId) match {
           case (Some(Some(internalId)), Some(provider)) =>
             if (appConfig.dstNewSolutionFeatureFlag) {
-              logger.info("DST user logged in")
+              logger.warn("DST user logged in")
             }
             Right(LoggedInRequest(internalId, enrolments, provider, groupId, request))
           case (_, None)                                => Left(Forbidden("No provider ID"))
