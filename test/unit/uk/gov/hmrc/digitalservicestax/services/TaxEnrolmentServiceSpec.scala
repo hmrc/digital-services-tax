@@ -27,11 +27,10 @@ import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
-import uk.gov.hmrc.http.HeaderCarrier
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class TaxEnrolmentServiceSpec
     extends FakeApplicationSetup
@@ -60,18 +59,18 @@ class TaxEnrolmentServiceSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(
-        mockTaxEnrolmentsConnector
-          .getSubscriptionByGroupId(any[String]())(any[HeaderCarrier](), any[ExecutionContext]())
-      ) thenReturn Future.successful(
+      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
         Some(taxEnrolmentsSubscription)
       )
-      for {
+      val chain = for {
         r <- mongoPersistence.registrations.update(internal, registration)
       } yield r
 
-      val result: Registration = dstService.getDSTRegistration(Some("1234")).futureValue.value
-      result mustBe registration
+      whenReady(chain) {_ =>
+        val result: Registration = dstService.getDSTRegistration(Some("1234")).futureValue.value
+        result mustBe registration
+      }
+
     }
 
     "return 'None' when tax enrolments connector does not return DstRegNumber" in {
