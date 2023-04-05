@@ -66,7 +66,7 @@ class TaxEnrolmentServiceSpec
         r <- mongoPersistence.registrations.update(internal, registration)
       } yield r
 
-      whenReady(chain) {_ =>
+      whenReady(chain) { _ =>
         val result: Registration = dstService.getDSTRegistration(Some("1234")).futureValue.value
         result mustBe registration
       }
