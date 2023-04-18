@@ -40,5 +40,10 @@ class TestController @Inject() (
       Future.successful(Ok("tax enrolment callback triggered "))
   }
 
+  def triggerDeleteTaxEnrolmentByGroupId(groupId: String): Action[AnyContent] = Action.async { implicit request =>
+    connector.triggerDeleteEnrolmentByGroupId(groupId) >>
+      Future.successful(Ok(s"tax enrolment deleted for groupId ${groupId}"))
+  }
+
   override def messagesControllerComponents: MessagesControllerComponents = mcc
 }

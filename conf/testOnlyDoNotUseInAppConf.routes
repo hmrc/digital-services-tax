@@ -12,4 +12,6 @@
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
 
-GET        /test-only/trigger-te-callback/:seed    uk.gov.hmrc.digitalservicestax.test.TestController.triggerTaxEnrolmentCallback(seed: String)
+GET        /test-only/trigger-te-callback/:seed                         uk.gov.hmrc.digitalservicestax.test.TestController.triggerTaxEnrolmentCallback(seed: String)
+
+DELETE     /test-only/tax-enrolments/delete-by-groupid/:groupId         uk.gov.hmrc.digitalservicestax.test.TestController.triggerDeleteTaxEnrolmentByGroupId(groupId: String)

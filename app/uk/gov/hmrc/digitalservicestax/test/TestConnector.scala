@@ -40,4 +40,7 @@ class TestConnector @Inject() (
       TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", None)
     }
 
+  def triggerDeleteEnrolmentByGroupId(groupId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
+    http.DELETE[HttpResponse](s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/group-records/${groupId}")
+
 }
