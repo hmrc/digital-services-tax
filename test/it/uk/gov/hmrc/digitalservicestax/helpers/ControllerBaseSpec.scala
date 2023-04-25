@@ -29,6 +29,7 @@ import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors._
+import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -75,13 +76,14 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
     FakeRequest().withBody(AnyContent().asInstanceOf[A])
   )
 
-  def loginReturn(internalId: InternalId = InternalId("Int-aaff66")) =
+  def loginReturn(internalId: InternalId = InternalId("Int-aaff66"), enrolments: Enrolments = mockEnrolments) =
     new LoggedInAction(mockMcc, mockAppConfig, mockAuthConnector) {
       override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
         Future.successful(
           Right(
             loginReq[A].copy(
-              internalId = internalId
+              internalId = internalId,
+              enrolments = enrolments
             )
           )
         )
@@ -89,7 +91,7 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
       override def parser: BodyParser[AnyContent] = stubBodyParser()
     }
 
-  val mockRegistered: Registered = new Registered(mockPersistence, mockTaxEnrolmentService) {
+  val mockRegistered: Registered = new Registered(mockPersistence, mockAppConfig) {
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
   }

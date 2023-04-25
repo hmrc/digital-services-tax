@@ -55,20 +55,21 @@ class TaxEnrolmentServiceSpec
       val internal                                             = arbitrary[InternalId].sample.value
       val dstNumber                                            = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", dstNumber))), "SUCCEEDED", None)
+        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", dstNumber))), "PENDING", None)
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
       val chain = for {
         r <- mongoPersistence.registrations.update(internal, registration)
       } yield r
 
       whenReady(chain) { _ =>
-        val result: Registration = dstService.getDSTRegistration(Some("1234")).futureValue.value
-        result mustBe registration
+        val result: DSTRegNumber = dstService.getPendingDSTRegistration(Some("1234")).futureValue.value
+        result mustBe registration.registrationNumber.get
       }
 
     }
@@ -78,11 +79,12 @@ class TaxEnrolmentServiceSpec
         TaxEnrolmentsSubscription(Some(Seq(Identifier("Dummy", "DummyValue"))), "SUCCEEDED", None)
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
 
-      val result = dstService.getDSTRegistration(Some("1234"))
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
       result.futureValue mustBe None
 
     }
@@ -91,18 +93,19 @@ class TaxEnrolmentServiceSpec
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "ERROR", Some("error"))
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
 
-      val result = dstService.getDSTRegistration(Some("1234"))
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
       result.futureValue mustBe None
     }
 
     "return 'None' when dstNewSolutionFeatureFlag is false" in {
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(false)
 
-      val result = dstService.getDSTRegistration(Some("1234"))
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
       result.futureValue mustBe None
     }
   }

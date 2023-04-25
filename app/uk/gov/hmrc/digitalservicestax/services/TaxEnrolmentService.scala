@@ -19,7 +19,7 @@ package uk.gov.hmrc.digitalservicestax.services
 import play.api.Logging
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
-import uk.gov.hmrc.digitalservicestax.data.Registration
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
@@ -31,13 +31,13 @@ class TaxEnrolmentService @Inject() (
   persistence: MongoPersistence
 ) extends Logging {
 
-  def getDSTRegistration(
+  def getPendingDSTRegistration(
     groupId: Option[String]
-  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[Registration]] =
+  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[DSTRegNumber]] =
     (groupId, appConfig.dstNewSolutionFeatureFlag) match {
       case (Some(groupId), true) =>
         taxEnrolmentConnector
-          .getSubscriptionByGroupId(groupId)
+          .getPendingSubscriptionByGroupId(groupId)
           .flatMap {
             case Some(taxEnrolmentSubscription) =>
               if (taxEnrolmentSubscription.errorResponse.isDefined) {
@@ -46,13 +46,7 @@ class TaxEnrolmentService @Inject() (
                     s"${taxEnrolmentSubscription.errorResponse.getOrElse("")}"
                 )
                 Future.successful(None)
-              } else {
-                taxEnrolmentSubscription.getDSTNumber match {
-                  case Some(dstRegNumber) =>
-                    persistence.registrations.findByRegistrationNumber(dstRegNumber)
-                  case _                  => Future.successful(None)
-                }
-              }
+              } else Future.successful(taxEnrolmentSubscription.getDSTNumber)
             case _                              =>
               logger.info(s"Failed to get the response from Tax enrolment subscription by groupId")
               Future.successful(None)
