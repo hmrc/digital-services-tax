@@ -96,10 +96,7 @@ class RegistrationsController @Inject() (
   def getTaxEnrolmentsPendingRegDetails(): Action[AnyContent] = loggedIn.async {
     implicit request: LoggedInRequest[AnyContent] =>
       if (appConfig.dstNewSolutionFeatureFlag) {
-        taxEnrolmentService.getPendingDSTRegistration(request.groupId).map {
-          case Some(pendingRegNumber) => Ok(pendingRegNumber)
-          case _                      => NotFound
-        }
+        taxEnrolmentService.getPendingDSTRegistration(request.groupId)
       } else Future.successful(NotFound)
   }
 

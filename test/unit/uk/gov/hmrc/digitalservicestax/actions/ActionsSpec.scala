@@ -26,6 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.Json
+import play.api.mvc.Results.NotFound
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -171,8 +172,6 @@ class ActionsSpec
 
     "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
       val action = new Registered(mongoPersistence, mockAppConfig)
-
-      when(mockTaxEnrolmentService.getPendingDSTRegistration(any())(any(), any())).thenReturn(Future.successful(None))
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value

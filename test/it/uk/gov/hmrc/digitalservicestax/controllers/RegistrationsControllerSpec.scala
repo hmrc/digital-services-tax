@@ -191,20 +191,32 @@ class RegistrationsControllerSpec
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
       when(mockTaxEnrolmentService.getPendingDSTRegistration(any())(any(), any())) thenReturn Future
-        .successful(
-          Some(DSTRegNumber(dstNumber))
-        )
+        .successful(Ok)
 
       val result: Future[Result] =
         controller(loginReturn(internalId)).getTaxEnrolmentsPendingRegDetails().apply(FakeRequest())
       val resultStatus           = status(result)
 
       resultStatus mustBe 200
-      contentAsString(result) mustBe s"$dstNumber"
+    }
+
+    "return 404 with registration data when dstNewSolutionFeatureFlag is true and DST enrolment is in non-pending state" in {
+      val internalId = Arbitrary.arbitrary[InternalId].sample.value
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
+      when(mockTaxEnrolmentService.getPendingDSTRegistration(any())(any(), any())) thenReturn Future.successful(
+        NotFound
+      )
+
+      val result: Future[Result] =
+        controller(loginReturn(internalId)).getTaxEnrolmentsPendingRegDetails().apply(FakeRequest())
+      val resultStatus           = status(result)
+
+      resultStatus mustBe 404
     }
 
     "return 404 with None when dstNewSolutionFeatureFlag is false" in {
-      val dstNumber  = Arbitrary.arbitrary[DSTRegNumber].sample.value
       val internalId = Arbitrary.arbitrary[InternalId].sample.value
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false

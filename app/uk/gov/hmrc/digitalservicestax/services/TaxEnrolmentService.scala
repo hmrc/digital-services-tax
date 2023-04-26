@@ -17,6 +17,7 @@
 package uk.gov.hmrc.digitalservicestax.services
 
 import play.api.Logging
+import play.api.mvc.Result
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
@@ -24,6 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc.Results.{NotFound, Ok}
 
 class TaxEnrolmentService @Inject() (
   appConfig: AppConfig,
@@ -33,7 +35,7 @@ class TaxEnrolmentService @Inject() (
 
   def getPendingDSTRegistration(
     groupId: Option[String]
-  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[DSTRegNumber]] =
+  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Result] =
     (groupId, appConfig.dstNewSolutionFeatureFlag) match {
       case (Some(groupId), true) =>
         taxEnrolmentConnector
@@ -45,19 +47,19 @@ class TaxEnrolmentService @Inject() (
                   s"Error response received while getting Tax enrolment subscription by groupId: " +
                     s"${taxEnrolmentSubscription.errorResponse.getOrElse("")}"
                 )
-                Future.successful(None)
-              } else Future.successful(taxEnrolmentSubscription.getDSTNumber)
+                Future.successful(NotFound)
+              } else Future.successful(Ok)
             case _                              =>
               logger.info(s"Failed to get the response from Tax enrolment subscription by groupId")
-              Future.successful(None)
+              Future.successful(NotFound)
           }
           .recoverWith { case ex: Exception =>
             logger.error(
               s"Unexpected error response received while getting Tax enrolment subscription by groupId: " +
                 s"${ex.getMessage}"
             )
-            Future.successful(None)
+            Future.successful(NotFound)
           }
-      case _                     => Future(None)
+      case _                     => Future(NotFound)
     }
 }

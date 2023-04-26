@@ -90,7 +90,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "getPendingSubscriptionByGroupId" should {
-    "retrieve the latest DST period for a groupId" in {
+    "retrieve the tax enrolment with pending state for a groupId" in {
       val groupId            = gen[ShortString].value
       val enrolment: JsValue = Json.parse(
         """[{"created":1676542914173,
@@ -115,28 +115,28 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         res mustBe expectedResult
       }
     }
+    "retrieve the taxenrolment by groupId and return none when state is not pending" in {
+      val groupId            = gen[ShortString].value
+      val enrolment: JsValue = Json.parse(
+        """[{"created":1676542914173,
+          "serviceName":"HMRC-DST-ORG",
+          "identifiers": null,
+          "state":"OFFLINE","etmpId":"XS0000100406365","groupIdentifier":"5551C230-68B2-4D12-A67F-6C1B6A74D53A"}]""".stripMargin
+      )
 
-    "getDSTNumberWithPendingState should return DSTRegNumber as None when identifiers is 'None'" in {
-      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
-      enrolment.getDSTNumberWithPendingState mustBe None
-    }
+      stubFor(
+        get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(enrolment.toString())
+          )
+      )
 
-    "getDSTNumberWithPendingState should return DSTRegNumber when identifiers is DST and state is succeeded" in {
-      val enrolment: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "PENDING", None)
-      enrolment.getDSTNumberWithPendingState mustBe Some(DSTRegNumber("XYDST0000000000"))
-    }
-
-    "getDSTNumberWithPendingState should return None when identifiers is DST and state is succeess" in {
-      val enrolment: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", "XYDST0000000000"))), "SUCCESS", None)
-      enrolment.getDSTNumberWithPendingState mustBe None
-    }
-
-    "getDSTNumberWithPendingState should return None when identifiers is not DST" in {
-      val enrolment: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("warehouseId", "123456789"))), "PENDING", None)
-      enrolment.getDSTNumberWithPendingState mustBe None
+      val response = TaxTestConnector.getPendingSubscriptionByGroupId(groupId)
+      whenReady(response) { res =>
+        res mustBe None
+      }
     }
   }
   "handle an unauthorised exception" in {
