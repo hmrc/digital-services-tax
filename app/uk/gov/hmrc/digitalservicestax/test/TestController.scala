@@ -36,8 +36,12 @@ class TestController @Inject() (
     with ExtraActions {
 
   def triggerTaxEnrolmentCallback(seed: String): Action[AnyContent] = Action.async { implicit request =>
-    connector.trigger("trigger/callback/te", seed) >>
-      Future.successful(Ok("tax enrolment callback triggered "))
+    connector.trigger("trigger/callback/te", seed).map { response =>
+      val dstRefNumberFromHeader = response
+        .header("dstRegistrationNumber")
+        .getOrElse(throw new Exception("DST Registration number missing in headers"))
+      Ok(s"tax enrolment callback triggered with dstReference:$dstRefNumberFromHeader")
+    }
   }
 
   override def messagesControllerComponents: MessagesControllerComponents = mcc

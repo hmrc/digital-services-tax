@@ -71,7 +71,7 @@ class TaxEnrolmentConnector @Inject() (
     }
   }
 
-  def getSubscriptionByGroupId(
+  def getPendingSubscriptionByGroupId(
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TaxEnrolmentsSubscription]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -79,7 +79,7 @@ class TaxEnrolmentConnector @Inject() (
       .GET[Seq[TaxEnrolmentsSubscription]](
         s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
       )
-      .map(_.find(_.getDSTNumberWithSucceededState.isDefined))
+      .map(_.find(_.state == "PENDING"))
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
@@ -108,13 +108,6 @@ case class TaxEnrolmentsSubscription(
     identifiers.getOrElse(Nil).collectFirst {
       case Identifier(_, value) if value.slice(2, 5) == "DST" => DSTRegNumber(value)
     }
-
-  def getDSTNumberWithSucceededState: Option[DSTRegNumber] =
-    if (state.equalsIgnoreCase("SUCCEEDED"))
-      identifiers.getOrElse(Nil).collectFirst {
-        case Identifier(key, value) if key.equalsIgnoreCase("DSTRefNumber") => DSTRegNumber(value)
-      }
-    else None
 }
 
 object TaxEnrolmentsSubscription {

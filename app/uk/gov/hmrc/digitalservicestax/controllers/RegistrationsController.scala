@@ -45,6 +45,7 @@ class RegistrationsController @Inject() (
   persistence: MongoPersistence,
   taxEnrolmentService: TaxEnrolmentService,
   appConfig: AppConfig,
+  registrationOrPending: RegisteredOrPending,
   val auditing: AuditConnector,
   loggedIn: LoggedInAction
 ) extends BackendController(cc)
@@ -54,6 +55,7 @@ class RegistrationsController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   implicit val ec: ExecutionContext = cc.executionContext
+  final val dstServiceName: String  = "HMRC-DST-ORG"
 
   def submitRegistration(): Action[JsValue] = loggedIn.async(parse.json) { implicit request =>
     withJsonBody[Registration](data =>
@@ -91,24 +93,32 @@ class RegistrationsController @Inject() (
     )
   }
 
+  def getTaxEnrolmentsPendingRegDetails(): Action[AnyContent] = loggedIn.async {
+    implicit request: LoggedInRequest[AnyContent] =>
+      if (appConfig.dstNewSolutionFeatureFlag) {
+        taxEnrolmentService.getPendingDSTRegistration(request.groupId)
+      } else Future.successful(NotFound)
+  }
+
   def lookupRegistration(): Action[AnyContent] = loggedIn.async { implicit request: LoggedInRequest[AnyContent] =>
     for {
-      a <- if (appConfig.dstNewSolutionFeatureFlag) taxEnrolmentService.getDSTRegistration(request.groupId)
-           else persistence.registrations.get(request.internalId)
-      b <- persistence.pendingCallbacks.reverseLookup(request.internalId)
-    } yield (a, b) match {
-      case (Some(r), _) if r.registrationNumber.isDefined =>
-        Ok(Json.toJson(r))
-      case (Some(r), p) if p.nonEmpty                     =>
-        if (r.registrationNumber.isEmpty) {
+      regDetails        <- getDstEnrolmentsFromAuth
+      pendingRegDetails <- persistence.pendingCallbacks.reverseLookup(request.internalId)
+    } yield (regDetails, pendingRegDetails) match {
+      case (Some(regDetails), _) if regDetails.registrationNumber.isDefined =>
+        Ok(Json.toJson(regDetails))
+      case (Some(regDetails), Some(_))                                      =>
+        if (regDetails.registrationNumber.isEmpty) {
           logger.info(s"no registration number found in registration details")
         }
-        logger.info(s"pending registration")
-        Ok(Json.toJson(r))
-      case _                                              =>
+        logger.info("pending registration")
+        Ok(Json.toJson(regDetails))
+      case _                                                                =>
         logger.info("no pending registration")
         NotFound
     }
   }
 
+  def getDstEnrolmentsFromAuth(implicit request: LoggedInRequest[AnyContent]): Future[Option[Registration]] =
+    registrationOrPending.getRegistration(request, appConfig)
 }

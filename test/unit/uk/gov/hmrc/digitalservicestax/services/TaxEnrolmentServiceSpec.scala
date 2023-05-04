@@ -22,6 +22,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.mvc.Result
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
@@ -29,6 +30,7 @@ import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, Registrati
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import play.api.mvc.Results.{NotFound, Ok}
 
 import scala.concurrent.Future
 
@@ -49,61 +51,60 @@ class TaxEnrolmentServiceSpec
 
   "Tax enrolments service" should {
 
-    "return DstRegNumber when tax enrolments connector returns taxEnrolmentsSubscription" in {
+    "return Ok when tax enrolments connector returns taxEnrolmentsSubscription with pending state" in {
 
       val registration                                         = arbitrary[Registration].sample.value
       val internal                                             = arbitrary[InternalId].sample.value
       val dstNumber                                            = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("DSTRefNumber", dstNumber))), "SUCCEEDED", None)
+        TaxEnrolmentsSubscription(None, "PENDING", None)
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
       val chain = for {
         r <- mongoPersistence.registrations.update(internal, registration)
       } yield r
 
       whenReady(chain) { _ =>
-        val result: Registration = dstService.getDSTRegistration(Some("1234")).futureValue.value
-        result mustBe registration
+        val result: Result = dstService.getPendingDSTRegistration(Some("1234")).futureValue
+        result mustBe Ok
       }
 
     }
 
-    "return 'None' when tax enrolments connector does not return DstRegNumber" in {
-      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(Some(Seq(Identifier("Dummy", "DummyValue"))), "SUCCEEDED", None)
+    "return 'NotFound' when tax enrolments connector returns NotFound" in {
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(None)
 
-      val result = dstService.getDSTRegistration(Some("1234"))
-      result.futureValue mustBe None
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
+      result.futureValue mustBe NotFound
 
     }
 
-    "return 'None' when tax enrolments connector return error message" in {
+    "return 'NotFound' when tax enrolments connector return error message" in {
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "ERROR", Some("error"))
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockTaxEnrolmentsConnector.getSubscriptionByGroupId(any())(any(), any())) thenReturn Future.successful(
-        Some(taxEnrolmentsSubscription)
-      )
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
 
-      val result = dstService.getDSTRegistration(Some("1234"))
-      result.futureValue mustBe None
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
+      result.futureValue mustBe NotFound
     }
 
-    "return 'None' when dstNewSolutionFeatureFlag is false" in {
+    "return 'NotFound' when dstNewSolutionFeatureFlag is false" in {
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(false)
 
-      val result = dstService.getDSTRegistration(Some("1234"))
-      result.futureValue mustBe None
+      val result = dstService.getPendingDSTRegistration(Some("1234"))
+      result.futureValue mustBe NotFound
     }
   }
 }

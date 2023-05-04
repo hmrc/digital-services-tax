@@ -6,6 +6,7 @@ GET  /lookup-company                                      uk.gov.hmrc.digitalser
 GET  /lookup-company/:utr/:postcode                       uk.gov.hmrc.digitalservicestax.controllers.RosmController.lookupWithIdCheckPostcode(utr, postcode)
 POST /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.submitRegistration()
 GET  /registration                                        uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.lookupRegistration()
+GET  /pending-registration                                uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController.getTaxEnrolmentsPendingRegDetails()
 
 # the readme says this should be a GET, but we're receiving a POST...
 POST /tax-enrolment-callback/:subscriptionId              uk.gov.hmrc.digitalservicestax.controllers.TaxEnrolmentCallbackController.callback(subscriptionId)
