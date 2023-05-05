@@ -118,9 +118,9 @@ class LoggedInAction @Inject() (
         request
       )
 
-    val retrieval = authorisedEnrolments and internalId and credentials and groupIdentifier
+    val retrieval = allEnrolments and internalId and credentials and groupIdentifier
 
-    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId =>
+    authorised(AffinityGroup.Organisation).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId =>
       val providerId = creds.map(_.providerId)
       Future.successful(
         (id.map(InternalId.of), providerId) match {
