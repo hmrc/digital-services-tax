@@ -57,6 +57,7 @@ class ActionsSpec
 
   val mockTaxEnrolmentService: TaxEnrolmentService = mock[TaxEnrolmentService]
   val mockAppConfig: AppConfig                     = mock[AppConfig]
+  val mockAuthConnector: AuthConnector             = mock[AuthConnector]
 
   class Harness(authAction: LoggedInAction) {
     def onPageLoad(): Action[AnyContent] = authAction { _ =>
@@ -69,9 +70,11 @@ class ActionsSpec
     minSuccessful = PosInt(1)
   )
 
+  type AuthRetrievals = Enrolments ~ Option[String] ~ Option[Credentials] ~ Option[String]
+
   "Registered" should {
     "execute an action against a registered user using LoggedInRequest" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockAuthConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -104,7 +107,7 @@ class ActionsSpec
     }
 
     "execute an action against a registered user using LoggedInRequest when taxEnrolmentService return registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockAuthConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -137,7 +140,7 @@ class ActionsSpec
     }
 
     "return forbidden if there is no DST number on the registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockAuthConnector)
 
       val internal    = arbitrary[InternalId].sample.value
       val enrolments  = arbitrary[Enrolments].sample.value
@@ -171,7 +174,7 @@ class ActionsSpec
     }
 
     "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockAuthConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -191,7 +194,7 @@ class ActionsSpec
     }
 
     "should execute an action against a registered user using Registered or pending request" in {
-      val action = new RegisteredOrPending(mongoPersistence, mockAppConfig)
+      val action = new RegisteredOrPending(mongoPersistence, mockAppConfig, mockAuthConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -247,7 +250,10 @@ class ActionsSpec
       } yield r
 
       whenReady(chain) { _ =>
-        await(new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)) mustBe Some(
+        await(
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockAuthConnector)
+            .getRegistration(req, mockAppConfig)
+        ) mustBe Some(
           reg
         )
       }
@@ -269,7 +275,9 @@ class ActionsSpec
         FakeRequest()
       )
 
-      await(new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)) mustEqual None
+      await(
+        new RegisteredOrPending(mongoPersistence, mockAppConfig, mockAuthConnector).getRegistration(req, mockAppConfig)
+      ) mustEqual None
     }
 
     "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists" in {
@@ -285,6 +293,13 @@ class ActionsSpec
         )
       )
 
+      val retrieval: AuthRetrievals =
+        enrolments ~ None ~ Some(Credentials("providerId", "providerType")) ~ None
+
+      when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any())) thenReturn Future.successful(
+        enrolments
+      )
+
       val req = LoggedInRequest(
         internal,
         enrolments,
@@ -299,7 +314,8 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockAuthConnector)
+            .getRegistration(req, mockAppConfig)
         ) mustEqual Some(reg)
       }
     }
@@ -315,6 +331,13 @@ class ActionsSpec
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
 
+      val retrieval: AuthRetrievals =
+        enrolments ~ None ~ Some(Credentials("providerId", "providerType")) ~ None
+
+      when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any())) thenReturn Future.successful(
+        enrolments
+      )
+
       val req = LoggedInRequest(
         internal,
         enrolments,
@@ -329,7 +352,8 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockAuthConnector)
+            .getRegistration(req, mockAppConfig)
         ) mustEqual None
       }
     }

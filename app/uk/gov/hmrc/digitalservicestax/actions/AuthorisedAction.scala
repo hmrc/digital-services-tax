@@ -36,9 +36,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Registered @Inject() (
   persistence: MongoPersistence,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  authConnector: AuthConnector
 )(implicit executionContext: ExecutionContext)
-    extends RegisteredOrPending(persistence, appConfig) {
+    extends RegisteredOrPending(persistence, appConfig, authConnector) {
 
   override def refine[A](
     request: LoggedInRequest[A]
@@ -47,9 +48,11 @@ class Registered @Inject() (
 
 class RegisteredOrPending @Inject() (
   persistence: MongoPersistence,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  val authConnector: AuthConnector
 )(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
+    extends ActionRefiner[LoggedInRequest, RegisteredRequest]
+    with AuthorisedFunctions {
 
   val logger = Logger(getClass)
 
@@ -70,31 +73,37 @@ class RegisteredOrPending @Inject() (
   def getRegistration[A](
     request: LoggedInRequest[A],
     appConfig: AppConfig
-  )(implicit hc: HeaderCarrier): Future[Option[Registration]] =
+  )(implicit hc: HeaderCarrier): Future[Option[Registration]] = {
+    val dstServiceName = "HMRC-DST-ORG"
     if (appConfig.dstNewSolutionFeatureFlag) {
-      request.enrolments.enrolments
-        .find(enrolment => enrolment.key == "HMRC-DST-ORG" && enrolment.isActivated)
-        .map(_.getIdentifier("DSTRefNumber") match {
-          case Some(dstRegNumber) =>
-            persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber.value))
-          case _                  =>
-            logger.info(s"DST enrolment does not exists for user")
-            Future.successful(None)
-        })
-        .getOrElse(Future.successful(None))
-        .recoverWith { case ex: Exception =>
-          logger.error(
-            s"Unexpected error response received while getting Tax enrolment subscription by groupId: " +
-              s"${ex.getMessage}"
-          )
-          Future.successful(None)
-        }
+      authorised(Enrolment(dstServiceName)).retrieve(allEnrolments) {
+        case enrolments =>
+          enrolments.enrolments
+            .find(enrolment => enrolment.key == dstServiceName && enrolment.isActivated)
+            .map(_.getIdentifier("DSTRefNumber") match {
+              case Some(dstRegNumber) =>
+                persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber.value))
+              case _                  =>
+                logger.info(s"DST enrolment does not exists for user")
+                Future.successful(None)
+            })
+            .getOrElse(Future.successful(None))
+            .recoverWith { case ex: Exception =>
+              logger.error(
+                s"Unexpected error response received while getting Tax enrolment subscription by groupId: " +
+                  s"${ex.getMessage}"
+              )
+              Future.successful(None)
+            }
+        case _          => Future.successful(None)
+      }
     } else {
       persistence.registrations.get(request.internalId) flatMap {
         case Some(registration) => Future.successful(Some(registration))
         case _                  => Future.successful(None)
       }
     }
+  }
 }
 
 case class RegisteredRequest[A](
@@ -120,7 +129,7 @@ class LoggedInAction @Inject() (
 
     val retrieval = allEnrolments and internalId and credentials and groupIdentifier
 
-    authorised(AffinityGroup.Organisation).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId =>
       val providerId = creds.map(_.providerId)
       Future.successful(
         (id.map(InternalId.of), providerId) match {
