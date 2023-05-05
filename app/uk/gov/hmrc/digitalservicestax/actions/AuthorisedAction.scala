@@ -118,7 +118,7 @@ class LoggedInAction @Inject() (
         request
       )
 
-    val retrieval = allEnrolments and internalId and credentials and groupIdentifier
+    val retrieval = authorisedEnrolments and internalId and credentials and groupIdentifier
 
     authorised(AuthProviders(GovernmentGateway)).retrieve(retrieval) { case enrolments ~ id ~ creds ~ groupId =>
       val providerId = creds.map(_.providerId)
