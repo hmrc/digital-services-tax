@@ -36,7 +36,7 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   def es3DstUrl(groupId: String): String = {
     logger.info(s"espUrl: ${appConfig.enrolmentStoreProxyUrl}")
-    "https://enrolment-store-proxy.protected.mdtp:443" + s"/groups/$groupId/enrolments?service=$dstServiceName"
+    appConfig.enrolmentStoreProxyUrl + s"/enrolment-store-proxy/groups/$groupId/enrolments?service=$dstServiceName"
   }
 
   def getDstRefFromGroupAssignedEnrolment(
