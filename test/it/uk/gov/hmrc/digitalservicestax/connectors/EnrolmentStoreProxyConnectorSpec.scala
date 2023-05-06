@@ -46,7 +46,7 @@ class EnrolmentStoreProxyConnectorSpec
 
   "should retrieve the latest DSTRegNumber when we get right 200 response" in {
     stubFor(
-      get(urlEqualTo("""/enrolment-store-proxy/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+      get(urlEqualTo("""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -105,7 +105,7 @@ class EnrolmentStoreProxyConnectorSpec
 
   "should return DSTRegNumber as None when response is 204" in {
     stubFor(
-      get(urlEqualTo(s"""/enrolment-store-proxy/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+      get(urlEqualTo(s"""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
         .willReturn(
           aResponse()
             .withStatus(204)
@@ -121,7 +121,7 @@ class EnrolmentStoreProxyConnectorSpec
   "should return None when we DST ref exists and status is not activated" in {
 
     stubFor(
-      get(urlEqualTo(s"""/enrolment-store-proxy/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+      get(urlEqualTo(s"""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -181,7 +181,7 @@ class EnrolmentStoreProxyConnectorSpec
   "should return exception when we response is 200 but invalid json" in {
 
     stubFor(
-      get(urlEqualTo(s"""/enrolment-store-proxy/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+      get(urlEqualTo(s"""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -218,7 +218,7 @@ class EnrolmentStoreProxyConnectorSpec
 
   "should return Exception when a non success response is returned" in {
     stubFor(
-      get(urlEqualTo(s"""/enrolment-store-proxy/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+      get(urlEqualTo(s"""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
         .willReturn(
           aResponse()
             .withStatus(400)
