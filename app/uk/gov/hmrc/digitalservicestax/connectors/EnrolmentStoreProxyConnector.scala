@@ -34,8 +34,10 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   val dstServiceName: String = "HMRC-DST-ORG"
 
-  def es3DstUrl(groupId: String): String =
-    appConfig.enrolmentStoreProxyUrl + s"/groups/$groupId/enrolments?service=$dstServiceName"
+  def es3DstUrl(groupId: String): String = {
+    logger.info(s"espUrl: ${appConfig.enrolmentStoreProxyUrl}")
+    "https://enrolment-store-proxy.protected.mdtp:443" + s"/groups/$groupId/enrolments?service=$dstServiceName"
+  }
 
   def getDstRefFromGroupAssignedEnrolment(
     groupId: String
