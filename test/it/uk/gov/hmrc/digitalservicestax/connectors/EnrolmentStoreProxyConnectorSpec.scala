@@ -118,6 +118,21 @@ class EnrolmentStoreProxyConnectorSpec
     }
   }
 
+  "should return DSTRegNumber as None when response is 404" in {
+    stubFor(
+      get(urlEqualTo(s"""/enrolment-store-proxy/enrolment-store/groups/12345/enrolments?service=HMRC-DST-ORG"""))
+        .willReturn(
+          aResponse()
+            .withStatus(404)
+        )
+    )
+
+    val response = EspTestConnector.getDstRefFromGroupAssignedEnrolment("12345")
+    whenReady(response) { res =>
+      res mustEqual None
+    }
+  }
+
   "should return None when we DST ref exists and status is not activated" in {
 
     stubFor(

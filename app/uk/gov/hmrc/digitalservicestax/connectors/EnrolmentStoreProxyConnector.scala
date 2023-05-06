@@ -34,25 +34,23 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   val dstServiceName: String = "HMRC-DST-ORG"
 
-  def es3DstUrl(groupId: String): String = {
-    logger.info(s"espUrl: ${appConfig.enrolmentStoreProxyUrl}")
+  def es3DstUrl(groupId: String): String =
     appConfig.enrolmentStoreProxyUrl + s"/enrolment-store-proxy/enrolment-store/groups/$groupId/enrolments?service=$dstServiceName"
-  }
 
   def getDstRefFromGroupAssignedEnrolment(
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     http.GET[HttpResponse](es3DstUrl(groupId)) map {
-      case response if response.status == 204 => None
-      case response if response.status == 200 =>
+      case response if response.status == 204 || response.status == 404 => None
+      case response if response.status == 200                           =>
         response.json
           .validate[GroupEnrolmentsResponse]
           .getOrElse(throw new Exception("Unexpected Response body from enrolment store proxy"))
           .enrolments
           .find(enrolment => enrolment.isActivated && enrolment.service == dstServiceName)
           .flatMap(_.identifiers.find(_.key == "DSTRefNumber").map(_.value))
-      case response                           =>
+      case response                                                     =>
         throw new Exception(s"Response code: ${response.status}, Response body: ${response.body}")
     } recover { case e: Exception =>
       throw new Exception(s"Unexpected exception while getting group enrolments from ESP. Exception: ${e.getMessage}")
