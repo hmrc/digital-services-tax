@@ -49,6 +49,7 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
   val mockRosmConnector: RosmConnector                  = mock[connectors.RosmConnector]
   val mockEmailConnector: EmailConnector                = mock[connectors.EmailConnector]
   val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
+  val mockEspConnector: EnrolmentStoreProxyConnector    = mock[connectors.EnrolmentStoreProxyConnector]
   val mockTaxEnrolmentService: TaxEnrolmentService      = mock[TaxEnrolmentService]
   val mockAuditing: AuditConnector                      = mock[AuditConnector]
   val mockCompanyReg: CompanyRegWrapper                 = mock[CompanyRegWrapper]
@@ -91,7 +92,7 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
       override def parser: BodyParser[AnyContent] = stubBodyParser()
     }
 
-  val mockRegistered: Registered = new Registered(mockPersistence, mockAppConfig) {
+  val mockRegistered: Registered = new Registered(mockPersistence, mockAppConfig, mockEspConnector) {
     override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
       Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
   }

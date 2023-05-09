@@ -25,8 +25,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
-import play.api.libs.json.Json
-import play.api.mvc.Results.NotFound
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -34,8 +32,8 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, NonEmptyString, Registration}
+import uk.gov.hmrc.digitalservicestax.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
 import unit.uk.gov.hmrc.digitalservicestax.util.RetrievalOps._
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -55,8 +53,9 @@ class ActionsSpec
     reset(mockAppConfig, mockTaxEnrolmentService)
   }
 
-  val mockTaxEnrolmentService: TaxEnrolmentService = mock[TaxEnrolmentService]
-  val mockAppConfig: AppConfig                     = mock[AppConfig]
+  val mockTaxEnrolmentService: TaxEnrolmentService   = mock[TaxEnrolmentService]
+  val mockAppConfig: AppConfig                       = mock[AppConfig]
+  val mockEspConnector: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
 
   class Harness(authAction: LoggedInAction) {
     def onPageLoad(): Action[AnyContent] = authAction { _ =>
@@ -69,9 +68,11 @@ class ActionsSpec
     minSuccessful = PosInt(1)
   )
 
+  type AuthRetrievals = Enrolments ~ Option[String] ~ Option[Credentials] ~ Option[String]
+
   "Registered" should {
     "execute an action against a registered user using LoggedInRequest" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -104,7 +105,7 @@ class ActionsSpec
     }
 
     "execute an action against a registered user using LoggedInRequest when taxEnrolmentService return registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -137,7 +138,7 @@ class ActionsSpec
     }
 
     "return forbidden if there is no DST number on the registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
 
       val internal    = arbitrary[InternalId].sample.value
       val enrolments  = arbitrary[Enrolments].sample.value
@@ -171,7 +172,7 @@ class ActionsSpec
     }
 
     "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
-      val action = new Registered(mongoPersistence, mockAppConfig)
+      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -191,7 +192,7 @@ class ActionsSpec
     }
 
     "should execute an action against a registered user using Registered or pending request" in {
-      val action = new RegisteredOrPending(mongoPersistence, mockAppConfig)
+      val action = new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -247,7 +248,10 @@ class ActionsSpec
       } yield r
 
       whenReady(chain) { _ =>
-        await(new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)) mustBe Some(
+        await(
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+            .getRegistration(req, mockAppConfig)
+        ) mustBe Some(
           reg
         )
       }
@@ -269,7 +273,9 @@ class ActionsSpec
         FakeRequest()
       )
 
-      await(new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)) mustEqual None
+      await(
+        new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector).getRegistration(req, mockAppConfig)
+      ) mustEqual None
     }
 
     "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists" in {
@@ -285,6 +291,10 @@ class ActionsSpec
         )
       )
 
+      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+        Some(reg.registrationNumber.value)
+      )
+
       val req = LoggedInRequest(
         internal,
         enrolments,
@@ -299,7 +309,8 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+            .getRegistration(req, mockAppConfig)
         ) mustEqual Some(reg)
       }
     }
@@ -315,6 +326,10 @@ class ActionsSpec
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
 
+      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+        None
+      )
+
       val req = LoggedInRequest(
         internal,
         enrolments,
@@ -329,7 +344,8 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig).getRegistration(req, mockAppConfig)
+          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+            .getRegistration(req, mockAppConfig)
         ) mustEqual None
       }
     }

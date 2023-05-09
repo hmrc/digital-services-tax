@@ -17,17 +17,17 @@
 package uk.gov.hmrc.digitalservicestax
 package actions
 
-import play.api.{Logger, Logging}
 import play.api.mvc.Results.Forbidden
 import play.api.mvc._
+import play.api.{Logger, Logging}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
+import uk.gov.hmrc.digitalservicestax.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -36,9 +36,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Registered @Inject() (
   persistence: MongoPersistence,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
 )(implicit executionContext: ExecutionContext)
-    extends RegisteredOrPending(persistence, appConfig) {
+    extends RegisteredOrPending(persistence, appConfig, enrolmentStoreProxyConnector) {
 
   override def refine[A](
     request: LoggedInRequest[A]
@@ -47,7 +48,8 @@ class Registered @Inject() (
 
 class RegisteredOrPending @Inject() (
   persistence: MongoPersistence,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
 
@@ -72,23 +74,15 @@ class RegisteredOrPending @Inject() (
     appConfig: AppConfig
   )(implicit hc: HeaderCarrier): Future[Option[Registration]] =
     if (appConfig.dstNewSolutionFeatureFlag) {
-      request.enrolments.enrolments
-        .find(enrolment => enrolment.key == "HMRC-DST-ORG" && enrolment.isActivated)
-        .map(_.getIdentifier("DSTRefNumber") match {
-          case Some(dstRegNumber) =>
-            persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber.value))
-          case _                  =>
-            logger.info(s"DST enrolment does not exists for user")
-            Future.successful(None)
-        })
-        .getOrElse(Future.successful(None))
-        .recoverWith { case ex: Exception =>
-          logger.error(
-            s"Unexpected error response received while getting Tax enrolment subscription by groupId: " +
-              s"${ex.getMessage}"
-          )
+      enrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(
+        request.groupId.getOrElse(throw new Exception("GroupId does not exist"))
+      ) flatMap {
+        case Some(dstRegNumber) =>
+          persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber))
+        case _                  =>
+          logger.info(s"DST enrolment does not exists for user")
           Future.successful(None)
-        }
+      }
     } else {
       persistence.registrations.get(request.internalId) flatMap {
         case Some(registration) => Future.successful(Some(registration))

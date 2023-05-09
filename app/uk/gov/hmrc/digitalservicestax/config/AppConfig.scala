@@ -42,6 +42,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val taxEnrolmentsServiceName: String        = servicesConfig.getConfString("tax-enrolments.serviceName", "")
   val taxEnrolmentsEnabled: Boolean           = servicesConfig.getConfBool("tax-enrolments.enabled", true)
   val taxEnrolmentsUrl: String                = servicesConfig.baseUrl("tax-enrolments")
+  val enrolmentStoreProxyUrl: String          = servicesConfig.baseUrl("enrolment-store-proxy")
   lazy val dstNewSolutionFeatureFlag: Boolean =
     config.getOptional[Boolean]("feature.dstNewProposedSolution").getOrElse(false)
 
