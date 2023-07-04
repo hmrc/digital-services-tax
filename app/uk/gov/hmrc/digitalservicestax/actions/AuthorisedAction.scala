@@ -119,9 +119,6 @@ class LoggedInAction @Inject() (
       Future.successful(
         (id.map(InternalId.of), providerId) match {
           case (Some(Some(internalId)), Some(provider)) =>
-            if (appConfig.dstNewSolutionFeatureFlag) {
-              logger.warn("DST user logged in")
-            }
             Right(LoggedInRequest(internalId, enrolments, provider, groupId, request))
           case (_, None)                                => Left(Forbidden("No provider ID"))
           case (Some(None), _)                          => Left(Forbidden("Invalid Internal ID"))
