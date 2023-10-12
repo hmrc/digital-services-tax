@@ -20,7 +20,6 @@ import play.api.Logging
 import play.api.mvc.Result
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
