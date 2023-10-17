@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.digitalservicestax.test
 
-import cats.implicits._
 import play.api.mvc.{Action, AnyContent, ControllerComponents, MessagesControllerComponents}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class TestController @Inject() (
