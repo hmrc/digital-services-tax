@@ -24,7 +24,7 @@ import play.api.{Configuration, Logging}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
+import uk.gov.hmrc.digitalservicestax.data.{Period, percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -121,6 +121,17 @@ class ReturnsController @Inject() (
             }
           )
         )
+      }
+    }
+
+  def getReturn(periodKeyString: String): Action[AnyContent] =
+    loggedIn.andThen(registered).async { implicit request =>
+      val periodKey = Period.Key(periodKeyString)
+
+      persistence.returns(request.registration, periodKey).map { returnRecord =>
+        Ok(Json.toJson(returnRecord))
+      } recoverWith { case _: Throwable =>
+        Future.successful(NotFound)
       }
     }
 

@@ -15,4 +15,5 @@ POST /returns/:periodKey            		              uk.gov.hmrc.digitalservicest
 GET  /returns/outstanding                                 uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupOutstandingReturns()
 GET  /returns/amendable                                   uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAmendableReturns()
 GET  /returns/all                                         uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.lookupAllReturns()
+GET  /returns/:periodKey                                  uk.gov.hmrc.digitalservicestax.controllers.ReturnsController.getReturn(periodKey: String)
 

@@ -16,26 +16,47 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers
 
+import it.uk.gov.hmrc.digitalservicestax.helpers.ControllerBaseSpec
+import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
+import org.scalacheck.Arbitrary
+import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.{Application, Environment}
 import uk.gov.hmrc.digitalservicestax.controllers.ReturnsController
-import uk.gov.hmrc.digitalservicestax.data.Period
-import it.uk.gov.hmrc.digitalservicestax.helpers.ControllerBaseSpec
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data.{Period, Return, percentFormat => _}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
+import java.io.File
 import java.time.LocalDate
 import scala.concurrent.Future
 
-class ReturnsControllerSpec extends ControllerBaseSpec {
+class ReturnsControllerSpec
+    extends ControllerBaseSpec
+    with BaseOneAppPerSuite
+    with FakeApplicationFactory
+    with CleanMongoCollectionSupport {
+
+  val mongoPersistence: MongoPersistence      = app.injector.instanceOf[MongoPersistence]
+  lazy val environment: Environment           = Environment.simple(new File("."))
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder(environment = environment)
+      .configure(Map("tax-enrolments.enabled" -> "true", "auditing.enabled" -> "false"))
+      .build()
 
   object TestReturnsController
       extends ReturnsController(
         authConnector = mockAuthConnector,
         runModeConfiguration = mockRunModeConfiguration,
         cc = stubControllerComponents(),
-        persistence = mockPersistence,
+        persistence = mongoPersistence,
         connector = mockConnector,
         auditing = mockAuditing,
         registered = mockRegistered,
@@ -176,4 +197,38 @@ class ReturnsControllerSpec extends ControllerBaseSpec {
     }
   }
 
+  "getReturn" must {
+    "return 200 status and a Returns record for the input period key" in {
+      val ret: Return        = Arbitrary.arbitrary[Return].sample.value
+      val period: Period.Key = Period.Key.of("0220").value
+
+      val results = for {
+        _      <- mongoPersistence.returns.update(regObj, period, ret)
+        _      <- mongoPersistence.returns(regObj, period)
+        result <- TestReturnsController.getReturn(period).apply(FakeRequest())
+      } yield result
+
+      val resultStatus = status(results)
+
+      resultStatus mustBe 200
+      contentAsJson(results) mustBe Json.toJson(ret)
+
+    }
+
+    "return 404 status when there is no Returns record for the input period key" in {
+      val ret: Return           = Arbitrary.arbitrary[Return].sample.value
+      val period: Period.Key    = Period.Key.of("0220").value
+      val periodkey: Period.Key = Period.Key.of("0221").value
+
+      val results = for {
+        _      <- mongoPersistence.returns.update(regObj, period, ret)
+        result <- TestReturnsController.getReturn(periodkey).apply(FakeRequest())
+      } yield result
+
+      val resultStatus = status(results)
+
+      resultStatus mustBe 404
+
+    }
+  }
 }
