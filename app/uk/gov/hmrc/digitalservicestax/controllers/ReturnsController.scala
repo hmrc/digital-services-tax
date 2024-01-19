@@ -128,12 +128,11 @@ class ReturnsController @Inject() (
     loggedIn.andThen(registered).async { implicit request =>
       val periodKey = Period.Key(periodKeyString)
 
-       persistence.returns(request.registration, periodKey).map { returnRecord =>
-         Ok(Json.toJson(returnRecord))
-       } recoverWith {
-         case _: Throwable =>
-           Future.successful(NotFound)
-       }
+      persistence.returns(request.registration, periodKey).map { returnRecord =>
+        Ok(Json.toJson(returnRecord))
+      } recoverWith { case _: Throwable =>
+        Future.successful(NotFound)
+      }
     }
 
 }

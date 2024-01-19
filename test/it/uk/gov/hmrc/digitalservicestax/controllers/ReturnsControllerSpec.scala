@@ -38,10 +38,14 @@ import java.io.File
 import java.time.LocalDate
 import scala.concurrent.Future
 
-class ReturnsControllerSpec extends ControllerBaseSpec with BaseOneAppPerSuite with FakeApplicationFactory with CleanMongoCollectionSupport{
+class ReturnsControllerSpec
+    extends ControllerBaseSpec
+    with BaseOneAppPerSuite
+    with FakeApplicationFactory
+    with CleanMongoCollectionSupport {
 
-  val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
-  lazy val environment: Environment          = Environment.simple(new File("."))
+  val mongoPersistence: MongoPersistence      = app.injector.instanceOf[MongoPersistence]
+  lazy val environment: Environment           = Environment.simple(new File("."))
   override def fakeApplication(): Application =
     GuiceApplicationBuilder(environment = environment)
       .configure(Map("tax-enrolments.enabled" -> "true", "auditing.enabled" -> "false"))
@@ -195,12 +199,12 @@ class ReturnsControllerSpec extends ControllerBaseSpec with BaseOneAppPerSuite w
 
   "getReturn" must {
     "return 200 status and a Returns record for the input period key" in {
-      val ret: Return = Arbitrary.arbitrary[Return].sample.value
+      val ret: Return        = Arbitrary.arbitrary[Return].sample.value
       val period: Period.Key = Period.Key.of("0220").value
 
       val results = for {
-        _ <- mongoPersistence.returns.update(regObj, period, ret)
-        _ <- mongoPersistence.returns(regObj, period)
+        _      <- mongoPersistence.returns.update(regObj, period, ret)
+        _      <- mongoPersistence.returns(regObj, period)
         result <- TestReturnsController.getReturn(period).apply(FakeRequest())
       } yield result
 
@@ -212,12 +216,12 @@ class ReturnsControllerSpec extends ControllerBaseSpec with BaseOneAppPerSuite w
     }
 
     "return 404 status when there is no Returns record for the input period key" in {
-      val ret: Return = Arbitrary.arbitrary[Return].sample.value
-      val period: Period.Key = Period.Key.of("0220").value
+      val ret: Return           = Arbitrary.arbitrary[Return].sample.value
+      val period: Period.Key    = Period.Key.of("0220").value
       val periodkey: Period.Key = Period.Key.of("0221").value
 
       val results = for {
-        _ <- mongoPersistence.returns.update(regObj, period, ret)
+        _      <- mongoPersistence.returns.update(regObj, period, ret)
         result <- TestReturnsController.getReturn(periodkey).apply(FakeRequest())
       } yield result
 
