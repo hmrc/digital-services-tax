@@ -19,7 +19,9 @@ package uk.gov.hmrc.digitalservicestax.connectors
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
+import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
+import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Postcode}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HttpClient, _}
@@ -96,6 +98,31 @@ class TaxEnrolmentConnector @Inject() (
       "callback"    -> s"${appConfig.taxEnrolmentsCallbackUrl}$formBundleNumber",
       "etmpId"      -> safeId
     )
+
+  val allocateDstEnrolmentToGroup = s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/service/HMRC-DST-ORG/enrolment"
+
+  def isAllocateDstGroupEnrolmentSuccess(postCode: String, dstRegNumber: String)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Boolean] = {
+
+    val requestBody =
+      Enrolments(List(KeyValuePair("Postcode", postCode)), List(KeyValuePair("DSTRefNumber", dstRegNumber)))
+
+    http.PUT[Enrolments, HttpResponse](allocateDstEnrolmentToGroup, requestBody) map {
+      case responseMessage if responseMessage.status == 204 => true
+      case responseMessage                                  =>
+        logger.error(
+          s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for $allocateDstEnrolmentToGroup"
+        )
+        false
+    } recover { case ex: Exception =>
+      logger.error(
+        s"Tax enrolment returned an exception when trying to call $allocateDstEnrolmentToGroup. Exception: ${ex.getMessage}"
+      )
+      false
+    }
+  }
 
 }
 

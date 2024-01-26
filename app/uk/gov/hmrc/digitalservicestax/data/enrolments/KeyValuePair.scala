@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.data
+package uk.gov.hmrc.digitalservicestax.data.enrolments
 
-case class CompanyRegWrapper(
-  company: Company,
-  utr: Option[UTR] = None,
-  safeId: Option[SafeId] = None,
-  useSafeId: Boolean = false,
-  sapNumber: Option[SapNumber] = None
-)
+import play.api.libs.json.{Json, OFormat}
+
+final case class KeyValuePair(key: String, value: String)
+
+object KeyValuePair {
+  implicit val format: OFormat[KeyValuePair] = Json.format[KeyValuePair]
+}

@@ -16,21 +16,21 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.outworkers.util.samplers._
+import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.mockito._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
-import uk.gov.hmrc.digitalservicestax.connectors.RegistrationConnector
-import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
+import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, SubscriptionStatus, SubscriptionStatusResponse}
+import uk.gov.hmrc.digitalservicestax.connectors.RegistrationConnector
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration, SapNumber}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 class RegistrationConnectorSpec
     extends FakeApplicationSetup
@@ -70,6 +70,60 @@ class RegistrationConnectorSpec
     whenReady(response) { res =>
       res
     }
+  }
+
+  "should retrieve subscription status for sapNumber" in {
+
+    val expectedResponse: SubscriptionStatusResponse =
+      SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some("XYDST0000000000"))
+
+    val resp: String =
+      s"""{
+         |    "subscriptionStatus": "SUCCESSFUL",
+         |    "idType": "ZDST",
+         |    "idValue": "XYDST0000000000"
+         |}
+         |""".stripMargin
+
+    stubFor(
+      get(urlPathEqualTo(s"""/cross-regime/subscription/DST/1234567890/status"""))
+        .willReturn(aResponse().withStatus(200).withBody(resp))
+    )
+
+    val response = RegTestConnector.getSubscriptionStatus(SapNumber("1234567890"))
+    whenReady(response) { res =>
+      res mustEqual expectedResponse
+    }
+
+  }
+
+  "should fail when unexpected response is received" in {
+
+    val resp: String =
+      s"""{ 
+         |    "failures": [   
+         |            {    
+         |              "code": "INVALID_REGIME",
+         |              "reason": "Submission has not passed validation. Invalid parameter regime."   
+         |            },
+         |           {     
+         |              "code": "INVALID_CORRELATIONID",
+         |              "reason": "Submission has not passed validation. Invalid header CorrelationId."
+         |           }
+         |     ]
+         |}
+         |""".stripMargin
+
+    stubFor(
+      get(urlPathEqualTo(s"""/cross-regime/subscription/DST/1234567890/status"""))
+        .willReturn(aResponse().withStatus(400).withBody(resp))
+    )
+
+    whenReady(RegTestConnector.getSubscriptionStatus(SapNumber("1234567890")).failed) { ex =>
+      ex.getMessage contains "INVALID_REGIME"
+      ex.getMessage contains "INVALID_CORRELATIONID"
+    }
+
   }
 
 }
