@@ -27,7 +27,7 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors._
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
-import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, GetDstNumberFromEisService, MongoPersistence, TaxEnrolmentService}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -47,7 +47,8 @@ class RegistrationsController @Inject() (
   appConfig: AppConfig,
   registrationOrPending: RegisteredOrPending,
   val auditing: AuditConnector,
-  loggedIn: LoggedInAction
+  loggedIn: LoggedInAction,
+  getDstNumberService: GetDstNumberFromEisService
 ) extends BackendController(cc)
     with AuthorisedFunctions
     with AuditWrapper {

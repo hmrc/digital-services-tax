@@ -29,10 +29,9 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsString, defaultAwaitTimeout, status, stubControllerComponents}
 import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, RegisteredOrPending}
-import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentsSubscription
 import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, DSTRegNumber, FormBundleNumber, InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber, InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
@@ -61,7 +60,8 @@ class RegistrationsControllerSpec
       auditing = mockAuditing,
       loggedIn = loginAction,
       appConfig = mockAppConfig,
-      registrationOrPending = mockRegisteredOrPending
+      registrationOrPending = mockRegisteredOrPending,
+      getDstNumberService = mockGetDstNumberService
     )
 
   override def beforeEach(): Unit = {

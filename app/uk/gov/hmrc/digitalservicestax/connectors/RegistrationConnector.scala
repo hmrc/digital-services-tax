@@ -19,10 +19,10 @@ package connectors
 
 import play.api.Mode
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
+import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
-import uk.gov.hmrc.digitalservicestax.data.Registration
+import uk.gov.hmrc.digitalservicestax.data.{Registration, SapNumber}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -39,7 +39,8 @@ class RegistrationConnector @Inject() (
 ) extends DesHelpers
     with AuditWrapper {
 
-  private val registerPath = "cross-regime/subscription/DST"
+  private val registerPath              = "cross-regime/subscription/DST"
+  private val getSubscriptionStatusPath = "cross-regime/subscription/DST"
 
   def send(
     idType: String,
@@ -60,4 +61,16 @@ class RegistrationConnector @Inject() (
     }
   }
 
+  def getSubscriptionStatus(
+    sapNumber: SapNumber
+  )(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[SubscriptionStatusResponse] =
+    desGet[Either[UpstreamErrorResponse, SubscriptionStatusResponse]](
+      s"${appConfig.desURL}/$getSubscriptionStatusPath/$sapNumber/status"
+    )(implicitly, addHeaders, implicitly).map {
+      case Right(value) => value
+      case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)
+    }
 }

@@ -338,7 +338,8 @@ object TestInstances {
       arbitrary[Company],
       Gen.const(none[UTR]),
       Gen.const(none[SafeId]),
-      Gen.const(false)
+      Gen.const(false),
+      Gen.const(none[SapNumber])
     ).mapN(CompanyRegWrapper.apply)
   )
 

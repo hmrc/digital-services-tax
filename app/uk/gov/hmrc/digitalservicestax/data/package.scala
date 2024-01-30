@@ -38,6 +38,12 @@ package object data extends SimpleJson {
         "^[A-Z0-9]{1,15}$"
       )
 
+  type SapNumber = String @@ SapNumber.Tag
+  object SapNumber
+      extends RegexValidatedString(
+        "^[a-zA-Z0-9]{10}$"
+      )
+
   type FormBundleNumber = String @@ FormBundleNumber.Tag
   object FormBundleNumber
       extends RegexValidatedString(

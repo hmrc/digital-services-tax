@@ -139,6 +139,41 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       }
     }
   }
+
+  "isAllocateDstGroupEnrolmentSuccess" should {
+    "return true when allocate group enrolment is successful and returns 204" in {
+
+      stubFor(
+        put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
+          .willReturn(
+            aResponse()
+              .withStatus(204)
+          )
+      )
+
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess("AA1 2BB", "1234567890")
+      whenReady(response) { res =>
+        res mustBe true
+      }
+    }
+    "return false when allocate group enrolment fails and returns 400" in {
+
+      stubFor(
+        put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
+          .willReturn(
+            aResponse()
+              .withStatus(400)
+              .withBody("Provided service name is not in services-to-activate")
+          )
+      )
+
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess("AA1 2CC", "1234567890")
+      whenReady(response) { res =>
+        res mustBe false
+      }
+    }
+  }
+
   "handle an unauthorised exception" in {
     val safeId           = gen[ShortString].value
     val formBundleNumber = gen[ShortString].value

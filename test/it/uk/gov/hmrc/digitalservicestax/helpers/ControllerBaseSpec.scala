@@ -29,9 +29,8 @@ import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors._
-import uk.gov.hmrc.digitalservicestax.controllers.RegistrationsController
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, ContactDetails, DSTRegNumber, InternalId, Registration}
-import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, TaxEnrolmentService}
+import uk.gov.hmrc.digitalservicestax.services.{GetDstNumberFromEisService, MongoPersistence, TaxEnrolmentService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
@@ -40,22 +39,23 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
 
-  val mockAuthConnector: AuthConnector                  = mock[AuthConnector]
-  val mockRunModeConfiguration: Configuration           = mock[Configuration]
-  val mockAppConfig: AppConfig                          = mock[AppConfig]
-  val mockPersistence: MongoPersistence                 = mock[MongoPersistence]
-  val mockConnector: ReturnConnector                    = mock[connectors.ReturnConnector]
-  val mockRegistrationConnector: RegistrationConnector  = mock[connectors.RegistrationConnector]
-  val mockRosmConnector: RosmConnector                  = mock[connectors.RosmConnector]
-  val mockEmailConnector: EmailConnector                = mock[connectors.EmailConnector]
-  val mockTaxEnrolmentsConnector: TaxEnrolmentConnector = mock[connectors.TaxEnrolmentConnector]
-  val mockEspConnector: EnrolmentStoreProxyConnector    = mock[connectors.EnrolmentStoreProxyConnector]
-  val mockTaxEnrolmentService: TaxEnrolmentService      = mock[TaxEnrolmentService]
-  val mockAuditing: AuditConnector                      = mock[AuditConnector]
-  val mockCompanyReg: CompanyRegWrapper                 = mock[CompanyRegWrapper]
-  val mockContact: ContactDetails                       = mock[ContactDetails]
-  val mockMcc: MessagesControllerComponents             = mock[MessagesControllerComponents]
-  val mockEnrolments: Enrolments                        = mock[Enrolments]
+  val mockAuthConnector: AuthConnector                    = mock[AuthConnector]
+  val mockRunModeConfiguration: Configuration             = mock[Configuration]
+  val mockAppConfig: AppConfig                            = mock[AppConfig]
+  val mockPersistence: MongoPersistence                   = mock[MongoPersistence]
+  val mockConnector: ReturnConnector                      = mock[connectors.ReturnConnector]
+  val mockRegistrationConnector: RegistrationConnector    = mock[connectors.RegistrationConnector]
+  val mockRosmConnector: RosmConnector                    = mock[connectors.RosmConnector]
+  val mockEmailConnector: EmailConnector                  = mock[connectors.EmailConnector]
+  val mockTaxEnrolmentsConnector: TaxEnrolmentConnector   = mock[connectors.TaxEnrolmentConnector]
+  val mockEspConnector: EnrolmentStoreProxyConnector      = mock[connectors.EnrolmentStoreProxyConnector]
+  val mockGetDstNumberService: GetDstNumberFromEisService = mock[GetDstNumberFromEisService]
+  val mockTaxEnrolmentService: TaxEnrolmentService        = mock[TaxEnrolmentService]
+  val mockAuditing: AuditConnector                        = mock[AuditConnector]
+  val mockCompanyReg: CompanyRegWrapper                   = mock[CompanyRegWrapper]
+  val mockContact: ContactDetails                         = mock[ContactDetails]
+  val mockMcc: MessagesControllerComponents               = mock[MessagesControllerComponents]
+  val mockEnrolments: Enrolments                          = mock[Enrolments]
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -92,10 +92,17 @@ trait ControllerBaseSpec extends PlaySpec with MockitoSugar with Results {
       override def parser: BodyParser[AnyContent] = stubBodyParser()
     }
 
-  val mockRegistered: Registered = new Registered(mockPersistence, mockAppConfig, mockEspConnector) {
-    override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
-      Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
-  }
+  val mockRegistered: Registered =
+    new Registered(
+      mockPersistence,
+      mockAppConfig,
+      mockEspConnector,
+      mockGetDstNumberService,
+      mockTaxEnrolmentsConnector
+    ) {
+      override def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] =
+        Future.successful(Right(RegisteredRequest[A](regObj, loginReq[A])))
+    }
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 

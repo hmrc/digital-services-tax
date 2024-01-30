@@ -25,9 +25,9 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, TaxEnrolmentConnector}
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.digitalservicestax.services.{GetDstNumberFromEisService, MongoPersistence}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -37,9 +37,17 @@ import scala.concurrent.{ExecutionContext, Future}
 class Registered @Inject() (
   persistence: MongoPersistence,
   appConfig: AppConfig,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  getDstNumberFromEisService: GetDstNumberFromEisService,
+  taxEnrolmentConnector: TaxEnrolmentConnector
 )(implicit executionContext: ExecutionContext)
-    extends RegisteredOrPending(persistence, appConfig, enrolmentStoreProxyConnector) {
+    extends RegisteredOrPending(
+      persistence,
+      appConfig,
+      enrolmentStoreProxyConnector,
+      getDstNumberFromEisService,
+      taxEnrolmentConnector
+    ) {
 
   override def refine[A](
     request: LoggedInRequest[A]
@@ -49,7 +57,9 @@ class Registered @Inject() (
 class RegisteredOrPending @Inject() (
   persistence: MongoPersistence,
   appConfig: AppConfig,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  getDstNumberFromEisService: GetDstNumberFromEisService,
+  taxEnrolmentConnector: TaxEnrolmentConnector
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
 
@@ -80,8 +90,13 @@ class RegisteredOrPending @Inject() (
         case Some(dstRegNumber) =>
           persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber))
         case _                  =>
-          logger.info(s"DST enrolment does not exists for user")
-          Future.successful(None)
+          request.utr match {
+            case Some(utr) =>
+              getDstNumberFromEisService.getDstNumberAndActivateEnrolment(utr, request.groupId.get)
+            case _         =>
+              logger.info(s"DST enrolment does not exists for user")
+              Future.successful(None)
+          }
       }
     } else {
       persistence.registrations.get(request.internalId) flatMap {
@@ -89,6 +104,7 @@ class RegisteredOrPending @Inject() (
         case _                  => Future.successful(None)
       }
     }
+
 }
 
 case class RegisteredRequest[A](

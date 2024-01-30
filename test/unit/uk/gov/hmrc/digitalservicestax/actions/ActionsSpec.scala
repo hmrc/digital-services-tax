@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.actions
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, same}
 import org.mockito.Mockito.{reset, when}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.anyvals.PosInt
@@ -32,9 +32,9 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration}
-import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
+import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration, UTR}
+import uk.gov.hmrc.digitalservicestax.services.{GetDstNumberFromEisService, TaxEnrolmentService}
 import unit.uk.gov.hmrc.digitalservicestax.util.RetrievalOps._
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
@@ -53,9 +53,11 @@ class ActionsSpec
     reset(mockAppConfig, mockTaxEnrolmentService)
   }
 
-  val mockTaxEnrolmentService: TaxEnrolmentService   = mock[TaxEnrolmentService]
-  val mockAppConfig: AppConfig                       = mock[AppConfig]
-  val mockEspConnector: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
+  val mockTaxEnrolmentService: TaxEnrolmentService               = mock[TaxEnrolmentService]
+  val mockTaxEnrolmentConnector: TaxEnrolmentConnector           = mock[TaxEnrolmentConnector]
+  val mockAppConfig: AppConfig                                   = mock[AppConfig]
+  val mockEspConnector: EnrolmentStoreProxyConnector             = mock[EnrolmentStoreProxyConnector]
+  val mockGetDstNumberFromEisService: GetDstNumberFromEisService = mock[GetDstNumberFromEisService]
 
   class Harness(authAction: LoggedInAction) {
     def onPageLoad(): Action[AnyContent] = authAction { _ =>
@@ -72,7 +74,13 @@ class ActionsSpec
 
   "Registered" should {
     "execute an action against a registered user using LoggedInRequest" in {
-      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
+      val action = new Registered(
+        mongoPersistence,
+        mockAppConfig,
+        mockEspConnector,
+        mockGetDstNumberFromEisService,
+        mockTaxEnrolmentConnector
+      )
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -105,7 +113,13 @@ class ActionsSpec
     }
 
     "execute an action against a registered user using LoggedInRequest when taxEnrolmentService return registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
+      val action = new Registered(
+        mongoPersistence,
+        mockAppConfig,
+        mockEspConnector,
+        mockGetDstNumberFromEisService,
+        mockTaxEnrolmentConnector
+      )
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -138,7 +152,13 @@ class ActionsSpec
     }
 
     "return forbidden if there is no DST number on the registration" in {
-      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
+      val action = new Registered(
+        mongoPersistence,
+        mockAppConfig,
+        mockEspConnector,
+        mockGetDstNumberFromEisService,
+        mockTaxEnrolmentConnector
+      )
 
       val internal    = arbitrary[InternalId].sample.value
       val enrolments  = arbitrary[Enrolments].sample.value
@@ -172,7 +192,13 @@ class ActionsSpec
     }
 
     "should not execute an action against a registered user using LoggedInRequest if the reg number is not defined" in {
-      val action = new Registered(mongoPersistence, mockAppConfig, mockEspConnector)
+      val action = new Registered(
+        mongoPersistence,
+        mockAppConfig,
+        mockEspConnector,
+        mockGetDstNumberFromEisService,
+        mockTaxEnrolmentConnector
+      )
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -192,7 +218,13 @@ class ActionsSpec
     }
 
     "should execute an action against a registered user using Registered or pending request" in {
-      val action = new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+      val action = new RegisteredOrPending(
+        mongoPersistence,
+        mockAppConfig,
+        mockEspConnector,
+        mockGetDstNumberFromEisService,
+        mockTaxEnrolmentConnector
+      )
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = arbitrary[Enrolments].sample.value
@@ -249,7 +281,13 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+          new RegisteredOrPending(
+            mongoPersistence,
+            mockAppConfig,
+            mockEspConnector,
+            mockGetDstNumberFromEisService,
+            mockTaxEnrolmentConnector
+          )
             .getRegistration(req, mockAppConfig)
         ) mustBe Some(
           reg
@@ -274,11 +312,18 @@ class ActionsSpec
       )
 
       await(
-        new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector).getRegistration(req, mockAppConfig)
+        new RegisteredOrPending(
+          mongoPersistence,
+          mockAppConfig,
+          mockEspConnector,
+          mockGetDstNumberFromEisService,
+          mockTaxEnrolmentConnector
+        )
+          .getRegistration(req, mockAppConfig)
       ) mustEqual None
     }
 
-    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists" in {
+    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists in EACD" in {
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
@@ -309,24 +354,82 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+          new RegisteredOrPending(
+            mongoPersistence,
+            mockAppConfig,
+            mockEspConnector,
+            mockGetDstNumberFromEisService,
+            mockTaxEnrolmentConnector
+          )
             .getRegistration(req, mockAppConfig)
         ) mustEqual Some(reg)
       }
     }
 
-    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment do not exists" in {
+    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists in EIS & activation is successful" in {
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
+      val internal   = arbitrary[InternalId].sample.value
+      val utr        = arbitrary[UTR].sample.value
+      val providerId = arbitrary[NonEmptyString].sample.value
+      val reg        = arbitrary[Registration].sample.value
+      val enrolments = Enrolments(
+        Set(
+          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated"),
+          Enrolment("IR-SA", Seq(EnrolmentIdentifier("UTR", utr)), "Activated")
+        )
+      )
+
+      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(None)
+      when(
+        mockGetDstNumberFromEisService.getDstNumberAndActivateEnrolment(same(utr), same("groupId"))(any(), any())
+      ) thenReturn Future.successful(Some(reg))
+
+      val req = LoggedInRequest(
+        internal,
+        enrolments,
+        providerId,
+        Some("groupId"),
+        FakeRequest()
+      )
+
+      val chain = for {
+        r <- mongoPersistence.registrations.update(internal, reg)
+      } yield r
+
+      whenReady(chain) { _ =>
+        await(
+          new RegisteredOrPending(
+            mongoPersistence,
+            mockAppConfig,
+            mockEspConnector,
+            mockGetDstNumberFromEisService,
+            mockTaxEnrolmentConnector
+          )
+            .getRegistration(req, mockAppConfig)
+        ) mustEqual Some(reg)
+      }
+    }
+
+    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment do not exists in EACD & EIS" in {
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
       val internal   = arbitrary[InternalId].sample.value
       val enrolments = Enrolments(
-        Set(Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "123456789")), "Activated"))
+        Set(Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated"))
       )
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
 
       when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+        None
+      )
+      when(
+        mockGetDstNumberFromEisService
+          .getDstNumberAndActivateEnrolment(same("1234567890"), same("groupId"))(any(), any())
+      ) thenReturn Future.successful(
         None
       )
 
@@ -344,7 +447,13 @@ class ActionsSpec
 
       whenReady(chain) { _ =>
         await(
-          new RegisteredOrPending(mongoPersistence, mockAppConfig, mockEspConnector)
+          new RegisteredOrPending(
+            mongoPersistence,
+            mockAppConfig,
+            mockEspConnector,
+            mockGetDstNumberFromEisService,
+            mockTaxEnrolmentConnector
+          )
             .getRegistration(req, mockAppConfig)
         ) mustEqual None
       }
