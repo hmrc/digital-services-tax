@@ -45,7 +45,8 @@ class GetDstNumberFromEisService @Inject() (
             registrationConnector.getSubscriptionStatus(sapNumber).map {
               case subscriptionStatusResponse
                   if subscriptionStatusResponse.idType == Some("ZDST")
-                    && subscriptionStatusResponse.subscriptionStatus == SubscriptionStatus.Subscribed =>
+                    && subscriptionStatusResponse.subscriptionStatus == SubscriptionStatus.Subscribed
+                    && subscriptionStatusResponse.idValue.nonEmpty =>
                 Some(subscriptionStatusResponse.idValue.get)
               case _ => None
             }
