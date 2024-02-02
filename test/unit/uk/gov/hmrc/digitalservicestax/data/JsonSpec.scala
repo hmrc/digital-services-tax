@@ -27,7 +27,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data.{Activity, Company, CompanyRegWrapper, CountryCode, Email, GroupCompany, Money, NonEmptyString, Percent, PhoneNumber, Postcode, Registration, UTR}
+import uk.gov.hmrc.digitalservicestax.data.{Activity, Company, CompanyRegWrapper, CountryCode, Email, GroupCompany, Money, NonEmptyString, Percent, PhoneNumber, Postcode, Registration, SapNumber, UTR}
 import uk.gov.hmrc.digitalservicestax.services.{EeittInterface, JsonSchemaChecker}
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -127,6 +127,10 @@ class JsonSpec
 
   it should "serialize and de-serialise a UTR instance" in {
     testJsonRoundtrip[UTR]
+  }
+
+  it should "serialize and de-serialise a SapNumber instance" in {
+    testJsonRoundtrip[SapNumber]
   }
 
   it should "serialize and de-serialise a percent instance" in {

@@ -128,7 +128,9 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
           )
         ),
         None,
-        Some(SafeId("XE0001234567890"))
+        Some(SafeId("XE0001234567890")),
+        false,
+        Some(SapNumber("1234567890"))
       )
     )
   }
@@ -178,7 +180,9 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
             )
           ),
           None,
-          Some(SafeId("XE0001234567890"))
+          Some(SafeId("XE0001234567890")),
+          false,
+          Some(SapNumber("1234567890"))
         )
       )
     )
