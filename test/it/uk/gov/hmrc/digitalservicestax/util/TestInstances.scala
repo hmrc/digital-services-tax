@@ -285,6 +285,7 @@ object TestInstances {
   implicit def arbPhone: Arbitrary[PhoneNumber]                 = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR]                           = Arbitrary(UTR.gen)
   implicit def safeId: Arbitrary[SafeId]                        = Arbitrary(SafeId.gen)
+  implicit def sapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
   implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
 

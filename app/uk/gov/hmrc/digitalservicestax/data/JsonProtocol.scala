@@ -201,6 +201,11 @@ object BackendAndFrontendJson extends SimpleJson {
             {
               json \ "safeId"
             }.as[String]
+          ).some,
+          sapNumber = SapNumber(
+            {
+              json \ "sapNumber"
+            }.as[String]
           ).some
         )
       )
