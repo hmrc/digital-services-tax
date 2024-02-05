@@ -84,6 +84,56 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
     }
   }
 
+  it should "parse a company reg response from a JSON object if the sap number is not present" in {
+    val json: JsValue = Json.parse("""|{
+                                      |  "safeId": "XE0001234567890",
+                                      |  "agentReferenceNumber": "AARN1234567",
+                                      |  "isEditable": true,
+                                      |  "isAnAgent": false,
+                                      |  "isAnASAgent":false,
+                                      |  "isAnIndividual": true,
+                                      |  "organisation": {
+                                      |    "organisationName": "Trotters Trading",
+                                      |    "isAGroup": true,
+                                      |    "organisationType": "Not Specified"
+                                      |  },
+                                      |  "address": {
+                                      |    "addressLine1": "Sky 33R",
+                                      |    "addressLine2": "605 West 42nd Street",
+                                      |    "addressLine3": "New York",
+                                      |    "addressLine4": "",
+                                      |    "postalCode": "10036",
+                                      |    "countryCode": "US"
+                                      |  },
+                                      |  "contactDetails": {
+                                      |    "primaryPhoneNumber": "01332752856",
+                                      |    "secondaryPhoneNumber": "07782565326",
+                                      |    "faxNumber": "01332754256",
+                                      |    "emailAddress": "stephen@manncorpone.co.uk"
+                                      |  }
+                                      |}
+                                      |""".stripMargin)
+
+    RosmJsonReader.reads(json) shouldEqual JsSuccess(
+      CompanyRegWrapper(
+        Company(
+          CompanyName("Trotters Trading"),
+          ForeignAddress(
+            line1 = AddressLine("Sky 33R"),
+            line2 = AddressLine("605 West 42nd Street").some,
+            line3 = AddressLine("New York").some,
+            line4 = None,
+            CountryCode("US")
+          )
+        ),
+        None,
+        Some(SafeId("XE0001234567890")),
+        false,
+        None
+      )
+    )
+  }
+
   it should "parse a ForeignAddress from a JSON object if the country code in the source JSON is not GB" in {
     val json: JsValue = Json.parse("""|{
        |  "safeId": "XE0001234567890",
