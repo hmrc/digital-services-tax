@@ -142,9 +142,28 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
 
   "isAllocateDstGroupEnrolmentSuccess" should {
     "return true when allocate group enrolment is successful and returns 204" in {
+      val requestBody: String = Json
+        .parse(s"""
+               |{
+               |    "identifiers": [
+               |        {
+               |            "key": "DSTRefNumber",
+               |            "value": "1234567890"
+               |        }
+               |    ],
+               |    "verifiers": [
+               |        {
+               |            "key": "Postcode",
+               |            "value": "AA1 2BB"
+               |        }
+               |    ]
+               |}
+         """.stripMargin)
+        .toString()
 
       stubFor(
         put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
+          .withRequestBody(equalToJson(requestBody))
           .willReturn(
             aResponse()
               .withStatus(204)

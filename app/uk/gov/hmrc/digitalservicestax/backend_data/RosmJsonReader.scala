@@ -75,11 +75,9 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
         safeId = SafeId(
           { json \ "safeId" }.as[String]
         ).some,
-        sapNumber = SapNumber(
-          {
-            json \ "sapNumber"
-          }.as[String]
-        ).some
+        sapNumber = {
+          json \ "sapNumber"
+        }.asOpt[SapNumber]
       )
     )
   }

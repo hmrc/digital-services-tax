@@ -202,11 +202,9 @@ object BackendAndFrontendJson extends SimpleJson {
               json \ "safeId"
             }.as[String]
           ).some,
-          sapNumber = SapNumber(
-            {
-              json \ "sapNumber"
-            }.as[String]
-          ).some
+          sapNumber = {
+            json \ "sapNumber"
+          }.asOpt[SapNumber]
         )
       )
   }
