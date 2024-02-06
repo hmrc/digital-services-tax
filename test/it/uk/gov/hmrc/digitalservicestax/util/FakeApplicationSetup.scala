@@ -16,7 +16,7 @@
 
 package it.uk.gov.hmrc.digitalservicestax.util
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.TryValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory, PlaySpec}
