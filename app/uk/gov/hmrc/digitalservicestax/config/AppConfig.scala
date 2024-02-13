@@ -43,7 +43,15 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val taxEnrolmentsEnabled: Boolean           = servicesConfig.getConfBool("tax-enrolments.enabled", true)
   val taxEnrolmentsUrl: String                = servicesConfig.baseUrl("tax-enrolments")
   val enrolmentStoreProxyUrl: String          = servicesConfig.baseUrl("enrolment-store-proxy")
+  val groupIdForActivation: String            = servicesConfig.getConfString("dstRefAndGroupIdForActivation.groupId", "")
+  val fbNumberForActivation: String           = servicesConfig.getConfString("dstRefAndGroupIdForActivation.formBundleNumber", "")
+  val dstRefNumberForActivation: String       = servicesConfig.getConfString("dstRefAndGroupIdForActivation.dstRefNumber", "")
+  val nonUkCountryCodeForActivation: String   =
+    servicesConfig.getConfString("dstRefAndGroupIdForActivation.nonUkCountryCode", "")
   lazy val dstNewSolutionFeatureFlag: Boolean =
     config.getOptional[Boolean]("feature.dstNewProposedSolution").getOrElse(false)
+
+  lazy val dstRefAndGroupIdActivationFeatureFlag: Boolean =
+    config.getOptional[Boolean]("feature.dstRefAndGroupIdActivation").getOrElse(false)
 
 }

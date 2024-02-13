@@ -21,7 +21,7 @@ import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Postcode}
+import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HttpClient, _}
@@ -101,13 +101,18 @@ class TaxEnrolmentConnector @Inject() (
 
   val allocateDstEnrolmentToGroup = s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/service/HMRC-DST-ORG/enrolment"
 
-  def isAllocateDstGroupEnrolmentSuccess(postCode: String, dstRegNumber: String)(implicit
+  def isAllocateDstGroupEnrolmentSuccess(address: Address, dstRegNumber: String)(implicit
     hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Boolean] = {
 
+    val verifierKey: KeyValuePair = address match {
+      case ukAddress: UkAddress         => KeyValuePair("Postcode", ukAddress.postalCode)
+      case nonUkAddress: ForeignAddress => KeyValuePair("NonUkCountryCode", nonUkAddress.countryCode)
+    }
+
     val requestBody =
-      Enrolments(List(KeyValuePair("Postcode", postCode)), List(KeyValuePair("DSTRefNumber", dstRegNumber)))
+      Enrolments(List(verifierKey), List(KeyValuePair("DSTRefNumber", dstRegNumber)))
 
     http.PUT[Enrolments, HttpResponse](allocateDstEnrolmentToGroup, requestBody) map {
       case responseMessage if responseMessage.status == 204 => true

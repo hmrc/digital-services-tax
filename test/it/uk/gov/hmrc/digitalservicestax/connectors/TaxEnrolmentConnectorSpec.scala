@@ -22,7 +22,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
-import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
+import uk.gov.hmrc.digitalservicestax.data.{AddressLine, CountryCode, DSTRegNumber, ForeignAddress, Postcode, UkAddress}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import play.api.Application
@@ -141,7 +141,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "isAllocateDstGroupEnrolmentSuccess" should {
-    "return true when allocate group enrolment is successful and returns 204" in {
+    "return true when allocate group enrolment is successful and returns 204 with Postcode as verifier" in {
       val requestBody: String = Json
         .parse(s"""
                |{
@@ -170,12 +170,52 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
           )
       )
 
-      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess("AA1 2BB", "1234567890")
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
+        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2BB")),
+        "1234567890"
+      )
       whenReady(response) { res =>
         res mustBe true
       }
     }
-    "return false when allocate group enrolment fails and returns 400" in {
+    "return true when allocate group enrolment is successful and returns 204 with NonUkCountryCode" in {
+      val requestBody: String = Json
+        .parse(s"""
+                  |{
+                  |    "identifiers": [
+                  |        {
+                  |            "key": "DSTRefNumber",
+                  |            "value": "1234567890"
+                  |        }
+                  |    ],
+                  |    "verifiers": [
+                  |        {
+                  |            "key": "NonUkCountryCode",
+                  |            "value": "IN"
+                  |        }
+                  |    ]
+                  |}
+         """.stripMargin)
+        .toString()
+
+      stubFor(
+        put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
+          .withRequestBody(equalToJson(requestBody))
+          .willReturn(
+            aResponse()
+              .withStatus(204)
+          )
+      )
+
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
+        ForeignAddress(AddressLine("address line 1"), None, None, None, CountryCode("IN")),
+        "1234567890"
+      )
+      whenReady(response) { res =>
+        res mustBe true
+      }
+    }
+    "return false when allocate group enrolment fails and returns 400 with Postcode as verifier" in {
 
       stubFor(
         put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
@@ -186,7 +226,29 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
           )
       )
 
-      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess("AA1 2CC", "1234567890")
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
+        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2CC")),
+        "1234567890"
+      )
+      whenReady(response) { res =>
+        res mustBe false
+      }
+    }
+    "return false when allocate group enrolment fails and returns 400 with NonUkCountryCode as verifier" in {
+
+      stubFor(
+        put(urlPathEqualTo("""/tax-enrolments/service/HMRC-DST-ORG/enrolment"""))
+          .willReturn(
+            aResponse()
+              .withStatus(400)
+              .withBody("Provided service name is not in services-to-activate")
+          )
+      )
+
+      val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
+        ForeignAddress(AddressLine("address line 1"), None, None, None, CountryCode("IN")),
+        "1234567890"
+      )
       whenReady(response) { res =>
         res mustBe false
       }

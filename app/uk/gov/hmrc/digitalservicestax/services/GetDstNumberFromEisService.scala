@@ -65,7 +65,7 @@ class GetDstNumberFromEisService @Inject() (
           case Some(registration) =>
             taxEnrolmentConnector
               .isAllocateDstGroupEnrolmentSuccess(
-                registration.companyReg.company.address.postalCode,
+                registration.companyReg.company.address,
                 dstRegNumber
               )
               .flatMap {
