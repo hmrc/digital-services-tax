@@ -90,7 +90,7 @@ class RegisteredOrPending @Inject() (
         case Some(dstRegNumber) =>
           persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber))
         case _
-            if appConfig.dstRefAndGroupIdActivationFeatureFlag && request.groupId.contains[String](
+            if appConfig.dstRefAndGroupIdActivationFeatureFlag && request.groupId.get.equalsIgnoreCase(
               appConfig.groupIdForActivation
             ) =>
           activateDstEnrolmentFromConfig(request.groupId.get, appConfig).flatMap {
