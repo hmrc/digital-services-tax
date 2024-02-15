@@ -93,18 +93,12 @@ class RegisteredOrPending @Inject() (
             if appConfig.dstRefAndGroupIdActivationFeatureFlag && request.groupId.get.equalsIgnoreCase(
               appConfig.groupIdForActivation
             ) =>
-          logger.info(
-            s"dstRefAndGroupIdActivationFeatureFlag: ${appConfig.dstRefAndGroupIdActivationFeatureFlag} and groupId: ${request.groupId.get} and groupIdFromConfig: ${appConfig.groupIdForActivation} "
-          )
           activateDstEnrolmentFromConfig(request.groupId.get, appConfig).flatMap {
             case Some(registration) if registration.registrationNumber.isDefined =>
               Future.successful(Some(registration))
             case _                                                               => Future.successful(None)
           }
         case _                  =>
-          logger.info(
-            s"dstRefAndGroupIdActivationFeatureFlag: ${appConfig.dstRefAndGroupIdActivationFeatureFlag} and groupId: ${request.groupId.get} and groupIdFromConfig: ${appConfig.groupIdForActivation} "
-          )
           request.utr match {
             case Some(utr) =>
               getDstNumberFromEisService.getDstNumberAndActivateEnrolment(utr, request.groupId.get)
