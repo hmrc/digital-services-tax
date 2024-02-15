@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.digitalservicestax.backend_data
 
-import play.api.libs.json.{Format, JsString, JsSuccess, Json, Reads, Writes}
+import play.api.libs.json.{JsString, JsSuccess, Json, Reads}
 
 case class SubscriptionStatusResponse(
   subscriptionStatus: SubscriptionStatus,

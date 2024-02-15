@@ -33,7 +33,7 @@ import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.digitalservicestax.actions._
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, TaxEnrolmentConnector}
-import uk.gov.hmrc.digitalservicestax.data.{InternalId, NonEmptyString, Registration, UTR}
+import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, InternalId, NonEmptyString, Registration, UTR}
 import uk.gov.hmrc.digitalservicestax.services.{GetDstNumberFromEisService, TaxEnrolmentService}
 import unit.uk.gov.hmrc.digitalservicestax.util.RetrievalOps._
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
@@ -257,7 +257,172 @@ class ActionsSpec
     }
   }
 
-  "RegisteredOrPending.getRegistration" should {
+  "RegisteredOrPending.activateDstEnrolmentFromConfig" should {
+    "dstNewSolutionFeatureFlag is true and DST enrolment does not exists in EACD" when {
+      "execute an activateDstEnrolmentFromConfig details when groupId matches the one in config" when {
+        "return registration details with Dst reference number when record exists with Fb number" in {
+
+          when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+          when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
+
+          val internal = arbitrary[InternalId].sample.value
+          val reg      = arbitrary[Registration].sample.value
+          val fbNumber = arbitrary[FormBundleNumber].sample.value
+
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+          when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
+
+          when(
+            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+          ) thenReturn Future
+            .successful(true)
+          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+            Some(reg.registrationNumber.value)
+          )
+
+          val chain = for {
+            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+            r <- mongoPersistence.registrations.update(internal, reg.copy(registrationNumber = None))
+          } yield r
+
+          whenReady(chain) { _ =>
+            val registration = await(
+              new RegisteredOrPending(
+                mongoPersistence,
+                mockAppConfig,
+                mockEspConnector,
+                mockGetDstNumberFromEisService,
+                mockTaxEnrolmentConnector
+              )
+                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+            )
+            registration mustEqual Some(reg)
+            registration.get.registrationNumber mustEqual reg.registrationNumber
+          }
+        }
+        "return None when record does not exists with Fb number" in {
+
+          when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+          when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
+
+          val internal = arbitrary[InternalId].sample.value
+          val reg      = arbitrary[Registration].sample.value
+          val fbNumber = arbitrary[FormBundleNumber].sample.value
+
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+          when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
+
+          when(
+            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+          ) thenReturn Future
+            .successful(true)
+          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+            Some(reg.registrationNumber.value)
+          )
+
+          val chain = for {
+            r <- mongoPersistence.registrations.update(internal, reg)
+          } yield r
+
+          whenReady(chain) { _ =>
+            val registration = await(
+              new RegisteredOrPending(
+                mongoPersistence,
+                mockAppConfig,
+                mockEspConnector,
+                mockGetDstNumberFromEisService,
+                mockTaxEnrolmentConnector
+              )
+                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+            )
+            registration mustEqual None
+          }
+        }
+        "return registration details with no dst ref when record exists with Fb number but Tax enrolment call fails" in {
+
+          when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+          when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
+
+          val internal = arbitrary[InternalId].sample.value
+          val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
+          val fbNumber = arbitrary[FormBundleNumber].sample.value
+
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+          when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387428400"
+
+          when(
+            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+          ) thenReturn Future
+            .successful(false)
+
+          val chain = for {
+            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+            r <- mongoPersistence.registrations.update(internal, reg)
+          } yield r
+
+          whenReady(chain) { _ =>
+            val registration = await(
+              new RegisteredOrPending(
+                mongoPersistence,
+                mockAppConfig,
+                mockEspConnector,
+                mockGetDstNumberFromEisService,
+                mockTaxEnrolmentConnector
+              )
+                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+            )
+            registration mustEqual Some(reg)
+            registration.get.registrationNumber mustEqual None
+          }
+        }
+        "return registration details with no Dst reference number when tax enrolment is successful but no ES record" in {
+
+          when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+          when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
+
+          val internal = arbitrary[InternalId].sample.value
+          val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
+          val fbNumber = arbitrary[FormBundleNumber].sample.value
+
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+          when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387420000"
+
+          when(
+            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+          ) thenReturn Future
+            .successful(true)
+          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+            None
+          )
+
+          val chain = for {
+            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+            r <- mongoPersistence.registrations.update(internal, reg)
+          } yield r
+
+          whenReady(chain) { _ =>
+            val registration = await(
+              new RegisteredOrPending(
+                mongoPersistence,
+                mockAppConfig,
+                mockEspConnector,
+                mockGetDstNumberFromEisService,
+                mockTaxEnrolmentConnector
+              )
+                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+            )
+            registration mustEqual Some(reg)
+            registration.get.registrationNumber mustEqual None
+          }
+        }
+      }
+    }
+  }
+  "RegisteredOrPending.getRegistration"                should {
     "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag false and registration details existing" in {
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false

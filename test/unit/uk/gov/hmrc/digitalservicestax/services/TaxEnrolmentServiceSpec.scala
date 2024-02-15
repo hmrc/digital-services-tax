@@ -23,14 +23,14 @@ import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.mvc.Result
+import play.api.mvc.Results.{NotFound, Ok}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors
-import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, Registration}
+import uk.gov.hmrc.digitalservicestax.connectors.{TaxEnrolmentConnector, TaxEnrolmentsSubscription}
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import play.api.mvc.Results.{NotFound, Ok}
 
 import scala.concurrent.Future
 
@@ -55,7 +55,6 @@ class TaxEnrolmentServiceSpec
 
       val registration                                         = arbitrary[Registration].sample.value
       val internal                                             = arbitrary[InternalId].sample.value
-      val dstNumber                                            = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
         TaxEnrolmentsSubscription(None, "PENDING", None)
 

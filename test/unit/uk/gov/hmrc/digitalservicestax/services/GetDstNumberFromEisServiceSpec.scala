@@ -154,7 +154,6 @@ class GetDstNumberFromEisServiceSpec
       val companyRegWrapper = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = None)
       val utr               = arbitrary[UTR].sample.value
       val internal          = arbitrary[InternalId].sample.value
-      val dstNumber         = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 

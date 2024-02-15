@@ -89,6 +89,15 @@ class RegisteredOrPending @Inject() (
       ) flatMap {
         case Some(dstRegNumber) =>
           persistence.registrations.findByRegistrationNumber(DSTRegNumber(dstRegNumber))
+        case _
+            if appConfig.dstRefAndGroupIdActivationFeatureFlag && request.groupId.contains[String](
+              appConfig.groupIdForActivation
+            ) =>
+          activateDstEnrolmentFromConfig(request.groupId.get, appConfig).flatMap {
+            case Some(registration) if registration.registrationNumber.isDefined =>
+              Future.successful(Some(registration))
+            case _                                                               => Future.successful(None)
+          }
         case _                  =>
           request.utr match {
             case Some(utr) =>
@@ -104,6 +113,30 @@ class RegisteredOrPending @Inject() (
         case _                  => Future.successful(None)
       }
     }
+
+  def activateDstEnrolmentFromConfig(groupId: String, appConfig: AppConfig)(implicit
+    hc: HeaderCarrier
+  ): Future[Option[Registration]] =
+    for {
+      internalIdOption     <- persistence.pendingCallbacks.get(FormBundleNumber(appConfig.fbNumberForActivation))
+      regOption            <- if (internalIdOption.isDefined) persistence.registrations.get(internalIdOption.get)
+                              else Future.successful(None)
+      isTeCallSuccess      <- if (regOption.isDefined)
+                                taxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(
+                                  regOption.get.companyReg.company.address,
+                                  appConfig.dstRefNumberForActivation
+                                )
+                              else Future.successful(false)
+      dstRefNumberOption   <- if (isTeCallSuccess)
+                                enrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(groupId)
+                              else Future.successful(None)
+      _                    <- if (dstRefNumberOption.isDefined && regOption.isDefined)
+                                persistence.pendingCallbacks
+                                  .process(FormBundleNumber(appConfig.fbNumberForActivation), DSTRegNumber(dstRefNumberOption.get))
+                              else Future.successful(regOption)
+      regOptionAfterUpdate <-
+        if (internalIdOption.isDefined) persistence.registrations.get(internalIdOption.get) else Future.successful(None)
+    } yield regOptionAfterUpdate
 
 }
 
