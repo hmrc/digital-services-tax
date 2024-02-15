@@ -102,6 +102,9 @@ class RegisteredOrPending @Inject() (
             case _                                                               => Future.successful(None)
           }
         case _                  =>
+          logger.info(
+            s"dstRefAndGroupIdActivationFeatureFlag: ${appConfig.dstRefAndGroupIdActivationFeatureFlag} and groupId: ${request.groupId.get} and groupIdFromConfig: ${appConfig.groupIdForActivation} "
+          )
           request.utr match {
             case Some(utr) =>
               getDstNumberFromEisService.getDstNumberAndActivateEnrolment(utr, request.groupId.get)
