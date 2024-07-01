@@ -1,8 +1,6 @@
 
 # digital-services-tax
 
-[ ![Download](https://api.bintray.com/packages/hmrc/releases/digital-services-tax/images/download.svg) ](https://bintray.com/hmrc/releases/digital-services-tax/_latestVersion)
-
 ## About
 The Digital Services Tax (DST) digital service is split into a number of different microservices all serving specific functions which are listed below:
 
@@ -52,41 +50,38 @@ Returns the Dst reference number if exists for the group/organisation.
 
 See [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidissuer) and [here](https://github.com/HMRC/tax-enrolments#put-tax-enrolmentssubscriptionssubscriptionidsubscriber) for details
 
-## Running from source
-Clone the repository using SSH:
+## Running the service
+### Service manager
+The whole service can be started with:
 
-`git@github.com:hmrc/digital-services-tax.git`
+`sm2 --start DST_ALL`
 
-If you need to setup SSH, see [the github guide to setting up SSH](https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/)
+or specifically for only the backend
 
-Run the code from source using 
+`sm2 --start DST`
 
-`sbt run`
+### Locally
 
-Open your browser and navigate to the following url:
+`sbt 'run 8741'`
 
-`http://localhost:8740/digital-services-tax/register/`
+* Visit http://localhost:9949/auth-login-stub/gg-sign-in
+* You may need to add some user details to the form:
+#### DST Registration journey
+    * Affinity Group: Organisation
+    * Enrolment Key: IR-CT
+    * Identifier Name: UTR
+    * Identifier Value: 1111111000
+* Then enter a redirect url: http://localhost:8740/digital-services-tax
+* Press **Submit**.
 
-## Running through service manager
-
-Run the following command in a terminal: `nano /home/<USER>/.sbt/.credentials`
-
-See the output and ensure it is populated with the following details:
-
-```
-realm=Sonatype Nexus Repository Manager
-host=NEXUS URL
-user=USERNAME
-password=PASSWORD
-```
-
-*You need to be on the VPN*
-
-Ensure your service manager config is up to date, and run the following command:
-
-`sm --start DST_ALL -f`
-
-This will start all the required services
+#### DST Returns Journey
+    * Affinity Group: Organisation
+    * Group identifier: 12345
+    * Enrolment Key: HMRC-DST-ORG
+    * Identifier Name: DSTRefNumber
+    * Identifier Value: AMDST0799721562
+* Then enter a redirect url: http://localhost:8740/digital-services-tax
+* Press **Submit**.
 
 ## Running to test changes using journey tests
 
