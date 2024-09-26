@@ -20,6 +20,8 @@ package services
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
 
+import scala.concurrent.Future
+
 abstract class Persistence[F[_]: cats.Monad] {
 
   protected trait PendingCallbacks {
@@ -54,6 +56,8 @@ abstract class Persistence[F[_]: cats.Monad] {
         updated   = existing.copy(registrationNumber = Some(registrationNumber))
         _        <- update(user, updated)
       } yield updated
+
+    def delete(registrationNumber: DSTRegNumber): F[Long]
   }
 
   def registrations: Registrations
