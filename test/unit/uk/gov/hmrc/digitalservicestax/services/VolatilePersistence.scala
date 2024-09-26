@@ -21,6 +21,8 @@ import cats.Id
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.Persistence
 
+import scala.concurrent.Future
+
 trait VolatilePersistence extends Persistence[Id] {
 
   val pendingCallbacks = new PendingCallbacks {
@@ -51,6 +53,14 @@ trait VolatilePersistence extends Persistence[Id] {
 
     override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Id[Option[Registration]] =
       _data.find(_._2._1.registrationNumber.contains(registrationNumber)).map(_._2._1)
+
+    override def delete(registrationNumber: DSTRegNumber): Long =
+      _data.find(_._2._1.registrationNumber.contains(registrationNumber)) match {
+        case Some(value) =>
+          _data = _data - value._1
+          1
+        case None        => 0
+      }
   }
 
   val returns = new Returns {

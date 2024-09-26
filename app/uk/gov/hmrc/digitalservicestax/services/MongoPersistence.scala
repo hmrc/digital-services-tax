@@ -164,6 +164,12 @@ class MongoPersistence @Inject() (
         .find(Filters.equal("data.registrationNumber", registrationNumber))
         .map(_.data)
         .headOption()
+
+    override def delete(registrationNumber: DSTRegNumber): Future[Long] =
+      repo.collection
+        .deleteOne(Filters.equal("data.registrationNumber", registrationNumber))
+        .toFuture()
+        .map(_.getDeletedCount)
   }
 
   def returns = new Returns {
