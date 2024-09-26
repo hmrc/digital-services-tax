@@ -25,36 +25,41 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class DstRegRemover @Inject()(configuration: Configuration, db: MongoPersistence)(implicit ec: ExecutionContext) extends StartUpChecks {
+class DstRegRemover @Inject() (configuration: Configuration, db: MongoPersistence)(implicit ec: ExecutionContext)
+    extends StartUpChecks {
 
   val logger: Logger = Logger(this.getClass)
 
   logger.warn("\n<<>><<>><<>><<>><<>><<>><<>>DST REG CHECKER RUNNING<<>><<>><<>><<>><<>><<>><<>>\n")
 
-  val dstRegConfOne: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC_ONE")
-  val dstRegConfTwo: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC_TWO")
+  val dstRegConfOne: Option[String]   = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC_ONE")
+  val dstRegConfTwo: Option[String]   = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC_TWO")
   val dstRegConfThree: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER_ENC_THREE")
-
 
   if (dstRegConfOne.isEmpty || dstRegConfTwo.isEmpty || dstRegConfThree.isEmpty) {
     logger.info("\n<<>><<>><<>><<>><<>><<>><<>>ERROR READING VALUE<<>><<>><<>><<>><<>><<>><<>>\n")
   } else {
-    val dstRegNumbersConf = List(dstRegConfOne.head, dstRegConfTwo.head, dstRegConfThree.head)
+    val dstRegNumbersConf                                   = List(dstRegConfOne.head, dstRegConfTwo.head, dstRegConfThree.head)
     val dstRegNumbers: Seq[String @@ data.DSTRegNumber.Tag] = dstRegNumbersConf.map(DSTRegNumber(_))
 
     if (dstRegNumbers.isEmpty) {
-      logger.info("\n<<>><<>><<>><<>><<>><<>><<>>ERROR VALUE PROVIDED IS NOT A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n")
+      logger.info(
+        "\n<<>><<>><<>><<>><<>><<>><<>>ERROR VALUE PROVIDED IS NOT A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n"
+      )
     }
 
-    /**
-     * Registrations
-     */
+    /** Registrations
+      */
     dstRegNumbers.foreach { dstRegNumber =>
       db.registrations.findByRegistrationNumber(dstRegNumber).foreach { optDstRegNum: Option[Registration] =>
         if (optDstRegNum.isEmpty) {
-          logger.error("\n<<>><<>><<>><<>><<>><<>><<>>ERROR NO REGISTRATION COULD BE FOUND FOR THE INTERNAL ID<<>><<>><<>><<>><<>><<>><<>>\n")
+          logger.error(
+            "\n<<>><<>><<>><<>><<>><<>><<>>ERROR NO REGISTRATION COULD BE FOUND FOR THE INTERNAL ID<<>><<>><<>><<>><<>><<>><<>>\n"
+          )
         } else {
-          logger.info("\n<<>><<>><<>><<>><<>><<>><<>>DELETING REGISTRATION FOR A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n")
+          logger.info(
+            "\n<<>><<>><<>><<>><<>><<>><<>>DELETING REGISTRATION FOR A DST REGISTRATION NUMBER<<>><<>><<>><<>><<>><<>><<>>\n"
+          )
           db.registrations.delete(dstRegNumber)
         }
       }

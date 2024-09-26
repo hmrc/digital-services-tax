@@ -165,12 +165,11 @@ class MongoPersistence @Inject() (
         .map(_.data)
         .headOption()
 
-    override def delete(registrationNumber: DSTRegNumber): Future[Long] = {
+    override def delete(registrationNumber: DSTRegNumber): Future[Long] =
       repo.collection
         .deleteOne(Filters.equal("data.registrationNumber", registrationNumber))
         .toFuture()
         .map(_.getDeletedCount)
-    }
   }
 
   def returns = new Returns {

@@ -132,7 +132,7 @@ class RegistationPersistenceSpec
   "it should delete by DST Registration Number" in {
     forAll { (id: InternalId, reg: Registration) =>
       val chain = for {
-        _ <- mongoPersistence.registrations.update(id, reg)
+        _           <- mongoPersistence.registrations.update(id, reg)
         deleteCount <- mongoPersistence.registrations.delete(reg.registrationNumber.head)
       } yield deleteCount
 
