@@ -17,12 +17,11 @@
 package unit.uk.gov.hmrc.digitalservicestax.services
 
 import cats.instances.future._
-
-import javax.inject._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.digitalservicestax.services.Persistence
 
+import javax.inject._
 import scala.concurrent._
 
 @Singleton
@@ -54,8 +53,6 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[Registration]] = f(
       V.findByRegistrationNumber(registrationNumber)
     )
-
-    override def delete(registrationNumber: DSTRegNumber): Future[Long] = f(V.delete(registrationNumber))
   }
 
   val returns = new Returns {

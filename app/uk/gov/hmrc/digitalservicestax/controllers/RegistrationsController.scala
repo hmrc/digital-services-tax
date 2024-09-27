@@ -114,9 +114,6 @@ class RegistrationsController @Inject() (
         }
         logger.info("pending registration")
         Ok(Json.toJson(regDetails))
-      case (Some(r), _) if r.registrationNumber.isEmpty                     =>
-        logger.info("No Registration Number found for user")
-        NotFound
       case _                                                                =>
         logger.info("no pending registration")
         NotFound
