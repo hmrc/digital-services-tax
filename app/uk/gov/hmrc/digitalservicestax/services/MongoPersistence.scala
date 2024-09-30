@@ -18,18 +18,16 @@ package uk.gov.hmrc.digitalservicestax
 package services
 
 import cats.instances.future._
-import data.BackendAndFrontendJson._
-import data._
+import org.mongodb.scala.model._
+import play.api.libs.json._
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
 import java.time.LocalDateTime
 import javax.inject._
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
-import play.api.libs.json._
 import scala.concurrent._
-import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import org.mongodb.scala.model.Updates
-import org.mongodb.scala.model.FindOneAndUpdateOptions
-import uk.gov.hmrc.mongo.play.json.Codecs
 
 object MongoPersistence {
 
@@ -164,12 +162,6 @@ class MongoPersistence @Inject() (
         .find(Filters.equal("data.registrationNumber", registrationNumber))
         .map(_.data)
         .headOption()
-
-    override def delete(registrationNumber: DSTRegNumber): Future[Long] =
-      repo.collection
-        .deleteOne(Filters.equal("data.registrationNumber", registrationNumber))
-        .toFuture()
-        .map(_.getDeletedCount)
   }
 
   def returns = new Returns {
