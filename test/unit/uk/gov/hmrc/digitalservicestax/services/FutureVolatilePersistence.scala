@@ -53,6 +53,8 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[Registration]] = f(
       V.findByRegistrationNumber(registrationNumber)
     )
+
+    override def delete(registrationNumber: DSTRegNumber): Future[Long] = f(V.delete(registrationNumber))
   }
 
   val returns = new Returns {
