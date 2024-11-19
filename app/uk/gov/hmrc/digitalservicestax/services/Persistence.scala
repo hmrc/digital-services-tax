@@ -19,6 +19,7 @@ package services
 
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 
 abstract class Persistence[F[_]: cats.Monad] {
 
@@ -46,6 +47,9 @@ abstract class Persistence[F[_]: cats.Monad] {
     def get(user: InternalId): F[Option[Registration]]
 
     def findByRegistrationNumber(registrationNumber: DSTRegNumber): F[Option[Registration]]
+    def findWrapperByRegistrationNumber(registrationNumber: DSTRegNumber): F[Option[RegWrapper]]
+    def findBySafeId(safeId: SafeId): F[Option[RegWrapper]]
+    def findByEmail(email: Email): F[Option[RegWrapper]]
     def update(user: InternalId, reg: Registration): F[Unit]
 
     def confirm(user: InternalId, registrationNumber: DSTRegNumber): F[Registration] =

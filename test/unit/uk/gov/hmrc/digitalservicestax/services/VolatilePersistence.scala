@@ -18,7 +18,8 @@ package unit.uk.gov.hmrc.digitalservicestax.services
 
 import cats.Id
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.Persistence
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
+import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, Persistence}
 
 import java.time.LocalDateTime
 
@@ -53,6 +54,9 @@ trait VolatilePersistence extends Persistence[Id] {
     override def findByRegistrationNumber(registrationNumber: DSTRegNumber): Id[Option[Registration]] =
       _data.find(_._2._1.registrationNumber.contains(registrationNumber)).map(_._2._1)
 
+    override def findWrapperByRegistrationNumber(registrationNumber: DSTRegNumber): Id[Option[RegWrapper]] =
+      _data.find(_._2._1.registrationNumber.contains(registrationNumber)).map(irl => RegWrapper(irl._1, irl._2._1))
+
     override def delete(registrationNumber: DSTRegNumber): Long =
       _data.find(_._2._1.registrationNumber.contains(registrationNumber)) match {
         case Some(value) =>
@@ -60,6 +64,10 @@ trait VolatilePersistence extends Persistence[Id] {
           1
         case None        => 0
       }
+
+    override def findBySafeId(safeId: SafeId): Id[Option[RegWrapper]] = None
+
+    override def findByEmail(email: Email): Id[Option[RegWrapper]] = None
   }
 
   val returns = new Returns {
