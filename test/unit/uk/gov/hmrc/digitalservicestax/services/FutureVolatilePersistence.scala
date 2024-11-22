@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.digitalservicestax.services
 import cats.instances.future._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.Persistence
+import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, Persistence}
 
 import javax.inject._
 import scala.concurrent._
@@ -54,7 +54,17 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
       V.findByRegistrationNumber(registrationNumber)
     )
 
+    override def findWrapperByRegistrationNumber(
+      registrationNumber: DSTRegNumber
+    ): Future[Option[MongoPersistence.RegWrapper]] = f(
+      V.findWrapperByRegistrationNumber(registrationNumber)
+    )
+
     override def delete(registrationNumber: DSTRegNumber): Future[Long] = f(V.delete(registrationNumber))
+
+    override def findBySafeId(safeId: SafeId): Future[Option[MongoPersistence.RegWrapper]] = f(V.findBySafeId(safeId))
+
+    override def findByEmail(email: Email): Future[Option[MongoPersistence.RegWrapper]] = f(V.findByEmail(email))
   }
 
   val returns = new Returns {

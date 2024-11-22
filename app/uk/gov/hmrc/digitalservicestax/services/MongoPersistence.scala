@@ -42,7 +42,7 @@ object MongoPersistence {
     formBundle: FormBundleNumber
   )
 
-  private[services] case class RegWrapper(
+  case class RegWrapper(
     session: InternalId,
     data: Registration
   )
@@ -161,6 +161,21 @@ class MongoPersistence @Inject() (
       repo.collection
         .find(Filters.equal("data.registrationNumber", registrationNumber))
         .map(_.data)
+        .headOption()
+
+    override def findWrapperByRegistrationNumber(registrationNumber: DSTRegNumber): Future[Option[RegWrapper]] =
+      repo.collection
+        .find(Filters.equal("data.registrationNumber", registrationNumber))
+        .headOption()
+
+    override def findBySafeId(safeId: SafeId): Future[Option[RegWrapper]] =
+      repo.collection
+        .find(Filters.equal("data.companyReg.safeId", safeId))
+        .headOption()
+
+    override def findByEmail(email: Email): Future[Option[RegWrapper]] =
+      repo.collection
+        .find(Filters.equal("data.contact.email", email))
         .headOption()
 
     override def delete(registrationNumber: DSTRegNumber): Future[Long] =
