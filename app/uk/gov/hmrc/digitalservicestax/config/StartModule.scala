@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.services
+package uk.gov.hmrc.digitalservicestax.config
 
 import com.google.inject.AbstractModule
+import uk.gov.hmrc.digitalservicestax.services.{DstRegUpdater, StartUpChecks}
 
 class StartModule extends AbstractModule {
   override def configure(): Unit = bind(classOf[StartUpChecks]).to(classOf[DstRegUpdater]).asEagerSingleton()

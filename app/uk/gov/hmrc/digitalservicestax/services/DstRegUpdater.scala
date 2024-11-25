@@ -21,14 +21,15 @@ import play.api.{Configuration, Logger}
 import play.mvc.Http
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, Registration, SafeId}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, SafeId}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, RequestId}
 
 import java.util.UUID
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+@Singleton
 class DstRegUpdater @Inject() (
   configuration: Configuration,
   db: MongoPersistence,
@@ -39,24 +40,24 @@ class DstRegUpdater @Inject() (
   val logger: Logger                                   = Logger(this.getClass)
   implicit val credentialsWrites: OWrites[Credentials] = Json.writes[Credentials]
 
-  logWarn("DST REG UPDATER RUNNING")
+  logger.warn("\nDST REG UPDATER RUNNING\n")
 
   private val optDstReg: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER")
   private val dstReg: String            = optDstReg.head
 
-  logInfo("SEARCHING BY SAFE ID")
+  logger.warn("\nSEARCHING BY SAFE ID\n")
   db.registrations.findBySafeId(SafeId(configuration.get[String]("USER_SAFE_ID"))).foreach { optRegWrapperBySafeId =>
     if (optRegWrapperBySafeId.isEmpty) {
-      logError("ERROR NO REGISTRATION COULD BE FOUND FOR THE SAFE ID")
+      logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE SAFE ID\n")
 
-      logInfo("SEARCHING BY EMAIL")
+      logger.warn("\nSEARCHING BY EMAIL\n")
       db.registrations.findByEmail(Email(configuration.get[String]("USER_EMAIL"))).foreach { optRegWrapperByEmail =>
         if (optRegWrapperByEmail.isEmpty) {
-          logError("ERROR NO REGISTRATION COULD BE FOUND FOR THE EMAIL")
+          logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE EMAIL\n")
 
           db.registrations.findWrapperByRegistrationNumber(DSTRegNumber(dstReg)).foreach { optRegWrapperByDstRegNum =>
             if (optRegWrapperByDstRegNum.isEmpty) {
-              logError("ERROR NO REGISTRATION COULD BE FOUND FOR THE DST REGISTRATION NUMBER")
+              logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE DST REGISTRATION NUMBER\n")
             } else {
               subscribe(optRegWrapperByDstRegNum.head)
             }
@@ -71,14 +72,14 @@ class DstRegUpdater @Inject() (
   }
 
   private def subscribe(regWrapper: RegWrapper): Unit = {
-    logInfo("CHECKING FOR SAFE ID IN RETRIEVED DATA")
+    logger.warn("\nCHECKING FOR SAFE ID IN RETRIEVED DATA\n")
     if (regWrapper.data.companyReg.safeId.isEmpty) {
-      logError("SAFE ID NOT FOUND IN DATA SETTING IT")
+      logger.error("\nSAFE ID NOT FOUND IN DATA SETTING IT\n")
       val safeId = SafeId(configuration.get[String]("USER_SAFE_ID"))
       regWrapper
         .copy(data = regWrapper.data.copy(companyReg = regWrapper.data.companyReg.copy(safeId = Some(safeId))))
     } else {
-      logInfo("SAFE ID FOUND PROCEEDING WITH TAX ENROLMENT")
+      logger.warn("\nSAFE ID FOUND PROCEEDING WITH TAX ENROLMENT\n")
       implicit val headers: HeaderCarrier = buildHeaders(
         HeaderCarrier(
           authorization = Some(
@@ -92,10 +93,10 @@ class DstRegUpdater @Inject() (
       )
       taxEnrolmentConnector.subscribe(regWrapper.data.companyReg.safeId.head, regWrapper.session).foreach {
         case httpResponse if httpResponse.status == Http.Status.NO_CONTENT =>
-          logInfo("EXPECTED SUCCESSFUL RESPONSE RETURNED FROM TAX ENROLMENTS UPDATER STOPPING")
+          logger.warn("\nEXPECTED SUCCESSFUL RESPONSE RETURNED FROM TAX ENROLMENTS UPDATER STOPPING\n")
         case httpResponse                                                  =>
-          logError(
-            s"UNKNOWN RESPONSE RECEIVED FROM TAX ENROLMENTS UPDATER ABORTING\n STATUS IS: ${httpResponse.status}\n BODY IS: ${httpResponse.body}"
+          logger.error(
+            s"\nUNKNOWN RESPONSE RECEIVED FROM TAX ENROLMENTS UPDATER ABORTING\n STATUS IS: ${httpResponse.status}\n BODY IS: ${httpResponse.body}"
           )
       }
     }
@@ -113,12 +114,4 @@ class DstRegUpdater @Inject() (
       ("internalId", internalId)
     )
 
-  private def logWarn(s: String): Unit =
-    logger.info(s"\n<<>><<>><<>><<>><<>><<>><<>>$s<<>><<>><<>><<>><<>><<>><<>>\n")
-
-  private def logError(s: String): Unit =
-    logger.info(s"\n<<>><<>><<>><<>><<>><<>><<>>$s<<>><<>><<>><<>><<>><<>><<>>\n")
-
-  private def logInfo(s: String): Unit =
-    logger.info(s"\n<<>><<>><<>><<>><<>><<>><<>>$s<<>><<>><<>><<>><<>><<>><<>>\n")
 }
