@@ -21,7 +21,7 @@ import play.api.{Configuration, Logger}
 import play.mvc.Http
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, SafeId}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, InternalId, SafeId}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, RequestId}
 
@@ -42,56 +42,43 @@ class DstRegUpdater @Inject() (
 
   logger.warn("\nDST REG UPDATER RUNNING\n")
 
-  private val optDstReg: Option[String] = configuration.getOptional[String]("DST_REGISTRATION_NUMBER")
-  private val dstReg: String            = optDstReg.head
+  private val dstRegConf: String = configuration.get[String]("DST_REGISTRATION_NUMBER")
+  private val internalIdConf     = configuration.get[String]("CUST_ID")
+  private val dstReg             = DSTRegNumber(dstRegConf)
+  private val internalId         = InternalId(internalIdConf)
 
-  logger.warn("\nSEARCHING BY SAFE ID\n")
-  db.registrations.findBySafeId(SafeId(configuration.get[String]("USER_SAFE_ID"))).foreach { optRegWrapperBySafeId =>
-    if (optRegWrapperBySafeId.isEmpty) {
-      logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE SAFE ID\n")
+  logger.warn("\nSEARCHING PENDING REGISTRATIONS FOR CUSTOMER WITH INTERNAL ID\n")
 
-      logger.warn("\nSEARCHING BY EMAIL\n")
-      db.registrations.findByEmail(Email(configuration.get[String]("USER_EMAIL"))).foreach { optRegWrapperByEmail =>
-        if (optRegWrapperByEmail.isEmpty) {
-          logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE EMAIL\n")
+  db.registrations.get(InternalId(internalId)).foreach { optReg =>
+    if (optReg.isEmpty) {
+      logger.error("\nNO USER FOUND FOR GIVEN INTERNAL ID\n")
+    } else {
+      logger.warn("\nFOUND USER FOR INTERNAL ID, CHECKING IF THE DST REFERENCE IS SET FOR THE USER'S REGISTRATION\n")
+      val regWrapper = optReg.head
 
-          db.registrations.findWrapperByRegistrationNumber(DSTRegNumber(dstReg)).foreach { optRegWrapperByDstRegNum =>
-            if (optRegWrapperByDstRegNum.isEmpty) {
-              logger.error("\nERROR NO REGISTRATION COULD BE FOUND FOR THE DST REGISTRATION NUMBER\n")
-            } else {
-              subscribe(optRegWrapperByDstRegNum.head)
-            }
-          }
-        } else {
-          subscribe(optRegWrapperByEmail.head)
-        }
+      if (regWrapper.registrationNumber.isEmpty) {
+        logger.error("\nDST REFERENCE NUMBER IS NOT SET FOR USER, SETTING IT\n")
+        db.registrations.update(internalId, regWrapper.copy(registrationNumber = Some(dstReg)))
       }
-    } else {
-      subscribe(optRegWrapperBySafeId.head)
-    }
-  }
 
-  private def subscribe(regWrapper: RegWrapper): Unit = {
-    logger.warn("\nCHECKING FOR SAFE ID IN RETRIEVED DATA\n")
-    if (regWrapper.data.companyReg.safeId.isEmpty) {
-      logger.error("\nSAFE ID NOT FOUND IN DATA SETTING IT\n")
-      val safeId = SafeId(configuration.get[String]("USER_SAFE_ID"))
-      regWrapper
-        .copy(data = regWrapper.data.copy(companyReg = regWrapper.data.companyReg.copy(safeId = Some(safeId))))
-    } else {
-      logger.warn("\nSAFE ID FOUND PROCEEDING WITH TAX ENROLMENT\n")
+      if (regWrapper.companyReg.safeId.isEmpty) {
+        logger.error("\nSAFE ID NOT FOUND IN DATA SETTING IT\n")
+        val safeId = SafeId(configuration.get[String]("USER_SAFE_ID"))
+        db.registrations
+          .update(internalId, regWrapper.copy(companyReg = regWrapper.companyReg.copy(safeId = Some(safeId))))
+      }
+
+      logger.warn("\nRE-SUBSCRIBING CUSTOMER TO TAX-ENROLMENTS\n")
+
       implicit val headers: HeaderCarrier = buildHeaders(
         HeaderCarrier(
-          authorization = Some(
-            Authorization(
-              "Bearer " + configuration.get[String]("USER_TOKEN")
-            )
-          ),
+          authorization = Some(Authorization("Bearer " + configuration.get[String]("USER_TOKEN"))),
           requestId = Some(RequestId(UUID.randomUUID().toString))
         ),
-        regWrapper.session
+        internalId
       )
-      taxEnrolmentConnector.subscribe(regWrapper.data.companyReg.safeId.head, regWrapper.session).foreach {
+
+      taxEnrolmentConnector.subscribe(regWrapper.companyReg.safeId.head, internalId).foreach {
         case httpResponse if httpResponse.status == Http.Status.NO_CONTENT =>
           logger.warn("\nEXPECTED SUCCESSFUL RESPONSE RETURNED FROM TAX ENROLMENTS UPDATER STOPPING\n")
         case httpResponse                                                  =>
@@ -102,7 +89,7 @@ class DstRegUpdater @Inject() (
     }
   }
 
-  private def buildHeaders(headers: HeaderCarrier, internalId: String): HeaderCarrier =
+  private def buildHeaders(headers: HeaderCarrier, internalId: InternalId): HeaderCarrier =
     headers.withExtraHeaders(
       ("groupIdentifier", configuration.get[String]("GROUP_ID")),
       (
