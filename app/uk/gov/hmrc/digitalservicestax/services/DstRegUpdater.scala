@@ -27,6 +27,7 @@ import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, InternalId, Saf
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, RequestId}
 
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -68,6 +69,8 @@ class DstRegUpdater @Inject() (
           logger.error(s"THE CURRENT DST REGISTRATION NUMBER IS NOT WHAT WE EXPECTED: ${currDstRegNum
               .takeRight(2)}, DATE LIABLE IS: ${regWrapper.dateLiable}")
         }
+
+        db.registrations.update(internalId, regWrapper.copy(dateLiable = LocalDate.of(2023, 1, 1)))
       }
 
       if (regWrapper.companyReg.safeId.isEmpty) {
@@ -87,6 +90,7 @@ class DstRegUpdater @Inject() (
         internalId
       )
 
+      logger.warn("\nATTEMPTING to RE-SUBSCRIBE CUSTOMER TO TAX ENROLMENTS\n")
       taxEnrolmentConnector.subscribe(regWrapper.companyReg.safeId.head, internalId).foreach {
         case httpResponse if httpResponse.status == Http.Status.NO_CONTENT =>
           logger.warn("\nEXPECTED SUCCESSFUL RESPONSE RETURNED FROM TAX ENROLMENTS UPDATER STOPPING\n")
