@@ -19,8 +19,10 @@ package uk.gov.hmrc.digitalservicestax.services
 import play.api.libs.json.{Json, OWrites}
 import play.api.{Configuration, Logger}
 import play.mvc.Http
+import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
+import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Email, InternalId, SafeId}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, RequestId}
@@ -42,10 +44,10 @@ class DstRegUpdater @Inject() (
 
   logger.warn("\nDST REG UPDATER RUNNING\n")
 
-  private val dstRegConf: String = configuration.get[String]("DST_REGISTRATION_NUMBER")
-  private val internalIdConf     = configuration.get[String]("CUST_ID")
-  private val dstReg             = DSTRegNumber(dstRegConf)
-  private val internalId         = InternalId(internalIdConf)
+  private val dstRegConf: String                      = configuration.get[String]("DST_REGISTRATION_NUMBER")
+  private val internalIdConf                          = configuration.get[String]("CUST_ID")
+  private val dstReg: String @@ data.DSTRegNumber.Tag = DSTRegNumber(dstRegConf)
+  private val internalId                              = InternalId(internalIdConf)
 
   logger.warn("\nSEARCHING PENDING REGISTRATIONS FOR CUSTOMER WITH INTERNAL ID\n")
 
@@ -59,6 +61,13 @@ class DstRegUpdater @Inject() (
       if (regWrapper.registrationNumber.isEmpty) {
         logger.error("\nDST REFERENCE NUMBER IS NOT SET FOR USER, SETTING IT\n")
         db.registrations.update(internalId, regWrapper.copy(registrationNumber = Some(dstReg)))
+      }
+
+      regWrapper.registrationNumber.foreach { currDstRegNum =>
+        if (currDstRegNum.!=(dstReg)) {
+          logger.error(s"THE CURRENT DST REGISTRATION NUMBER IS NOT WHAT WE EXPECTED: ${currDstRegNum
+              .takeRight(2)}, DATE LIABLE IS: ${regWrapper.dateLiable}")
+        }
       }
 
       if (regWrapper.companyReg.safeId.isEmpty) {
