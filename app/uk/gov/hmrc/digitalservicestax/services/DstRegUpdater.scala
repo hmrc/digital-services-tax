@@ -33,11 +33,11 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class DstRegUpdater @Inject() (
-                                configuration: Configuration,
-                                db: MongoPersistence,
-                                taxEnrolmentConnector: TaxEnrolmentConnector
-                              )(implicit ec: ExecutionContext)
-  extends StartUpChecks {
+  configuration: Configuration,
+  db: MongoPersistence,
+  taxEnrolmentConnector: TaxEnrolmentConnector
+)(implicit ec: ExecutionContext)
+    extends StartUpChecks {
 
   val logger: Logger                                   = Logger(this.getClass)
   implicit val credentialsWrites: OWrites[Credentials] = Json.writes[Credentials]
@@ -69,7 +69,7 @@ class DstRegUpdater @Inject() (
       regWrapper.registrationNumber.foreach { currDstRegNum =>
         if (currDstRegNum.!=(dstReg)) {
           logger.error(s"THE CURRENT DST REGISTRATION NUMBER IS NOT WHAT WE EXPECTED: ${currDstRegNum
-            .takeRight(2)}, DATE LIABLE IS: ${regWrapper.dateLiable}")
+              .takeRight(2)}, DATE LIABLE IS: ${regWrapper.dateLiable}")
         }
 
         db.registrations.update(internalId, regWrapper.copy(dateLiable = LocalDate.of(2023, 1, 1)))
