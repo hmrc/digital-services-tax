@@ -38,7 +38,7 @@ class DstRegUpdater @Inject() (
 
   logger.warn("\nDST REG UPDATER RUNNING\n")
 
-  private val formBundleNumber   = configuration.get[String]("FORM_BUNDLE_NUMBER")
+  private val formBundleNumber = configuration.get[String]("FORM_BUNDLE_NUMBER")
 
   logger.warn("\nSEARCHING PENDING CALLBACKS FOR CUSTOMER WITH FORM BUNDLE NUMBER\n")
 
@@ -48,7 +48,9 @@ class DstRegUpdater @Inject() (
       optInternalId.foreach { dbInternalId =>
         db.registrations.apply(dbInternalId).foreach { existingRegistration =>
           if (existingRegistration.registrationNumber.isEmpty) {
-            logger.warn("THE CUSTOMER REGISTRATION DOESN'T CONTAIN THE dst REGISTRATION nUMBER & REQUIRES FURTHER PROCESSING")
+            logger.warn(
+              "THE CUSTOMER REGISTRATION DOESN'T CONTAIN THE dst REGISTRATION nUMBER & REQUIRES FURTHER PROCESSING"
+            )
           }
         }
       }
