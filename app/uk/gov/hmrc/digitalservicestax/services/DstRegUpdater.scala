@@ -18,16 +18,10 @@ package uk.gov.hmrc.digitalservicestax.services
 
 import play.api.libs.json.{Json, OWrites}
 import play.api.{Configuration, Logger}
-import play.mvc.Http
-import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.digitalservicestax.connectors.TaxEnrolmentConnector
-import uk.gov.hmrc.digitalservicestax.data
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, InternalId, SafeId}
-import uk.gov.hmrc.http.{Authorization, HeaderCarrier, RequestId}
+import uk.gov.hmrc.digitalservicestax.data.FormBundleNumber
 
-import java.time.LocalDate
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -44,75 +38,24 @@ class DstRegUpdater @Inject() (
 
   logger.warn("\nDST REG UPDATER RUNNING\n")
 
-  private val dstRegConf: String = configuration.get[String]("DST_REGISTRATION_NUMBER")
-  private val internalIdConf     = configuration.get[String]("CUST_ID")
-  private val subscriptionId     = configuration.get[String]("USER_SUB")
-  private val formBundleNumber   = configuration.get[String]("FORM_BUNDLE_NUMBER")
+  private val formBundleNumber = configuration.get[String]("FORM_BUNDLE_NUMBER")
 
-  private val dstReg: String @@ data.DSTRegNumber.Tag = DSTRegNumber(dstRegConf)
-  private val internalId                              = InternalId(internalIdConf)
+  logger.warn("\nSEARCHING PENDING CALLBACKS FOR CUSTOMER WITH FORM BUNDLE NUMBER\n")
 
-  logger.warn("\nSEARCHING PENDING REGISTRATIONS FOR CUSTOMER WITH INTERNAL ID\n")
-
-  db.registrations.get(InternalId(internalId)).foreach { optReg =>
-    if (optReg.isEmpty) {
-      logger.error("\nNO USER FOUND FOR GIVEN INTERNAL ID\n")
-    } else {
-      logger.warn("\nFOUND USER FOR INTERNAL ID, CHECKING IF THE DST REFERENCE IS SET FOR THE USER'S REGISTRATION\n")
-      val regWrapper = optReg.head
-
-      if (regWrapper.registrationNumber.isEmpty) {
-        logger.error("\nDST REFERENCE NUMBER IS NOT SET FOR USER, SETTING IT\n")
-        db.registrations.update(internalId, regWrapper.copy(registrationNumber = Some(dstReg)))
-      }
-
-      regWrapper.registrationNumber.foreach { currDstRegNum =>
-        if (currDstRegNum.!=(dstReg)) {
-          logger.error(s"THE CURRENT DST REGISTRATION NUMBER IS NOT WHAT WE EXPECTED: ${currDstRegNum
-              .takeRight(2)}, DATE LIABLE IS: ${regWrapper.dateLiable}")
+  db.pendingCallbacks.get(FormBundleNumber(formBundleNumber)).foreach { optInternalId =>
+    if (optInternalId.nonEmpty) {
+      logger.warn("CUSTOMER STILL EXISTS IN PENDING CALLBACKS & REQUIRES FURTHER PROCESSING")
+      optInternalId.foreach { dbInternalId =>
+        db.registrations.apply(dbInternalId).foreach { existingRegistration =>
+          if (existingRegistration.registrationNumber.isEmpty) {
+            logger.warn(
+              "THE CUSTOMER REGISTRATION DOESN'T CONTAIN THE dst REGISTRATION nUMBER & REQUIRES FURTHER PROCESSING"
+            )
+          }
         }
-
-        db.registrations.update(internalId, regWrapper.copy(dateLiable = LocalDate.of(2023, 1, 1)))
       }
-
-      if (regWrapper.companyReg.safeId.isEmpty) {
-        logger.error("\nSAFE ID NOT FOUND IN DATA SETTING IT\n")
-        val safeId = SafeId(configuration.get[String]("USER_SAFE_ID"))
-        db.registrations
-          .update(internalId, regWrapper.copy(companyReg = regWrapper.companyReg.copy(safeId = Some(safeId))))
-      }
-
-      logger.warn("\nRE-SUBSCRIBING CUSTOMER TO TAX-ENROLMENTS\n")
-
-      implicit val headers: HeaderCarrier = buildHeaders(
-        HeaderCarrier(
-          authorization = Some(Authorization("Bearer " + configuration.get[String]("USER_TOKEN"))),
-          requestId = Some(RequestId(UUID.randomUUID().toString))
-        ),
-        internalId
-      )
-
-      logger.warn("\nATTEMPTING to RE-SUBSCRIBE CUSTOMER TO TAX ENROLMENTS\n")
-      taxEnrolmentConnector.subscribe(regWrapper.companyReg.safeId.head, formBundleNumber).foreach {
-        case httpResponse if httpResponse.status == Http.Status.NO_CONTENT =>
-          logger.warn("\nEXPECTED SUCCESSFUL RESPONSE RETURNED FROM TAX ENROLMENTS UPDATER STOPPING\n")
-        case httpResponse                                                  =>
-          logger.error(
-            s"\nUNKNOWN RESPONSE RECEIVED FROM TAX ENROLMENTS UPDATER ABORTING\n STATUS IS: ${httpResponse.status}\n BODY IS: ${httpResponse.body}"
-          )
-      }
+    } else {
+      logger.info("CUSTOMER HAS BEEN PROCESSED & REMOVED FROM PENDING CALLBACKS")
     }
   }
-
-  private def buildHeaders(headers: HeaderCarrier, internalId: InternalId): HeaderCarrier =
-    headers.withExtraHeaders(
-      ("groupIdentifier", configuration.get[String]("GROUP_ID")),
-      (
-        "credentials",
-        Json.toJson(Credentials(configuration.get[String]("PROVIDER_ID"), "GovernmentGateway")).toString()
-      ),
-      ("affinityGroup", "Organisation"),
-      ("email", configuration.get[String]("USER_EMAIL")),
-      ("internalId", internalId)
-    )
 }
