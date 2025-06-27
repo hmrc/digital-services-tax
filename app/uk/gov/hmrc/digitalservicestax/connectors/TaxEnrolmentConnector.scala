@@ -46,7 +46,7 @@ class TaxEnrolmentConnector @Inject() (
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        case responseMessage if is2xx(responseMessage.status) =>
+        case responseMessage: HttpResponse if is2xx(responseMessage.status) =>
           responseMessage
         case responseMessage                                  =>
           logger.error(
