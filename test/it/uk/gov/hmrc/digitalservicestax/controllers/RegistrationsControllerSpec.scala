@@ -18,18 +18,21 @@ package it.uk.gov.hmrc.digitalservicestax.controllers
 
 import it.uk.gov.hmrc.digitalservicestax.helpers.ControllerBaseSpec
 import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, when}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.http.HeaderNames
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.http.Status.CREATED
+import play.api.i18n.Lang.defaultLang
+import play.api.i18n.{Messages, MessagesApi, MessagesImpl}
 import play.api.libs.json.Json
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AnyContent, AnyContentAsJson, BodyParser, PlayBodyParsers, Request, Result}
-import play.api.test.FakeRequest
+import play.api.mvc.{AnyContent, AnyContentAsJson, BodyParser, DefaultMessagesActionBuilderImpl, DefaultMessagesControllerComponents, PlayBodyParsers, Request, RequestHeader, Result}
+import play.api.test.{FakeRequest, Injecting}
 import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status, stubBodyParser, stubControllerComponents}
 import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, RegisteredOrPending}
@@ -55,11 +58,18 @@ class RegistrationsControllerSpec
 
   val mongoPersistence: MongoPersistence           = app.injector.instanceOf[MongoPersistence]
   val mockRegisteredOrPending: RegisteredOrPending = mock[RegisteredOrPending]
+  implicit val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
+  implicit val messages: Messages = MessagesImpl(defaultLang, messagesApi)
+  implicit val mat: Materializer = app.materializer
+
 
   def controller(loginAction: LoggedInAction = loginReturn()): RegistrationsController =
     new RegistrationsController(
       authConnector = mockAuthConnector,
-      cc = stubControllerComponents(),
+      cc = stubControllerComponents(
+        bodyParser = stubBodyParser(AnyContentAsJson(Json.toJson(givenRegistration(SafeId("XE0001234567890"))))),
+        playBodyParsers = PlayBodyParsers()(mat)
+      ),
       registrationConnector = mockRegistrationConnector,
       rosmConnector = mockRosmConnector,
       taxEnrolmentConnector = mockTaxEnrolmentsConnector,
@@ -259,7 +269,11 @@ class RegistrationsControllerSpec
 
       // When
       implicit val mat: Materializer = app.materializer
-      val fakeRequest: FakeRequest[AnyContentAsJson] = FakeRequest().withMethod("POST").withJsonBody(Json.toJson(submittedRegistration)).withHeaders(HeaderNames.CONTENT_TYPE -> "application/json")
+      val fakeRequest: FakeRequest[Registration] =
+        FakeRequest()
+          .withMethod("POST")
+          .withBody(submittedRegistration)
+          .withHeaders(HeaderNames.CONTENT_TYPE -> "application/json; charset=UTF-8")
       val result: Future[Result] = regController.submitRegistration().apply(fakeRequest).run()
 
       // Then
@@ -319,7 +333,7 @@ class RegistrationsControllerSpec
     "",
     Some("groupId"),
     FakeRequest()
-      .withHeaders("Content-Type" -> "application/json")
+      .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
       .withMethod("POST")
       .withBody(givenRegistration(SafeId("XE0001234567890")).asInstanceOf[A])
   )
