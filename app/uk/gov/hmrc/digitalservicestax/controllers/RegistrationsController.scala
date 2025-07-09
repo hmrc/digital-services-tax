@@ -47,7 +47,7 @@ class RegistrationsController @Inject() (
   appConfig: AppConfig,
   registrationOrPending: RegisteredOrPending,
   val auditing: AuditConnector,
-  loggedIn: LoggedInAction,
+  loggedIn: IdentifierAction,
   getDstNumberService: GetDstNumberFromEisService
 ) extends BackendController(cc)
     with AuthorisedFunctions
