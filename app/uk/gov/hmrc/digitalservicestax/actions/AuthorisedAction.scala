@@ -61,7 +61,7 @@ class RegisteredOrPending @Inject() (
   getDstNumberFromEisService: GetDstNumberFromEisService,
   taxEnrolmentConnector: TaxEnrolmentConnector
 )(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
+    extends RegisteredActionRefiner {
 
   val logger = Logger(getClass)
 
@@ -196,3 +196,5 @@ trait IdentifierAction
   extends ActionBuilder[LoggedInRequest, AnyContent]
   with ActionRefiner[Request, LoggedInRequest]
   with AuthorisedFunctions
+
+trait RegisteredActionRefiner extends ActionRefiner[LoggedInRequest, RegisteredRequest]

@@ -34,9 +34,6 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ReturnConnector @Inject() (val http: HttpClient, val mode: Mode, val appConfig: AppConfig) extends DesHelpers {
 
-  val logger: Logger = Logger(this.getClass)
-  val registerPath   = "cross-regime/subscription/DST"
-
   def getNextPendingPeriod(
     dstRegNo: DSTRegNumber
   )(implicit

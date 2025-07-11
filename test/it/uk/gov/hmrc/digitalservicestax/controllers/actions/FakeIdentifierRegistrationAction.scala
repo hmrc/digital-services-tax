@@ -17,14 +17,17 @@
 package it.uk.gov.hmrc.digitalservicestax.controllers.actions
 
 import com.google.inject.Inject
-import play.api.mvc.{AnyContent, BodyParser, PlayBodyParsers, Request, Result}
+import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
+import play.api.mvc._
+import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInRequest}
+import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.InternalId
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FakeIdentifierAction @Inject() (bodyParser: PlayBodyParsers)(implicit
+class FakeIdentifierRegistrationAction @Inject() (bodyParser: PlayBodyParsers)(implicit
   val executionContext: ExecutionContext
 ) extends IdentifierAction {
 
@@ -34,16 +37,20 @@ class FakeIdentifierAction @Inject() (bodyParser: PlayBodyParsers)(implicit
     Future.successful(
       Right(
         LoggedInRequest(
-          InternalId("Int-aaff66"),
+          internalId,
           Enrolments(
             Set(Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", "AMDST0799721562")), "Activated"))
           ),
           "provider-id",
-          None,
+          Some("123456"),
           request
         )
       )
     )
 
   override def parser: BodyParser[AnyContent] = bodyParser.defaultBodyParser
+}
+
+object FakeIdentifierRegistrationAction {
+  val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
 }

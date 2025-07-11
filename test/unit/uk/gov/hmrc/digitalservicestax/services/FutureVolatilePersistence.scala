@@ -19,7 +19,9 @@ package unit.uk.gov.hmrc.digitalservicestax.services
 import cats.instances.future._
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RetWrapper
 import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, Persistence}
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import javax.inject._
 import scala.concurrent._
@@ -37,6 +39,8 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     def delete(formBundle: FormBundleNumber)                         = f(V.delete(formBundle))
     def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
     def reverseLookup(id: InternalId)                                = f(V.reverseLookup(id))
+
+    override def repository(): PlayMongoRepository[MongoPersistence.CallbackWrapper] = inner.pendingCallbacks.repository()
   }
 
   val registrations = new Registrations {
@@ -65,6 +69,8 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     override def findBySafeId(safeId: SafeId): Future[Option[MongoPersistence.RegWrapper]] = f(V.findBySafeId(safeId))
 
     override def findByEmail(email: Email): Future[Option[MongoPersistence.RegWrapper]] = f(V.findByEmail(email))
+
+    override def repository(): PlayMongoRepository[MongoPersistence.RegWrapper] = inner.registrations.repository()
   }
 
   val returns = new Returns {
@@ -72,6 +78,8 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     def get(reg: Registration): Future[Map[Key, Return]]                         = f(V.get(reg))
     def update(reg: Registration, period: Period.Key, ret: Return): Future[Unit] =
       f(V.update(reg, period, ret))
+
+    override def repository(): PlayMongoRepository[RetWrapper] = inner.returns.repository()
   }
 
 }

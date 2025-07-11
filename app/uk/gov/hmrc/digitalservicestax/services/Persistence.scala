@@ -19,7 +19,8 @@ package services
 
 import cats.implicits._
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper, RetWrapper}
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 abstract class Persistence[F[_]: cats.Monad] {
 
@@ -35,6 +36,7 @@ abstract class Persistence[F[_]: cats.Monad] {
     def process(formBundle: FormBundleNumber, regId: DSTRegNumber): F[Registration] = {
       apply(formBundle) >>= (registrations.confirm(_, regId))
     } <* delete(formBundle)
+    def repository(): PlayMongoRepository[CallbackWrapper]
   }
 
   def pendingCallbacks: PendingCallbacks
@@ -60,6 +62,8 @@ abstract class Persistence[F[_]: cats.Monad] {
       } yield updated
 
     def delete(registrationNumber: DSTRegNumber): F[Long]
+
+    def repository(): PlayMongoRepository[RegWrapper]
   }
 
   def registrations: Registrations
@@ -76,6 +80,7 @@ abstract class Persistence[F[_]: cats.Monad] {
 
     def update(reg: Registration, period: Period.Key, ret: Return): F[Unit]
 
+    def repository(): PlayMongoRepository[RetWrapper]
   }
 
   def returns: Returns

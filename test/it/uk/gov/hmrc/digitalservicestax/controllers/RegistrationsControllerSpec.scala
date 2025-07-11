@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,334 +16,292 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers
 
-import it.uk.gov.hmrc.digitalservicestax.helpers.ControllerBaseSpec
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
-import org.scalacheck.{Arbitrary, Gen}
+import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
+import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, RegistrationWiremockStubs, WiremockServer}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.http.{HeaderNames, MimeTypes}
-import play.api.http.Status.CREATED
-import play.api.i18n.Lang.defaultLang
-import play.api.i18n.{Messages, MessagesApi, MessagesImpl}
+import play.api.Application
+import play.api.inject._
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.libs.streams.Accumulator
-import play.api.mvc.{AnyContent, AnyContentAsJson, BodyParser, DefaultMessagesActionBuilderImpl, DefaultMessagesControllerComponents, PlayBodyParsers, Request, RequestHeader, Result}
-import play.api.test.{FakeRequest, Helpers, Injecting}
-import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status, stubBodyParser, stubControllerComponents}
+import play.api.mvc.{AnyContentAsJson, Result, Results}
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HttpVerbs
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
-import uk.gov.hmrc.digitalservicestax.actions.{LoggedInAction, LoggedInRequest, RegisteredOrPending}
+import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
-import uk.gov.hmrc.digitalservicestax.controllers.{RegistrationsController, routes}
+import uk.gov.hmrc.digitalservicestax.controllers.routes
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, InternalId, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
-import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper}
 
 import java.time.LocalDate
 import scala.concurrent.Future
 
 class RegistrationsControllerSpec
-    extends ControllerBaseSpec
+    extends PlaySpec
+    with MockitoSugar
+    with Results
     with GuiceOneServerPerSuite
     with BeforeAndAfterEach
     with ScalaFutures
-    with IntegrationPatience {
+    with IntegrationPatience
+    with WiremockServer
+    with RegistrationWiremockStubs
+    with AuditingEmailStubs {
 
-  val mongoPersistence: MongoPersistence           = app.injector.instanceOf[MongoPersistence]
-  val mockRegisteredOrPending: RegisteredOrPending = mock[RegisteredOrPending]
-  implicit val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
-  implicit val messages: Messages = MessagesImpl(defaultLang, messagesApi)
-  implicit val mat: Materializer = app.materializer
+  val defaultConfiguration: Map[String, Any] = Map(
+    "microservice.services.des.port"                   -> WireMockSupport.port,
+    "microservice.services.email.port"                 -> WireMockSupport.port,
+    "microservice.services.tax-enrolments.port"        -> WireMockSupport.port,
+    "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port,
+    "tax-enrolments.enabled"                           -> "true",
+    "auditing.enabled"                                 -> "true",
+    "auditing.consumer.baseUri.host"                   -> "localhost",
+    "auditing.consumer.baseUri.port"                   -> WireMockSupport.port
+  )
 
-
-  def controller(loginAction: LoggedInAction = loginReturn()): RegistrationsController =
-    new RegistrationsController(
-      authConnector = mockAuthConnector,
-      cc = stubControllerComponents(
-        bodyParser = stubBodyParser(AnyContentAsJson(Json.toJson(givenRegistration(SafeId("XE0001234567890"))))),
-        playBodyParsers = PlayBodyParsers()(mat)
-      ),
-      registrationConnector = mockRegistrationConnector,
-      rosmConnector = mockRosmConnector,
-      taxEnrolmentConnector = mockTaxEnrolmentsConnector,
-      emailConnector = mockEmailConnector,
-      persistence = mongoPersistence,
-      taxEnrolmentService = mockTaxEnrolmentService,
-      auditing = mockAuditing,
-      loggedIn = loginAction,
-      appConfig = mockAppConfig,
-      registrationOrPending = mockRegisteredOrPending,
-      getDstNumberService = mockGetDstNumberService
+  override lazy val app: Application = new GuiceApplicationBuilder()
+    .overrides(
+      bind[IdentifierAction].to[FakeIdentifierRegistrationAction]
     )
+    .configure(defaultConfiguration)
+    .build()
+
+  def defaultAppWithDstNewSolutionFeatureFalse(): Application =
+    new GuiceApplicationBuilder()
+      .overrides(
+        bind[IdentifierAction].to[FakeIdentifierRegistrationAction]
+      )
+      .configure(defaultConfiguration.+(("feature.dstNewProposedSolution", false)))
+      .build()
+
+  def defaultAppWithDstNewSolutionFeatureTrue(): Application =
+    new GuiceApplicationBuilder()
+      .overrides(
+        bind[IdentifierAction].to[FakeIdentifierRegistrationAction]
+      )
+      .configure(defaultConfiguration.+(("feature.dstNewProposedSolution", true)))
+      .build()
 
   override def beforeEach(): Unit = {
-    super.beforeEach()
-    reset(mockRegisteredOrPending, mockAppConfig, mockTaxEnrolmentService)
+    app.injector.instanceOf[MongoPersistence].registrations.repository().collection.drop().head()
+    app.injector.instanceOf[MongoPersistence].pendingCallbacks.repository().collection.drop().head()
   }
 
-//  "RegistrationsController.lookupRegistration()" must {
-//
-//    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber has data" in {
-//      val dstNumber    = Arbitrary.arbitrary[DSTRegNumber].sample.value
-//      val registration = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = Some(dstNumber))
-//      val internalId   = Arbitrary.arbitrary[InternalId].sample.value
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
-//
-//      when(mockRegisteredOrPending.getRegistration(any(), any())(any())) thenReturn Future.successful(
-//        Some(registration)
-//      )
-//
-//      val chain = for {
-//        r <- mongoPersistence.registrations.update(internalId, registration)
-//      } yield r
-//
-//      whenReady(chain) { _ =>
-//        val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
-//        val resultStatus           = status(result)
-//
-//        resultStatus mustBe 200
-//        contentAsString(result) mustBe s"${Json.toJson(registration)}"
-//      }
-//    }
-//
-//    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber is empty and FormBundleNumber is defined" in {
-//      val registration     = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = None)
-//      val internalId       = Arbitrary.arbitrary[InternalId].sample.value
-//      val formBundleNumber = Arbitrary.arbitrary[FormBundleNumber].sample.value
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
-//
-//      when(mockRegisteredOrPending.getRegistration(any(), any())(any())) thenReturn Future.successful(
-//        Some(registration)
-//      )
-//
-//      val chain = for {
-//        r <- mongoPersistence.registrations.update(internalId, registration)
-//        m <- mongoPersistence.pendingCallbacks.update(formBundleNumber, internalId)
-//      } yield m
-//
-//      whenReady(chain) { _ =>
-//        val result: Future[Result] = controller(loginReturn(internalId)).lookupRegistration().apply(FakeRequest())
-//        val resultStatus           = status(result)
-//
-//        resultStatus mustBe 200
-//        contentAsString(result) mustBe s"${Json.toJson(registration)}"
-//      }
-//
-//    }
-//
-//    "return 200 with registration data when dstNewSolutionFeatureFlag is true and registration details with registrationNumber exists" in {
-//      val dstNumber        = Arbitrary.arbitrary[DSTRegNumber].sample.value
-//      val internalId       = Arbitrary.arbitrary[InternalId].sample.value
-//      val formBundleNumber = Arbitrary.arbitrary[FormBundleNumber].sample.value
-//      val registration     = Arbitrary.arbitrary[Registration].sample.value.copy(registrationNumber = Some(dstNumber))
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
-//
-//      when(mockRegisteredOrPending.getRegistration(any(), any())(any())) thenReturn Future.successful(
-//        Some(registration)
-//      )
-//
-//      val chain = for {
-//        r <- mongoPersistence.registrations.update(internalId, registration)
-//        m <- mongoPersistence.pendingCallbacks.update(formBundleNumber, internalId)
-//      } yield m
-//
-//      whenReady(chain) { _ =>
-//        val result: Future[Result] = controller(
-//          loginReturn(
-//            internalId,
-//            Enrolments(
-//              Set(Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", dstNumber)), "Activated"))
-//            )
-//          )
-//        ).lookupRegistration().apply(FakeRequest())
-//        val resultStatus           = status(result)
-//
-//        resultStatus mustBe 200
-//        contentAsString(result) mustBe s"${Json.toJson(registration)}"
-//      }
-//    }
-//
-//    "return 404 when dstNewSolutionFeatureFlag is false and no registration data in DB" in {
-//
-//      mockAuth()
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
-//
-//      when(mockRegisteredOrPending.getRegistration(any(), any())(any())) thenReturn Future.successful(None)
-//
-//      val result: Future[Result] = controller().lookupRegistration().apply(FakeRequest())
-//      val resultStatus           = status(result)
-//
-//      resultStatus mustBe 404
-//    }
-//
-//    "return 404 when dstNewSolutionFeatureFlag is true and tax enrolments connector does not return DstRegNumber" in {
-//      mockAuth()
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
-//
-//      when(mockRegisteredOrPending.getRegistration(any(), any())(any())) thenReturn Future.successful(None)
-//
-//      val result: Future[Result] = controller().lookupRegistration().apply(FakeRequest())
-//      val resultStatus           = status(result)
-//
-//      resultStatus mustBe 404
-//    }
-//  }
-//
-//  "RegistrationsController.getTaxEnrolmentsPendingRegDetails()" must {
-//
-//    "return 200 with registration data when dstNewSolutionFeatureFlag is true and DST enrolment is in pending state" in {
-//      val dstNumber  = Arbitrary.arbitrary[DSTRegNumber].sample.value
-//      val internalId = Arbitrary.arbitrary[InternalId].sample.value
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
-//
-//      when(mockTaxEnrolmentService.getPendingDSTRegistration(any())(any(), any())) thenReturn Future
-//        .successful(Ok)
-//
-//      val result: Future[Result] =
-//        controller(loginReturn(internalId)).getTaxEnrolmentsPendingRegDetails().apply(FakeRequest())
-//      val resultStatus           = status(result)
-//
-//      resultStatus mustBe 200
-//    }
-//
-//    "return 404 with registration data when dstNewSolutionFeatureFlag is true and DST enrolment is in non-pending state" in {
-//      val internalId = Arbitrary.arbitrary[InternalId].sample.value
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
-//
-//      when(mockTaxEnrolmentService.getPendingDSTRegistration(any())(any(), any())) thenReturn Future.successful(
-//        NotFound
-//      )
-//
-//      val result: Future[Result] =
-//        controller(loginReturn(internalId)).getTaxEnrolmentsPendingRegDetails().apply(FakeRequest())
-//      val resultStatus           = status(result)
-//
-//      resultStatus mustBe 404
-//    }
-//
-//    "return 404 with None when dstNewSolutionFeatureFlag is false" in {
-//      val internalId = Arbitrary.arbitrary[InternalId].sample.value
-//
-//      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
-//
-//      val result: Future[Result] =
-//        controller(loginReturn(internalId)).getTaxEnrolmentsPendingRegDetails().apply(FakeRequest())
-//      val resultStatus           = status(result)
-//
-//      resultStatus mustBe 404
-//    }
-//  }
-
-  "RegistrationsController.submitRegistration()" must {
-    val regController = controller(loginReturnWithReg())
-
+  "submit registration" must {
     "return the updated registration upon successful registration" in {
       // Given
-      val companySafeId = SafeId("XE0001234567890")
-      val submittedRegistration     = givenRegistration(companySafeId)
-      val formBundleNumber = FormBundleNumber("677499783421")
-      val registrationResponse = RegistrationResponse(LocalDate.now().toString, formBundleNumber)
-      val expectedExtendedDataEvent = AuditingHelper.buildRegistrationAudit(submittedRegistration, "providerId", Some(formBundleNumber), "SUCCESS")
+      val safeId                  = SafeId("XE0001234567890")
+      val registration            = givenRegistration(safeId)
+      val formBundleNumber        = FormBundleNumber("123456789112")
+      val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
 
-      mockAuth()
-      when(mockAppConfig.taxEnrolmentsEnabled).thenReturn(true)
-      when(mockRosmConnector.getSafeId(submittedRegistration)(hc, regController.ec)).thenReturn(Future.successful(Some(companySafeId)))
-      when(mockRegistrationConnector.send("safe", companySafeId, submittedRegistration)(hc, regController.ec)).thenReturn(Future.successful(registrationResponse))
-      when(mockTaxEnrolmentsConnector.subscribe(companySafeId, formBundleNumber)(hc, regController.ec)).thenReturn(Future.successful(HttpResponse(CREATED, "")))
-      when(mockAuditing.sendExtendedEvent(expectedExtendedDataEvent)(hc, regController.ec)).thenReturn(Future.successful(AuditResult.Success))
-      when(mockEmailConnector.sendSubmissionReceivedEmail(submittedRegistration.contact, submittedRegistration.companyReg.company.name, submittedRegistration.ultimateParent)(hc, regController.ec)).thenReturn(Future.unit)
+      stubDesRegEndpointSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubRetrieveROSMDetailsWithoutIDEndpointSuccess(safeId)
+      stubTaxEnrolmentsSubscribeEndpointSuccess(formBundleNumber)
+      stubEmailSendEndpointSuccess
+      stubAuditWrite
+
+      val fakeRequest: FakeRequest[AnyContentAsJson] =
+        FakeRequest(HttpVerbs.POST, routes.RegistrationsController.submitRegistration().url)
+          .withJsonBody(Json.toJson(registration))
 
       // When
-//      implicit val mat: Materializer = app.materializer
-//      val fakeRequest: FakeRequest[Registration] =
-//        FakeRequest()
-//          .withMethod("POST")
-//          .withBody(submittedRegistration)
-//          .withHeaders(HeaderNames.CONTENT_TYPE -> "application/json; charset=UTF-8")
-
-      import Helpers._
-
-      val anotherFakeRequest: FakeRequest[AnyContentAsJson] = FakeRequest(HttpVerbs.POST, routes.RegistrationsController.submitRegistration().url).withJsonBody(Json.toJson(givenRegistration(SafeId("XE0001234567890"))))
-
-      val result: Future[Result] = Helpers.route(app, anotherFakeRequest).value
-//      val result: Future[Result] = regController.submitRegistration().apply(fakeRequest).run()
+      val result: Future[Result] = Helpers.route(app, fakeRequest).value
 
       // Then
-      println(contentAsString(result))
-//      status(result) mustEqual CREATED
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual Json.toJson(desRegistrationResponse)
 
-      1 mustEqual 1
+      val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
+      whenReady(mongoPersistence.registrations.get(FakeIdentifierRegistrationAction.internalId)) { optReg =>
+        optReg.value mustEqual registration
+      }
 
-      // test that registrations collection update was called with registration
-
-      // test that the pending callbacks collection update was called
-    }
-
-    "must return nothing when failing to retrieve the safe id" in {
-      fail("not yet implemented")
-    }
-
-    "must not await callback when failing to send registration to the data exchange service" in {
-      fail("not yet implemented")
+      whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
+        optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
+      }
     }
 
     "must leave registration stuck in a pending state if subscribing to tax enrolments fails" in {
-      fail("not yet implemented")
+      // Given
+      val safeId                  = SafeId("XE0001234567890")
+      val registration            = givenRegistration(safeId)
+      val formBundleNumber        = FormBundleNumber("123456789112")
+      val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
+
+      stubDesRegEndpointSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubRetrieveROSMDetailsWithoutIDEndpointSuccess(safeId)
+      stubTaxEnrolmentsSubscribeEndpointError(formBundleNumber)
+      stubEmailSendEndpointSuccess
+      stubAuditWrite
+
+      val fakeRequest: FakeRequest[AnyContentAsJson] =
+        FakeRequest(HttpVerbs.POST, routes.RegistrationsController.submitRegistration().url)
+          .withJsonBody(Json.toJson(registration))
+
+      // When
+      val result: Future[Result] = Helpers.route(app, fakeRequest).value
+
+      // Then
+      status(result) mustEqual OK
+
+      val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
+      whenReady(mongoPersistence.registrations.get(FakeIdentifierRegistrationAction.internalId)) { optReg =>
+        optReg.value mustEqual registration
+      }
+
+      whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
+        optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
+      }
     }
   }
 
-  private def givenRegistration(safeId: SafeId) = {
+  "RegistrationsController.lookupRegistration()" must {
+    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber has data" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureFalse()
+
+      running(newApp) {
+        // Given
+        val registration     =
+          givenRegistration(SafeId("XE0001234567890")).copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
+        val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
+        mongoPersistence.registrations
+          .repository()
+          .collection
+          .insertOne(RegWrapper(FakeIdentifierRegistrationAction.internalId, registration))
+          .headOption()
+
+        stubTaxEnrolmentsStoreProxyDstRefSuccess("123456")
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
+          .value
+
+        // Then
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(registration)
+      }
+    }
+
+    "return 200 with registration data when dstNewSolutionFeatureFlag is false and registrationNumber is empty and FormBundleNumber is defined" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureFalse()
+
+      running(newApp) {
+        // Given
+        val registration     = givenRegistration(SafeId("XE0001234567890"))
+        val formBundleNumber = FormBundleNumber("193756789113")
+        val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
+        mongoPersistence.registrations
+          .repository()
+          .collection
+          .insertOne(RegWrapper(FakeIdentifierRegistrationAction.internalId, registration))
+          .headOption()
+        mongoPersistence.pendingCallbacks
+          .repository()
+          .collection
+          .insertOne(CallbackWrapper(FakeIdentifierRegistrationAction.internalId, formBundleNumber))
+          .headOption()
+
+        // When
+        val result = Helpers
+          .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
+          .value
+
+        // Then
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(registration)
+      }
+    }
+
+    "return 200 with registration data when dstNewSolutionFeatureFlag is true and registration details with registrationNumber exists" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureTrue()
+
+      running(newApp) {
+        // Given
+        val registration     =
+          givenRegistration(SafeId("XE0001234567890")).copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
+        val formBundleNumber = FormBundleNumber("193756789113")
+        val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
+
+        stubTaxEnrolmentsStoreProxyDstRefSuccess("123456")
+        stubAuditWrite
+
+        mongoPersistence.registrations
+          .repository()
+          .collection
+          .insertOne(RegWrapper(FakeIdentifierRegistrationAction.internalId, registration))
+          .headOption()
+        mongoPersistence.pendingCallbacks
+          .repository()
+          .collection
+          .insertOne(CallbackWrapper(FakeIdentifierRegistrationAction.internalId, formBundleNumber))
+          .headOption()
+
+        // When
+        val result = Helpers
+          .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
+          .value
+
+        // Then
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(registration)
+      }
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is false and no registration data in DB" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureFalse()
+
+      running(newApp) {
+        // Given
+        stubTaxEnrolmentsStoreProxyDstRefNotFound("123456")
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
+          .value
+
+        // Then
+        status(result) mustEqual NOT_FOUND
+      }
+    }
+  }
+
+  private def givenRegistration(safeId: SafeId) =
     Registration(
       CompanyRegWrapper(
-        Company(CompanyName("Test Solutions Ltd"), UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))),
+        Company(
+          CompanyName("Test Solutions Ltd"),
+          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))
+        ),
         Some(UTR("1234567890")),
         Some(safeId),
         useSafeId = true,
         None
       ),
       Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX"))),
-      Some(Company(CompanyName("Ultimate Test Solutions Ltd"), UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP")))),
-      ContactDetails(RestrictiveString("Tom"), RestrictiveString("Riddle"), PhoneNumber("07340507800"), Email("tom.riddle@gmail.com")),
+      Some(
+        Company(
+          CompanyName("Ultimate Test Solutions Ltd"),
+          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP"))
+        )
+      ),
+      ContactDetails(
+        RestrictiveString("Tom"),
+        RestrictiveString("Riddle"),
+        PhoneNumber("07340507800"),
+        Email("tom.riddle@gmail.com")
+      ),
       LocalDate.now().minusWeeks(50),
       LocalDate.now().minusWeeks(50),
       None
     )
-  }
-
-  def loginReturnWithReg(): LoggedInAction =
-    new LoggedInAction(mockMcc, mockAppConfig, mockAuthConnector) {
-      override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
-        Future.successful(Right(loginReqWithReg[A]))
-      }
-
-      override def parser: BodyParser[AnyContent] = {
-        stubBodyParser(AnyContentAsJson(Json.toJson(givenRegistration(SafeId("XE0001234567890")))))
-      }
-    }
-
-  def loginReqWithReg[A]: LoggedInRequest[A] = new LoggedInRequest[A](
-    InternalId("Int-aaff66"),
-    mockEnrolments,
-    "",
-    Some("groupId"),
-    FakeRequest()
-      .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-      .withMethod("POST")
-      .withBody(givenRegistration(SafeId("XE0001234567890")).asInstanceOf[A])
-  )
 }

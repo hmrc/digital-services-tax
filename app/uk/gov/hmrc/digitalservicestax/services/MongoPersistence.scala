@@ -31,13 +31,7 @@ import scala.concurrent._
 
 object MongoPersistence {
 
-  private[services] case class EnrolmentWrapper(
-    internalId: InternalId,
-    safeId: SafeId,
-    formBundle: FormBundleNumber
-  )
-
-  private[services] case class CallbackWrapper(
+  case class CallbackWrapper(
     internalId: InternalId,
     formBundle: FormBundleNumber
   )
@@ -47,7 +41,7 @@ object MongoPersistence {
     data: Registration
   )
 
-  private[services] case class RetWrapper(
+  case class RetWrapper(
     regNo: DSTRegNumber,
     periodKey: Period.Key,
     data: Return
@@ -115,6 +109,7 @@ class MongoPersistence @Inject() (
         .map(_ => ())
     }
 
+    override def repository(): PlayMongoRepository[CallbackWrapper] = repo
   }
 
   val registrations: Registrations = new Registrations {
@@ -135,6 +130,8 @@ class MongoPersistence @Inject() (
       ),
       extraCodecs = Nil
     )
+
+    def repository(): PlayMongoRepository[RegWrapper] = repo
 
     def update(user: InternalId, value: Registration): Future[Unit] =
       repo.collection
@@ -202,6 +199,8 @@ class MongoPersistence @Inject() (
       ),
       extraCodecs = Nil
     )
+
+    override def repository(): PlayMongoRepository[RetWrapper] = repo
 
     def get(reg: Registration): Future[Map[Period.Key, Return]] =
       reg.registrationNumber match {
