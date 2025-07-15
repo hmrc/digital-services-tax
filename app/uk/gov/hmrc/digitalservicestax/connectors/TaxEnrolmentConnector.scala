@@ -23,7 +23,6 @@ import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HttpClient, _}
 
 import javax.inject.{Inject, Singleton}
@@ -46,9 +45,9 @@ class TaxEnrolmentConnector @Inject() (
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
       http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
-        case responseMessage if is2xx(responseMessage.status) =>
+        case responseMessage if responseMessage.status >= 200 && responseMessage.status < 300 =>
           responseMessage
-        case responseMessage                                  =>
+        case responseMessage                                                                  =>
           logger.error(
             s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}"
           )

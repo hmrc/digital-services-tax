@@ -5,7 +5,7 @@ object AppDependencies {
 
   val hmrcMongoVersion = "2.6.0"
   val play             = "30"
-  val bootstrapVersion = "8.6.0"
+  val bootstrapVersion = "9.16.0"
 
   val compile = Seq(
     "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14",
