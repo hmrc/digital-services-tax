@@ -17,13 +17,13 @@
 package it.uk.gov.hmrc.digitalservicestax.controllers.actions
 
 import com.google.inject.Inject
-import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
+import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.{dstRegNumber, groupId, internalId, providerId, utr}
 import play.api.mvc._
 import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInRequest}
 import uk.gov.hmrc.digitalservicestax.data
-import uk.gov.hmrc.digitalservicestax.data.InternalId
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, UTR}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,10 +39,17 @@ class FakeIdentifierRegistrationAction @Inject() (bodyParser: PlayBodyParsers)(i
         LoggedInRequest(
           internalId,
           Enrolments(
-            Set(Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", "AMDST0799721562")), "Activated"))
+            Set(
+              Enrolment(
+                "HMRC-DST-ORG",
+                Seq(EnrolmentIdentifier("DSTRefNumber", dstRegNumber)),
+                "Activated"
+              ),
+              Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated")
+            )
           ),
-          "provider-id",
-          Some("123456"),
+          providerId,
+          Some(groupId),
           request
         )
       )
@@ -53,4 +60,8 @@ class FakeIdentifierRegistrationAction @Inject() (bodyParser: PlayBodyParsers)(i
 
 object FakeIdentifierRegistrationAction {
   val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
+  val utr: String @@ data.UTR.Tag               = UTR("1234567890")
+  val providerId                                = "provider-id"
+  val groupId                                   = "123456"
+  val dstRegNumber                              = "AMDST0799721562"
 }

@@ -36,7 +36,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 
-
   val taxEnrolmentsCallbackUrl: String        = servicesConfig.getConfString("tax-enrolments.callback", "")
   val taxEnrolmentsServiceName: String        = servicesConfig.getConfString("tax-enrolments.serviceName", "")
   val taxEnrolmentsEnabled: Boolean           = servicesConfig.getConfBool("tax-enrolments.enabled", true)

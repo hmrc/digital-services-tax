@@ -40,7 +40,8 @@ class FutureVolatilePersistence @Inject() (implicit ec: ExecutionContext) extend
     def update(formBundle: FormBundleNumber, internalId: InternalId) = f(V.update(formBundle, internalId))
     def reverseLookup(id: InternalId)                                = f(V.reverseLookup(id))
 
-    override def repository(): PlayMongoRepository[MongoPersistence.CallbackWrapper] = inner.pendingCallbacks.repository()
+    override def repository(): PlayMongoRepository[MongoPersistence.CallbackWrapper] =
+      inner.pendingCallbacks.repository()
   }
 
   val registrations = new Registrations {

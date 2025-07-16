@@ -23,7 +23,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 trait WiremockServer extends BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite =>
 
-  val wiremockPort: Int                  = WireMockSupport.port
+  val wiremockPort: Int          = WireMockSupport.port
   protected[this] val mockServer = new WireMockServer(wiremockPort)
 
   val mockServerUrl = s"http://localhost:$wiremockPort"

@@ -16,8 +16,11 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers
 
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.{equalTo, equalToJson, getRequestedFor, matchingJsonPath, postRequestedFor, urlEqualTo, verify}
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
-import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, RegistrationWiremockStubs, WiremockServer}
+import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.{dstRegNumber, groupId}
+import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, RegistrationWireMockStubs, WiremockServer}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
@@ -36,7 +39,7 @@ import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.controllers.routes
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
+import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper}
 
 import java.time.LocalDate
@@ -51,7 +54,7 @@ class RegistrationsControllerSpec
     with ScalaFutures
     with IntegrationPatience
     with WiremockServer
-    with RegistrationWiremockStubs
+    with RegistrationWireMockStubs
     with AuditingEmailStubs {
 
   val defaultConfiguration: Map[String, Any] = Map(
@@ -91,17 +94,139 @@ class RegistrationsControllerSpec
   override def beforeEach(): Unit = {
     app.injector.instanceOf[MongoPersistence].registrations.repository().collection.drop().head()
     app.injector.instanceOf[MongoPersistence].pendingCallbacks.repository().collection.drop().head()
+    WireMock.reset()
   }
 
   "submit registration" must {
     "return the updated registration upon successful registration" in {
       // Given
       val safeId                  = SafeId("XE0001234567890")
-      val registration            = givenRegistration(safeId)
+      val registration            = givenRegistration(Some(safeId))
       val formBundleNumber        = FormBundleNumber("123456789112")
       val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
 
-      stubDesRegEndpointSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubDesRegEndpointUsingSafeIdSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubTaxEnrolmentsSubscribeEndpointSuccess(formBundleNumber)
+      stubEmailSendEndpointSuccess
+      stubAuditWrite
+
+      val fakeRequest: FakeRequest[AnyContentAsJson] =
+        FakeRequest(HttpVerbs.POST, routes.RegistrationsController.submitRegistration().url)
+          .withJsonBody(Json.toJson(registration))
+
+      // When
+      val result: Future[Result] = Helpers.route(app, fakeRequest).value
+
+      // Then
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual Json.toJson(desRegistrationResponse)
+
+      val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
+      whenReady(mongoPersistence.registrations.get(FakeIdentifierRegistrationAction.internalId)) { optReg =>
+        optReg.value mustEqual registration
+      }
+
+      whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
+        optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
+      }
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditSource", equalTo("digital-services-tax"))
+        )
+      )
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditType", equalTo("digitalServicesTaxRegistrationSubmitted"))
+        )
+      )
+
+      val expectedEventDetail = AuditingHelper
+        .buildRegistrationAudit(
+          registration,
+          FakeIdentifierRegistrationAction.providerId,
+          Some(formBundleNumber),
+          "SUCCESS"
+        )
+        .detail
+        .toString()
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+        )
+      )
+    }
+
+    "must leave registration stuck in a pending state if subscribing to tax enrolments fails" in {
+      // Given
+      val safeId                  = SafeId("XE0001234567890")
+      val registration            = givenRegistration(Some(safeId))
+      val formBundleNumber        = FormBundleNumber("123456789112")
+      val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
+
+      stubDesRegEndpointUsingSafeIdSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubTaxEnrolmentsSubscribeEndpointError(formBundleNumber)
+      stubEmailSendEndpointSuccess
+      stubAuditWrite
+
+      val fakeRequest: FakeRequest[AnyContentAsJson] =
+        FakeRequest(HttpVerbs.POST, routes.RegistrationsController.submitRegistration().url)
+          .withJsonBody(Json.toJson(registration))
+
+      // When
+      val result: Future[Result] = Helpers.route(app, fakeRequest).value
+
+      // Then
+      status(result) mustEqual OK
+
+      val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
+      whenReady(mongoPersistence.registrations.get(FakeIdentifierRegistrationAction.internalId)) { optReg =>
+        optReg.value mustEqual registration
+      }
+
+      whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
+        optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
+      }
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditSource", equalTo("digital-services-tax"))
+        )
+      )
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditType", equalTo("digitalServicesTaxRegistrationSubmitted"))
+        )
+      )
+
+      val expectedEventDetail = AuditingHelper
+        .buildRegistrationAudit(
+          registration,
+          FakeIdentifierRegistrationAction.providerId,
+          Some(formBundleNumber),
+          "SUCCESS"
+        )
+        .detail
+        .toString()
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+        )
+      )
+    }
+
+    "return updated registration given successful registration when no safe id in request" in {
+      // Given
+      val safeId                  = SafeId("XE0001234567890")
+      val registration            = givenRegistration(None)
+      val formBundleNumber        = FormBundleNumber("123456789112")
+      val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
+
+      stubDesRegEndpointUsingSafeIdSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
       stubRetrieveROSMDetailsWithoutIDEndpointSuccess(safeId)
       stubTaxEnrolmentsSubscribeEndpointSuccess(formBundleNumber)
       stubEmailSendEndpointSuccess
@@ -126,18 +251,52 @@ class RegistrationsControllerSpec
       whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
         optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
       }
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditSource", equalTo("digital-services-tax"))
+        )
+      )
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditType", equalTo("digitalServicesTaxRegistrationSubmitted"))
+        )
+      )
+
+      val expectedEventDetail = AuditingHelper
+        .buildRegistrationAudit(
+          registration,
+          FakeIdentifierRegistrationAction.providerId,
+          Some(formBundleNumber),
+          "SUCCESS"
+        )
+        .detail
+        .toString()
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+        )
+      )
     }
 
-    "must leave registration stuck in a pending state if subscribing to tax enrolments fails" in {
-      // Given
+    "update registration completing UTR from Auth to complete successful registration" in {
       val safeId                  = SafeId("XE0001234567890")
-      val registration            = givenRegistration(safeId)
+      val registration            =
+        givenRegistration(None).copy(companyReg =
+          givenRegistration(None).companyReg.copy(useSafeId = false, utr = None)
+        )
       val formBundleNumber        = FormBundleNumber("123456789112")
       val desRegistrationResponse = RegistrationResponse(LocalDate.now.toString, formBundleNumber)
 
-      stubDesRegEndpointSuccess(safeId, formBundleNumber, Some(desRegistrationResponse))
+      stubDesRegEndpointUsingUTRSuccess(
+        FakeIdentifierRegistrationAction.utr,
+        formBundleNumber,
+        Some(desRegistrationResponse)
+      )
       stubRetrieveROSMDetailsWithoutIDEndpointSuccess(safeId)
-      stubTaxEnrolmentsSubscribeEndpointError(formBundleNumber)
+      stubTaxEnrolmentsSubscribeEndpointSuccess(formBundleNumber)
       stubEmailSendEndpointSuccess
       stubAuditWrite
 
@@ -150,6 +309,7 @@ class RegistrationsControllerSpec
 
       // Then
       status(result) mustEqual OK
+      contentAsJson(result) mustEqual Json.toJson(desRegistrationResponse)
 
       val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]
       whenReady(mongoPersistence.registrations.get(FakeIdentifierRegistrationAction.internalId)) { optReg =>
@@ -159,6 +319,34 @@ class RegistrationsControllerSpec
       whenReady(mongoPersistence.pendingCallbacks.get(formBundleNumber)) { optInternalId =>
         optInternalId.value mustEqual FakeIdentifierRegistrationAction.internalId
       }
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditSource", equalTo("digital-services-tax"))
+        )
+      )
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.auditType", equalTo("digitalServicesTaxRegistrationSubmitted"))
+        )
+      )
+
+      val expectedEventDetail = AuditingHelper
+        .buildRegistrationAudit(
+          registration,
+          FakeIdentifierRegistrationAction.providerId,
+          Some(formBundleNumber),
+          "SUCCESS"
+        )
+        .detail
+        .toString()
+
+      verify(
+        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+          matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+        )
+      )
     }
   }
 
@@ -169,7 +357,8 @@ class RegistrationsControllerSpec
       running(newApp) {
         // Given
         val registration     =
-          givenRegistration(SafeId("XE0001234567890")).copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
+          givenRegistration(Some(SafeId("XE0001234567890")))
+            .copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
         val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
         mongoPersistence.registrations
           .repository()
@@ -196,7 +385,7 @@ class RegistrationsControllerSpec
 
       running(newApp) {
         // Given
-        val registration     = givenRegistration(SafeId("XE0001234567890"))
+        val registration     = givenRegistration(Some(SafeId("XE0001234567890")))
         val formBundleNumber = FormBundleNumber("193756789113")
         val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
         mongoPersistence.registrations
@@ -227,7 +416,8 @@ class RegistrationsControllerSpec
       running(newApp) {
         // Given
         val registration     =
-          givenRegistration(SafeId("XE0001234567890")).copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
+          givenRegistration(Some(SafeId("XE0001234567890")))
+            .copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
         val formBundleNumber = FormBundleNumber("193756789113")
         val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
 
@@ -275,7 +465,103 @@ class RegistrationsControllerSpec
     }
   }
 
-  private def givenRegistration(safeId: SafeId) =
+  "RegistrationsController.getTaxEnrolmentsPendingRegDetails" must {
+    "return 200 when dstNewSolutionFeatureFlag is true and subscription is pending" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureTrue()
+
+      running(newApp) {
+        // Given
+        stubTaxEnrolmentsPendingSubscriptionsSuccess(groupId, DSTRegNumber(dstRegNumber), "PENDING")
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(
+            newApp,
+            FakeRequest(HttpVerbs.GET, routes.RegistrationsController.getTaxEnrolmentsPendingRegDetails().url)
+          )
+          .value
+
+        // Then
+        status(result) mustEqual OK
+      }
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is false" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureFalse()
+
+      running(newApp) {
+        // Given
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(
+            newApp,
+            FakeRequest(HttpVerbs.GET, routes.RegistrationsController.getTaxEnrolmentsPendingRegDetails().url)
+          )
+          .value
+
+        // Then
+        status(result) mustEqual NOT_FOUND
+        verify(
+          0,
+          getRequestedFor(
+            urlEqualTo(s"/tax-enrolments/groups/${FakeIdentifierRegistrationAction.groupId}/subscriptions")
+          )
+        )
+      }
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is true and subscription is not pending" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureTrue()
+
+      running(newApp) {
+        // Given
+        stubTaxEnrolmentsPendingSubscriptionsSuccess(groupId, DSTRegNumber(dstRegNumber), "ACTIVATED")
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(
+            newApp,
+            FakeRequest(HttpVerbs.GET, routes.RegistrationsController.getTaxEnrolmentsPendingRegDetails().url)
+          )
+          .value
+
+        // Then
+        status(result) mustEqual NOT_FOUND
+      }
+    }
+
+    "return 404 when dstNewSolutionFeatureFlag is true and error response in subscription response is defined" in {
+      val newApp = defaultAppWithDstNewSolutionFeatureTrue()
+
+      running(newApp) {
+        // Given
+        stubTaxEnrolmentsPendingSubscriptionsSuccess(
+          groupId,
+          DSTRegNumber(dstRegNumber),
+          "PENDING",
+          Some("some random error errorResponse")
+        )
+        stubAuditWrite
+
+        // When
+        val result = Helpers
+          .route(
+            newApp,
+            FakeRequest(HttpVerbs.GET, routes.RegistrationsController.getTaxEnrolmentsPendingRegDetails().url)
+          )
+          .value
+
+        // Then
+        status(result) mustEqual NOT_FOUND
+      }
+    }
+  }
+
+  private def givenRegistration(safeId: Option[SafeId]) =
     Registration(
       CompanyRegWrapper(
         Company(
@@ -283,7 +569,7 @@ class RegistrationsControllerSpec
           UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))
         ),
         Some(UTR("1234567890")),
-        Some(safeId),
+        safeId,
         useSafeId = true,
         None
       ),

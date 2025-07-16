@@ -22,10 +22,9 @@ import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInAction,
 
 class HmrcModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] =
     Seq(
       bind[IdentifierAction].to[LoggedInAction],
       bind[RegisteredActionRefiner].to[RegisteredOrPending]
     )
-  }
 }

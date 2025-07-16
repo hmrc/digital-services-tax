@@ -20,12 +20,11 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period}
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
 
 import java.time.LocalDate
 
-trait ReturnsWiremockStubs {
+trait ReturnsWireMockStubs {
 
   def stubGetPeriodsSuccess(dstRegNo: DSTRegNumber): StubMapping = {
     val jsonResponse =
@@ -69,6 +68,14 @@ trait ReturnsWiremockStubs {
         .willReturn(aResponse().withStatus(200).withBody(jsonResponse))
     )
   }
+
+  def stubGetPeriodsError(dstRegNo: DSTRegNumber): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNo/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
+          1
+        )}"""))
+        .willReturn(serverError())
+    )
 
   def stubReturnSendSuccess(dstRegNo: DSTRegNumber): StubMapping =
     stubFor(

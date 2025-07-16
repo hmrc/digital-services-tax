@@ -31,8 +31,8 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import java.time.LocalDate
 import scala.concurrent.{ExecutionContext, Future}
 
-class FakeIdentifierRegisteredAction @Inject()(bodyParser: PlayBodyParsers)(implicit
-                                                                              val executionContext: ExecutionContext
+class FakeIdentifierRegisteredAction @Inject() (bodyParser: PlayBodyParsers)(implicit
+  val executionContext: ExecutionContext
 ) extends RegisteredActionRefiner {
 
   override protected def refine[A](request: LoggedInRequest[A]): Future[Either[Result, RegisteredRequest[A]]] = {
@@ -40,7 +40,7 @@ class FakeIdentifierRegisteredAction @Inject()(bodyParser: PlayBodyParsers)(impl
     Future.successful(Right(RegisteredRequest(givenRegistration, givenLoggedInRequest(request))))
   }
 
-  private def givenLoggedInRequest[A](request: Request[A]): LoggedInRequest[A] = {
+  private def givenLoggedInRequest[A](request: Request[A]): LoggedInRequest[A] =
     LoggedInRequest(
       internalId,
       Enrolments(
@@ -50,14 +50,13 @@ class FakeIdentifierRegisteredAction @Inject()(bodyParser: PlayBodyParsers)(impl
       Some("123456"),
       request
     )
-  }
 
 }
 
 object FakeIdentifierRegisteredAction {
   val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
 
-  val givenRegistration: Registration = {
+  val givenRegistration: Registration =
     Registration(
       CompanyRegWrapper(
         Company(
@@ -86,5 +85,4 @@ object FakeIdentifierRegisteredAction {
       LocalDate.now().minusWeeks(50),
       Some(DSTRegNumber("AMDST0799721562"))
     )
-  }
 }

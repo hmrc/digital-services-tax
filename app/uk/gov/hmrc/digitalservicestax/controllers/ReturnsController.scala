@@ -49,7 +49,7 @@ class ReturnsController @Inject() (
 
   implicit val ec: ExecutionContext = cc.executionContext
 
-  def submitReturn(periodKeyString: String): Action[JsValue] = {
+  def submitReturn(periodKeyString: String): Action[JsValue] =
     loggedIn.andThen(registered).async(parse.json) { implicit request =>
       val regNo     = request.registration.registrationNumber.get
       val periodKey = Period.Key(periodKeyString)
@@ -83,7 +83,6 @@ class ReturnsController @Inject() (
           }
       }
     }
-  }
 
   def lookupOutstandingReturns(): Action[AnyContent] =
     loggedIn.andThen(registered).async { implicit request =>

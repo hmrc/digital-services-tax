@@ -23,7 +23,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import play.api.{Configuration, Logger}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -43,12 +43,10 @@ class RosmController @Inject() (
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments: Enrolments =>
       getUtrFromAuth(enrolments).fold(Future.successful[Result](NotFound)) { utr =>
         rosmConnector
-          .retrieveROSMDetails(
-            utr
-          )
+          .retrieveROSMDetails(utr)
           .map {
             case Some(r) =>
               import data.BackendAndFrontendJson._
@@ -75,10 +73,12 @@ class RosmController @Inject() (
             JsonSchemaChecker[data.Company](r.company, "rosm-response")
             Ok(Json.toJson(r))
           case Some(r)                                                                                     =>
+            // $COVERAGE-OFF$
             logger.warn(
               s"Record found for UTR $utr, but postcode is '${r.company.address.postalCode}' " +
                 s", not user supplied '$postcode'."
             )
+            // $COVERAGE-ON$
             NotFound
           case _                                                                                           =>
             logger.warn(s"No record found for UTR $utr")

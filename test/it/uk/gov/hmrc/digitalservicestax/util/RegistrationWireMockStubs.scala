@@ -22,13 +22,13 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats._
 import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
-import uk.gov.hmrc.digitalservicestax.data.{EnrolmentDetail, FormBundleNumber, GroupEnrolmentsResponse, SafeId, ServiceIdentifier}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, EnrolmentDetail, FormBundleNumber, GroupEnrolmentsResponse, SafeId, ServiceIdentifier, UTR}
 
 import java.time.LocalDate
 
-trait RegistrationWiremockStubs {
+trait RegistrationWireMockStubs {
 
-  def stubDesRegEndpointSuccess(
+  def stubDesRegEndpointUsingSafeIdSuccess(
     safeId: SafeId,
     formBundleNumber: FormBundleNumber,
     regResponse: Option[RegistrationResponse]
@@ -36,6 +36,18 @@ trait RegistrationWiremockStubs {
     val desRegistrationResponse = regResponse.getOrElse(RegistrationResponse(LocalDate.now.toString, formBundleNumber))
     stubFor(
       post(urlPathEqualTo(s"""/cross-regime/subscription/DST/safe/$safeId"""))
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(desRegistrationResponse).toString()))
+    )
+  }
+
+  def stubDesRegEndpointUsingUTRSuccess(
+    utr: UTR,
+    formBundleNumber: FormBundleNumber,
+    regResponse: Option[RegistrationResponse]
+  ): StubMapping = {
+    val desRegistrationResponse = regResponse.getOrElse(RegistrationResponse(LocalDate.now.toString, formBundleNumber))
+    stubFor(
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/utr/$utr"""))
         .willReturn(aResponse().withStatus(200).withBody(Json.toJson(desRegistrationResponse).toString()))
     )
   }
@@ -91,10 +103,25 @@ trait RegistrationWiremockStubs {
     )
   }
 
-  def stubTaxEnrolmentsStoreProxyDstRefNotFound(groupId: String): StubMapping = {
+  def stubTaxEnrolmentsStoreProxyDstRefNotFound(groupId: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/$groupId/enrolments?service=HMRC-DST-ORG"))
         .willReturn(notFound())
+    )
+
+  def stubTaxEnrolmentsPendingSubscriptionsSuccess(
+    groupId: String,
+    dstRegNo: DSTRegNumber,
+    state: String,
+    errorResponse: Option[String] = None
+  ): StubMapping = {
+    val subscriptionResponse = Seq(
+      TaxEnrolmentsSubscription(Some(List(Identifier("DST", dstRegNo))), state, errorResponse)
+    )
+
+    stubFor(
+      get(urlEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(subscriptionResponse).toString()))
     )
   }
 }

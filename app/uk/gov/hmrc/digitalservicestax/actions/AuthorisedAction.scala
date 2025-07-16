@@ -193,8 +193,8 @@ case class LoggedInRequest[A](
 }
 
 trait IdentifierAction
-  extends ActionBuilder[LoggedInRequest, AnyContent]
-  with ActionRefiner[Request, LoggedInRequest]
-  with AuthorisedFunctions
+    extends ActionBuilder[LoggedInRequest, AnyContent]
+    with ActionRefiner[Request, LoggedInRequest]
+    with AuthorisedFunctions
 
 trait RegisteredActionRefiner extends ActionRefiner[LoggedInRequest, RegisteredRequest]
