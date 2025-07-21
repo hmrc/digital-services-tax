@@ -113,8 +113,9 @@ class RosmControllerSpec
       authPostAuthoriseSuccess()
       stubROSMDetailsSuccess()
 
-      val fakeRequest = FakeRequest(Helpers.GET, routes.RosmController.lookupWithIdCheckPostcode("1111118888", "DH14 1EJ").url)
-        .withHeaders("Authorization" -> "Bearer 1234")
+      val fakeRequest =
+        FakeRequest(Helpers.GET, routes.RosmController.lookupWithIdCheckPostcode("1111118888", "DH14 1EJ").url)
+          .withHeaders("Authorization" -> "Bearer 1234")
 
       // When
       val result = Helpers.route(app, fakeRequest).value
@@ -146,8 +147,9 @@ class RosmControllerSpec
       authPostAuthoriseSuccess()
       stubROSMDetailsNotFound()
 
-      val fakeRequest = FakeRequest(Helpers.GET, routes.RosmController.lookupWithIdCheckPostcode("1111118888", "NW14 1AB").url)
-        .withHeaders("Authorization" -> "Bearer 1234")
+      val fakeRequest =
+        FakeRequest(Helpers.GET, routes.RosmController.lookupWithIdCheckPostcode("1111118888", "NW14 1AB").url)
+          .withHeaders("Authorization" -> "Bearer 1234")
 
       // When
       val result = Helpers.route(app, fakeRequest).value
