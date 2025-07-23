@@ -61,7 +61,7 @@ class RegisteredOrPending @Inject() (
   getDstNumberFromEisService: GetDstNumberFromEisService,
   taxEnrolmentConnector: TaxEnrolmentConnector
 )(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[LoggedInRequest, RegisteredRequest] {
+    extends RegisteredActionRefiner {
 
   val logger = Logger(getClass)
 
@@ -150,9 +150,7 @@ class LoggedInAction @Inject() (
   appConfig: AppConfig,
   val authConnector: AuthConnector
 )(implicit val executionContext: ExecutionContext)
-    extends ActionBuilder[LoggedInRequest, AnyContent]
-    with ActionRefiner[Request, LoggedInRequest]
-    with AuthorisedFunctions
+    extends IdentifierAction
     with Logging {
 
   override def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] = {
@@ -193,3 +191,10 @@ case class LoggedInRequest[A](
     .orElse(enrolments.getEnrolment("IR-SA"))
     .flatMap(_.getIdentifier("UTR").map(x => UTR(x.value)))
 }
+
+trait IdentifierAction
+    extends ActionBuilder[LoggedInRequest, AnyContent]
+    with ActionRefiner[Request, LoggedInRequest]
+    with AuthorisedFunctions
+
+trait RegisteredActionRefiner extends ActionRefiner[LoggedInRequest, RegisteredRequest]

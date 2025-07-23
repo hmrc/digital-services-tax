@@ -47,7 +47,7 @@ class RegistrationsController @Inject() (
   appConfig: AppConfig,
   registrationOrPending: RegisteredOrPending,
   val auditing: AuditConnector,
-  loggedIn: LoggedInAction,
+  loggedIn: IdentifierAction,
   getDstNumberService: GetDstNumberFromEisService
 ) extends BackendController(cc)
     with AuthorisedFunctions
@@ -110,12 +110,18 @@ class RegistrationsController @Inject() (
         Ok(Json.toJson(regDetails))
       case (Some(regDetails), Some(_))                                      =>
         if (regDetails.registrationNumber.isEmpty) {
+          // $COVERAGE-OFF$
           logger.info(s"no registration number found in registration details")
+          // $COVERAGE-ON$
         }
+        // $COVERAGE-OFF$
         logger.info("pending registration")
+        // $COVERAGE-ON$
         Ok(Json.toJson(regDetails))
       case _                                                                =>
+        // $COVERAGE-OFF$
         logger.info("no pending registration")
+        // $COVERAGE-ON$
         NotFound
     }
   }

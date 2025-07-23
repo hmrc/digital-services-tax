@@ -41,8 +41,8 @@ class ReturnsController @Inject() (
   persistence: MongoPersistence,
   connector: connectors.ReturnConnector,
   auditing: AuditConnector,
-  registered: Registered,
-  loggedIn: LoggedInAction
+  registered: RegisteredActionRefiner,
+  loggedIn: IdentifierAction
 ) extends BackendController(cc)
     with AuthorisedFunctions
     with Logging {

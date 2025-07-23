@@ -18,8 +18,9 @@ package unit.uk.gov.hmrc.digitalservicestax.services
 
 import cats.Id
 import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.RegWrapper
+import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper, RetWrapper}
 import uk.gov.hmrc.digitalservicestax.services.{MongoPersistence, Persistence}
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import java.time.LocalDateTime
 
@@ -34,6 +35,8 @@ trait VolatilePersistence extends Persistence[Id] {
       _data = _data + (formBundle -> internalId)
     def reverseLookup(id: InternalId): Option[FormBundleNumber]      =
       _data.collectFirst { case (k, v) if v == id => k }
+
+    override def repository(): PlayMongoRepository[CallbackWrapper] = ???
   }
 
   val registrations = new Registrations {
@@ -68,6 +71,8 @@ trait VolatilePersistence extends Persistence[Id] {
     override def findBySafeId(safeId: SafeId): Id[Option[RegWrapper]] = None
 
     override def findByEmail(email: Email): Id[Option[RegWrapper]] = None
+
+    override def repository(): PlayMongoRepository[RegWrapper] = ???
   }
 
   val returns = new Returns {
@@ -87,6 +92,8 @@ trait VolatilePersistence extends Persistence[Id] {
       }
       update(reg, updatedMap)
     }
+
+    override def repository(): PlayMongoRepository[RetWrapper] = ???
   }
 }
 

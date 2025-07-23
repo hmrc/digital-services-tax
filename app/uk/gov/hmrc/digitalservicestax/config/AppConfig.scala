@@ -36,8 +36,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   val obligationStartDate: String = config.getOptional[String]("obligation-data.fromDate").getOrElse("2020-04-01")
 
-  val fixFailedCallback: Boolean = config.getOptional[Boolean]("fix.callback-failure.enabled").getOrElse(false)
-
   val taxEnrolmentsCallbackUrl: String        = servicesConfig.getConfString("tax-enrolments.callback", "")
   val taxEnrolmentsServiceName: String        = servicesConfig.getConfString("tax-enrolments.serviceName", "")
   val taxEnrolmentsEnabled: Boolean           = servicesConfig.getConfBool("tax-enrolments.enabled", true)
@@ -48,8 +46,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     config.getOptional[String]("dstRefAndGroupIdForActivation.formBundleNumber").getOrElse("")
   val dstRefNumberForActivation: String       =
     config.getOptional[String]("dstRefAndGroupIdForActivation.dstRefNumber").getOrElse("")
-  val nonUkCountryCodeForActivation: String   =
-    servicesConfig.getConfString("dstRefAndGroupIdForActivation.nonUkCountryCode", "")
   lazy val dstNewSolutionFeatureFlag: Boolean =
     config.getOptional[Boolean]("feature.dstNewProposedSolution").getOrElse(false)
 

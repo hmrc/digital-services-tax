@@ -1,0 +1,67 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package it.uk.gov.hmrc.digitalservicestax.controllers.actions
+
+import com.google.inject.Inject
+import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.{dstRegNumber, groupId, internalId, providerId, utr}
+import play.api.mvc._
+import shapeless.tag.@@
+import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
+import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInRequest}
+import uk.gov.hmrc.digitalservicestax.data
+import uk.gov.hmrc.digitalservicestax.data.{InternalId, UTR}
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class FakeIdentifierRegistrationAction @Inject() (bodyParser: PlayBodyParsers)(implicit
+  val executionContext: ExecutionContext
+) extends IdentifierAction {
+
+  override def authConnector: AuthConnector = ???
+
+  override protected def refine[A](request: Request[A]): Future[Either[Result, LoggedInRequest[A]]] =
+    Future.successful(
+      Right(
+        LoggedInRequest(
+          internalId,
+          Enrolments(
+            Set(
+              Enrolment(
+                "HMRC-DST-ORG",
+                Seq(EnrolmentIdentifier("DSTRefNumber", dstRegNumber)),
+                "Activated"
+              ),
+              Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated")
+            )
+          ),
+          providerId,
+          Some(groupId),
+          request
+        )
+      )
+    )
+
+  override def parser: BodyParser[AnyContent] = bodyParser.defaultBodyParser
+}
+
+object FakeIdentifierRegistrationAction {
+  val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
+  val utr: String @@ data.UTR.Tag               = UTR("1234567890")
+  val providerId                                = "provider-id"
+  val groupId                                   = "123456"
+  val dstRegNumber                              = "AMDST0799721562"
+}

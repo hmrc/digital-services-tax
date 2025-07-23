@@ -75,7 +75,9 @@ class TaxEnrolmentCallbackController @Inject() (
               dstNumber.some
             )
           )
+          // $COVERAGE-OFF$
           logger.info("Tax-enrolments callback, lookup and save of persistence successful")
+          // $COVERAGE-ON$
           NoContent
         }).recoverWith {
           case e: Exception =>
