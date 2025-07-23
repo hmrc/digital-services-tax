@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{equalTo, equalToJson, ge
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.{dstRegNumber, groupId}
 import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, RegistrationWireMockStubs, WiremockServer}
+import org.mongodb.scala.result.InsertOneResult
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
@@ -38,7 +39,7 @@ import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.controllers.routes
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
+import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, InternalId, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper}
 
@@ -355,28 +356,24 @@ class RegistrationsControllerSpec
       val newApp = defaultAppWithDstNewSolutionFeatureFalse()
 
       running(newApp) {
-        // Given
-        val registration     =
+        val registration =
           givenRegistration(Some(SafeId("XE0001234567890")))
             .copy(registrationNumber = Some(DSTRegNumber("AMDST0799721562")))
-        val mongoPersistence = newApp.injector.instanceOf[MongoPersistence]
-        mongoPersistence.registrations
-          .repository()
-          .collection
-          .insertOne(RegWrapper(FakeIdentifierRegistrationAction.internalId, registration))
-          .headOption()
 
-        stubTaxEnrolmentsStoreProxyDstRefSuccess("123456")
-        stubAuditWrite
+        whenReady(insertRegistration(newApp, FakeIdentifierRegistrationAction.internalId, registration)) { _ =>
+          // Given
+          stubTaxEnrolmentsStoreProxyDstRefSuccess("123456")
+          stubAuditWrite
 
-        // When
-        val result = Helpers
-          .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
-          .value
+          // When
+          val result = Helpers
+            .route(newApp, FakeRequest(HttpVerbs.GET, routes.RegistrationsController.lookupRegistration().url))
+            .value
 
-        // Then
-        status(result) mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(registration)
+          // Then
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(registration)
+        }
       }
     }
 
@@ -590,4 +587,17 @@ class RegistrationsControllerSpec
       LocalDate.now().minusWeeks(50),
       None
     )
+
+  private def insertRegistration(
+    app: Application,
+    internalId: InternalId,
+    registration: Registration
+  ): Future[Option[InsertOneResult]] = {
+    val mongoPersistence = app.injector.instanceOf[MongoPersistence]
+    mongoPersistence.registrations
+      .repository()
+      .collection
+      .insertOne(RegWrapper(internalId, registration))
+      .headOption()
+  }
 }
