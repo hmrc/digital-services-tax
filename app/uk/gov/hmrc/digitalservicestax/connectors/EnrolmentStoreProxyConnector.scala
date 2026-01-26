@@ -20,14 +20,15 @@ import play.api.Logger
 import play.api.http.Status.{NOT_FOUND, NO_CONTENT, OK}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.GroupEnrolmentsResponse
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EnrolmentStoreProxyConnector @Inject() (
-  val http: HttpClient,
+  val http: HttpClientV2,
   val appConfig: AppConfig
 ) extends DesHelpers {
 
@@ -42,7 +43,7 @@ class EnrolmentStoreProxyConnector @Inject() (
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-    http.GET[HttpResponse](es3DstUrl(groupId)) map {
+    http.get(url"${es3DstUrl(groupId)}").execute[HttpResponse] map {
       case response if response.status == NO_CONTENT || response.status == NOT_FOUND => None
       case response if response.status == OK                                         =>
         response.json

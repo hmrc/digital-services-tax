@@ -17,15 +17,16 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.http.{ContentTypes, HeaderNames}
-import play.api.libs.json.Writes
+import play.api.libs.json.{Json, Writes}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, StringContextOps}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DesHelpers {
 
-  def http: HttpClient
+  def http: HttpClientV2
   def appConfig: AppConfig
 
   private def headers = Seq(
@@ -35,7 +36,7 @@ trait DesHelpers {
   )
 
   def desGet[O](url: String)(implicit rds: HttpReads[O], hc: HeaderCarrier, ec: ExecutionContext): Future[O] =
-    http.GET[O](url, Seq.empty, headers)(rds, addHeaders, ec)
+    http.get(url"$url")(addHeaders).setHeader(headers: _*).execute[O]
 
   def desPost[I, O](url: String, body: I)(implicit
     wts: Writes[I],
@@ -43,7 +44,7 @@ trait DesHelpers {
     hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[O] =
-    http.POST[I, O](url, body, headers)(wts, rds, addHeaders, ec)
+    http.post(url"$url")(addHeaders).setHeader(headers: _*).withBody(Json.toJson(body)).execute[O]
 
   def addHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = None)

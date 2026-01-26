@@ -3,9 +3,9 @@ import sbt._
 
 object AppDependencies {
 
-  val hmrcMongoVersion = "2.6.0"
+  val hmrcMongoVersion = "2.12.0"
   val play             = "30"
-  val bootstrapVersion = "9.16.0"
+  val bootstrapVersion = "10.5.0"
 
   val compile = Seq(
     "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14",
@@ -24,7 +24,7 @@ object AppDependencies {
     "org.scalatest"                %% "scalatest"                   % "3.2.18"         % Test,
     "org.scalatestplus.play"       %% "scalatestplus-play"          % "7.0.1"          % "test, it",
     "uk.gov.hmrc"                  %% s"bootstrap-test-play-$play"  % bootstrapVersion         % Test,
-    "org.scalatestplus"            %% "mockito-3-12"                % "3.2.10.0"       % Test,
+    "org.scalatestplus"            %% "mockito-4-11"                % "3.2.17.0"       % Test,
     "org.scalatestplus"            %% "scalacheck-1-15"             % "3.2.11.0"       % Test,
     "org.scalacheck"               %% "scalacheck"                  % "1.18.0"         % Test,
     "io.chrisdavenport"            %% "cats-scalacheck"             % "0.3.2"          % Test,
