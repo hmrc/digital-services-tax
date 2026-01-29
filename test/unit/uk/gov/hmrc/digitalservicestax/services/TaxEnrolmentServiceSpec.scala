@@ -29,7 +29,7 @@ import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors.{TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
-import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
+import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances}
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.Future
@@ -54,7 +54,7 @@ class TaxEnrolmentServiceSpec
     "return Ok when tax enrolments connector returns taxEnrolmentsSubscription with pending state" in {
 
       val registration                                         = arbitrary[Registration].sample.value
-      val internal                                             = arbitrary[InternalId].sample.value
+      val internal                                             = TestInstances.arbInternalId.arbitrary.sample.value
       val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
         TaxEnrolmentsSubscription(None, "PENDING", None)
 

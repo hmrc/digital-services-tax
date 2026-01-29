@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.actions
 
+import it.uk.gov.hmrc.digitalservicestax.util.TestInstances
 import org.mockito.ArgumentMatchers.{any, same}
 import org.mockito.Mockito.{reset, when}
 import org.scalacheck.Arbitrary.arbitrary
@@ -82,7 +83,7 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
@@ -121,7 +122,7 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
@@ -160,7 +161,7 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal    = arbitrary[InternalId].sample.value
+      val internal    = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments  = arbitrary[Enrolments].sample.value
       val providerId  = arbitrary[NonEmptyString].sample.value
       val reg         = arbitrary[Registration].sample.value
@@ -200,7 +201,7 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
 
@@ -226,7 +227,7 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
@@ -265,7 +266,7 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
+          val internal = TestInstances.arbInternalId.arbitrary.sample.value
           val reg      = arbitrary[Registration].sample.value
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
@@ -306,7 +307,7 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
+          val internal = TestInstances.arbInternalId.arbitrary.sample.value
           val reg      = arbitrary[Registration].sample.value
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
@@ -345,7 +346,7 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
+          val internal = TestInstances.arbInternalId.arbitrary.sample.value
           val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
@@ -383,7 +384,7 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
+          val internal = TestInstances.arbInternalId.arbitrary.sample.value
           val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
@@ -427,7 +428,7 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
@@ -464,7 +465,7 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = arbitrary[Enrolments].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
 
@@ -492,7 +493,7 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
       val enrolments = Enrolments(
@@ -535,7 +536,7 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val utr        = arbitrary[UTR].sample.value
       val providerId = arbitrary[NonEmptyString].sample.value
       val reg        = arbitrary[Registration].sample.value
@@ -581,7 +582,7 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
-      val internal   = arbitrary[InternalId].sample.value
+      val internal   = TestInstances.arbInternalId.arbitrary.sample.value
       val enrolments = Enrolments(
         Set(Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated"))
       )

@@ -17,8 +17,6 @@
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.outworkers.util.domain.ShortString
-import com.outworkers.util.samplers._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
@@ -28,7 +26,7 @@ import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
@@ -171,8 +169,8 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
     } yield (dstRegNumber, period, ret)
 
     val resp = ReturnResponse(
-      gen[ShortString].value,
-      gen[ShortString].value
+      TestInstances.shortString.sample.value,
+      TestInstances.shortString.sample.value
     )
 
     forAll(customGen) { case (dstNo, period, ret) =>

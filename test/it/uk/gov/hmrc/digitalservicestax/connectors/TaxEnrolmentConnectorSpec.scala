@@ -17,14 +17,13 @@
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.outworkers.util.samplers._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.{AddressLine, CountryCode, DSTRegNumber, ForeignAddress, Postcode, UkAddress}
 import uk.gov.hmrc.http.HeaderCarrier
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
@@ -47,8 +46,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
-    val subscriptionId = gen[ShortString].value
-    val enrolment      = gen[TaxEnrolmentsSubscription]
+    val subscriptionId = TestInstances.shortString.sample.value
+    val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
 
     stubFor(
       get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$subscriptionId"""))
@@ -71,8 +70,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "create a new subscription for a tax enrolment" in {
-    val safeId           = gen[ShortString].value
-    val formBundleNumber = gen[ShortString].value
+    val safeId           = TestInstances.shortString.sample.value
+    val formBundleNumber = TestInstances.shortString.sample.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
@@ -91,7 +90,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
 
   "getPendingSubscriptionByGroupId" should {
     "retrieve the tax enrolment with pending state for a groupId" in {
-      val groupId            = gen[ShortString].value
+      val groupId            = TestInstances.shortString.sample.value
       val enrolment: JsValue = Json.parse(
         """[{"created":1676542914173,
           "serviceName":"HMRC-DST-ORG",
@@ -116,7 +115,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       }
     }
     "retrieve the taxenrolment by groupId and return none when state is not pending" in {
-      val groupId            = gen[ShortString].value
+      val groupId            = TestInstances.shortString.sample.value
       val enrolment: JsValue = Json.parse(
         """[{"created":1676542914173,
           "serviceName":"HMRC-DST-ORG",
@@ -256,8 +255,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "handle an unauthorised exception" in {
-    val safeId           = gen[ShortString].value
-    val formBundleNumber = gen[ShortString].value
+    val safeId           = TestInstances.shortString.sample.value
+    val formBundleNumber = TestInstances.shortString.sample.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
@@ -274,8 +273,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "handle a BadRequest exception" in {
-    val safeId           = gen[ShortString].value
-    val formBundleNumber = gen[ShortString].value
+    val safeId           = TestInstances.shortString.sample.value
+    val formBundleNumber = TestInstances.shortString.sample.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))

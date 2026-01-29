@@ -17,9 +17,8 @@
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.outworkers.util.samplers._
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.mockito._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -53,12 +52,12 @@ class RegistrationConnectorSpec
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
 
     val resp = RegistrationResponse(
-      gen[ShortString].value,
+      TestInstances.shortString.sample.value,
       arbitrary[FormBundleNumber].sample.value
     )
 
-    val idType   = gen[ShortString].value
-    val idNumber = gen[ShortString].value
+    val idType   = TestInstances.shortString.sample.value
+    val idNumber = TestInstances.shortString.sample.value
     val reg      = arbitrary[Registration].sample.value
 
     stubFor(
