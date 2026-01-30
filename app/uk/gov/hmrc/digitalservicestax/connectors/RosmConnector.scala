@@ -52,7 +52,7 @@ class RosmConnector @Inject() (
     desPost[JsValue, Option[RosmWithoutIDResponse]](s"${appConfig.desURL}/$serviceURLWithoutId", Json.toJson(request))
   }
 
-  def retrieveROSMDetails(utr: String)(implicit
+  def retrieveROSMDetails(utr: UTR)(implicit
     hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Option[CompanyRegWrapper]] = {
@@ -64,7 +64,7 @@ class RosmConnector @Inject() (
     )
 
     desPost[JsValue, Option[CompanyRegWrapper]](
-      s"${appConfig.desURL}/$serviceURLWithId/utr/$utr",
+      s"${appConfig.desURL}/$serviceURLWithId/utr/${utr.value}",
       request
     ).recover {
       case NotAnOrganisationException  => None

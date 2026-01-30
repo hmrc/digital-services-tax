@@ -18,7 +18,8 @@ package uk.gov.hmrc.digitalservicestax.test
 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.digitalservicestax.data.FormBundleNumber
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
@@ -35,9 +36,9 @@ class TestConnector @Inject() (
     http.get(url"${appConfig.desURL}/$url/$param").execute[HttpResponse]
 
   def getSubscription(
-    subscriptionId: String
+    subscriptionId: FormBundleNumber
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
-    http.get(url"${appConfig.desURL}/get-subscription/$subscriptionId").execute[DstRegNoWrapper].map { x =>
+    http.get(url"${appConfig.desURL}/get-subscription/${subscriptionId.value}").execute[DstRegNoWrapper].map { x =>
       TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", None)
     }
 

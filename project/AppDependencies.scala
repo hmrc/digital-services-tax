@@ -14,7 +14,6 @@ object AppDependencies {
     "uk.gov.hmrc"               %% s"bootstrap-backend-play-$play" % bootstrapVersion,
     "com.beachape"              %% "enumeratum"                    % "1.7.3",
     "com.beachape"              %% "enumeratum-play-json"          % "1.8.0",
-    "com.chuusai"               %% "shapeless"                     % "2.4.0-M1",
     "commons-validator"          % "commons-validator"             % "1.7",
     "fr.marcwrobel"              % "jbanking"                      % "4.2.0"
   )

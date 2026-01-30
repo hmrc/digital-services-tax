@@ -41,8 +41,8 @@ object EeittInterface {
     def writes(value: ListMap[String, String]): JsValue =
       JsArray(
         value.toList.zipWithIndex flatMap {
-          case ((key, ""), i)    => Nil
-          case ((key, value), i) =>
+          case ((_, ""), _)    => Nil
+          case ((key, value), _) =>
             List(
               Json.obj(
                 "paramSequence" -> "01",
@@ -57,8 +57,8 @@ object EeittInterface {
   def strDate(d: LocalDate): String =
     d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
 
-  implicit val registrationWriter = new Writes[Registration] {
-    implicit val trueFalseIndicatorType = new Writes[Boolean] {
+  implicit val registrationWriter: Writes[Registration] = new Writes[Registration] {
+    implicit val trueFalseIndicatorType: Writes[Boolean] = new Writes[Boolean] {
       def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
     }
 
@@ -77,36 +77,36 @@ object EeittInterface {
             ),
             "customerIdentificationNumber" -> Json.obj(
               "noIdentifier"  -> o.companyReg.useSafeId, // Expected to always be False for MDTP submissions, except for Rosm without ID route
-              "custFirstName" -> contact.forename,
-              "custLastName"  -> contact.surname
+              "custFirstName" -> contact.forename.value,
+              "custLastName"  -> contact.surname.value
             ),
             "businessContactDetails"       -> Json.obj(
               "addressInputModeIndicator" -> "2",
-              "addressLine1"              -> contactAddress.line1,
+              "addressLine1"              -> contactAddress.line1.value,
               "addressLine2"              -> Some(contactAddress.line2).filter(_.nonEmpty),
               "addressLine3"              -> Some(contactAddress.line3).filter(_.nonEmpty),
               "addressLine4"              -> Some(contactAddress.line4).filter(_.nonEmpty),
               "postCode"                  -> Some(contactAddress.postalCode).filter(_.nonEmpty),
               "addressNotInUK"            -> contactAddress.isInstanceOf[ForeignAddress],
-              "nonUKCountry"              -> Some(contactAddress).collect { case f: ForeignAddress => f.countryCode },
-              "email"                     -> Some(contact.email).filter(_.nonEmpty),
-              "telephoneNumber"           -> Some(contact.phoneNumber).filter(_.nonEmpty)
+              "nonUKCountry"              -> Some(contactAddress).collect { case f: ForeignAddress => f.countryCode.value },
+              "email"                     -> Some(contact.email.value).filter(_.nonEmpty),
+              "telephoneNumber"           -> Some(contact.phoneNumber.value).filter(_.nonEmpty)
             )
           ),
           "regimeSpecificDetails" -> ListMap[String, String](
-            "A_DST_PRIM_NAME"         -> { contact.forename + " " + contact.surname },
-            "A_DST_PRIM_TELEPHONE"    -> contact.phoneNumber,
-            "A_DST_PRIM_EMAIL"        -> contact.email,
-            "A_DST_GLOBAL_NAME"       -> ultimateParent.fold("")(_.name),
+            "A_DST_PRIM_NAME"         -> { contact.forename.value + " " + contact.surname.value },
+            "A_DST_PRIM_TELEPHONE"    -> contact.phoneNumber.value,
+            "A_DST_PRIM_EMAIL"        -> contact.email.value,
+            "A_DST_GLOBAL_NAME"       -> ultimateParent.fold("")(_.name.value),
             "A_DATA_ORIGIN"           -> "1",
             "A_DST_PERIOD_END_DATE"   -> strDate(accountingPeriodEnd),
             "A_TAX_START_DATE"        -> strDate(dateLiable),
-            "A_CORR_ADR_LINE_1"       -> companyReg.company.address.line1,
-            "A_CORR_ADR_LINE_2"       -> companyReg.company.address.line2.getOrElse(""),
-            "A_CORR_ADR_LINE_3"       -> companyReg.company.address.line3.getOrElse(""),
-            "A_CORR_ADR_LINE_4"       -> companyReg.company.address.line4.getOrElse(""),
+            "A_CORR_ADR_LINE_1"       -> companyReg.company.address.line1.value,
+            "A_CORR_ADR_LINE_2"       -> companyReg.company.address.line2.map(_.value).getOrElse(""),
+            "A_CORR_ADR_LINE_3"       -> companyReg.company.address.line3.map(_.value).getOrElse(""),
+            "A_CORR_ADR_LINE_4"       -> companyReg.company.address.line4.map(_.value).getOrElse(""),
             "A_CORR_ADR_POST_CODE"    -> companyReg.company.address.postalCode,
-            "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
+            "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode.value
           )
         )
       )
@@ -116,7 +116,7 @@ object EeittInterface {
   }
 
   def returnRequestWriter(
-    dstRegNo: String,
+    dstRegNo: DSTRegNumber,
     period: Period,
     isAmend: Boolean = false,
     showReliefAmount: Boolean = false,
@@ -138,7 +138,7 @@ object EeittInterface {
 
           List(
             s"A_DST_${key}_CHARGE_PROVISION" -> bool(true),
-            s"A_DST_${key}_LOSS"             -> bool(v == 0),
+            s"A_DST_${key}_LOSS"             -> bool(v.value == 0),
             s"A_DST_${key}_OP_MARGIN"        -> v.toString
           )
         }
@@ -158,21 +158,21 @@ object EeittInterface {
         repayment.fold(Seq.empty[(String, String)]) {
           case RepaymentDetails(acctName, DomesticBankAccount(sortCode, acctNo, bsNo)) =>
             Seq[(String, String)](
-              "A_BANK_NAME"      -> acctName, // Name of account CHAR40
+              "A_BANK_NAME"      -> acctName.value, // Name of account CHAR40
               "A_BANK_NON_UK"    -> bool(false),
-              "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
-              "A_BANK_ACC_NO"    -> acctNo // Account number CHAR8
+              "A_BANK_SORT_CODE" -> sortCode.value, // Branch sort code CHAR6
+              "A_BANK_ACC_NO"    -> acctNo.value // Account number CHAR8
             ) ++ bsNo
-              .filter(_.nonEmpty)
+              .filter(_.value.nonEmpty)
               .map { a =>
-                "A_BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
+                "A_BUILDING_SOC_ROLE" -> a.value // Building Society reference CHAR20
               }
               .toSeq
 
           case RepaymentDetails(acctName, ForeignBankAccount(iban)) =>
             Seq(
-              "A_BANK_IBAN" -> iban, // IBAN if non-UK bank account CHAR34
-              "A_BANK_NAME" -> acctName // Name of account CHAR40
+              "A_BANK_IBAN" -> iban.value, // IBAN if non-UK bank account CHAR34
+              "A_BANK_NAME" -> acctName.value // Name of account CHAR40
             )
         }
 
@@ -190,7 +190,7 @@ object EeittInterface {
         .getOrElse(Seq.empty[(String, String)])
 
       val regimeSpecificDetails: Seq[(String, String)] = Seq(
-        "A_REGISTRATION_NUMBER" -> dstRegNo, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
+        "A_REGISTRATION_NUMBER" -> dstRegNo.value, // MANDATORY ID Reference number ZGEN_FBP_REFERENCE
         "A_PERIOD_FROM"         -> strDate(period.start), // MANDATORY Period From  DATS
         "A_PERIOD_TO"           -> strDate(period.end), // MANDATORY Period To  DATS
         "A_DST_FIRST_RETURN"    -> bool(
@@ -199,16 +199,16 @@ object EeittInterface {
         "A_DST_RELIEF"          -> bool(
           crossBorderReliefAmount > 0
         ), // Are you claiming relief for relevant cross-border transactions? CHAR1
-        "A_DST_GROUP_LIABILITY" -> totalLiability.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
+        "A_DST_GROUP_LIABILITY" -> totalLiability.value.toString, // MANDATORY Digital Services Group Total Liability BETRW_KK
         "A_DST_REPAYMENT_REQ"   -> bool(repayment.isDefined), // Repayment for overpayment required? CHAR1
         "A_DATA_ORIGIN"         -> "1" // MANDATORY Data origin CHAR2
       ) ++ subjectEntries ++ activityEntries ++ repaymentInfo ++ reliefAmount ++ dstTaxAllowance
 
       def groupMemberFields(company: GroupCompany, amt: Money): Seq[(String, String)] =
         Seq(
-          "A_DST_GROUP_MEMBER"        -> company.name, // Group Member Company Name CHAR40
-          "A_DST_GROUP_MEM_LIABILITY" -> amt.toString, // DST liability amount per group member BETRW_KK
-          "A_DST_GROUP_MEM_ID"        -> company.utr.getOrElse("NA") // UTR is optional for user but required in api
+          "A_DST_GROUP_MEMBER"        -> company.name.value, // Group Member Company Name CHAR40
+          "A_DST_GROUP_MEM_LIABILITY" -> amt.value.toString, // DST liability amount per group member BETRW_KK
+          "A_DST_GROUP_MEM_ID"        -> company.utr.map(_.value).getOrElse("NA") // UTR is optional for user but required in api
         )
 
       val breakdownEntries = companiesAmount.toList.map { case (company, amt) =>

@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{absent, equalTo, equalTo
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
 import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, TaxEnrolmentCallbackWireMockStubs, WiremockServer}
+import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.result.InsertOneResult
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -28,14 +29,13 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.inject._
+import play.api.inject.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Results
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HttpVerbs
-import shapeless.tag.@@
 import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
 import uk.gov.hmrc.digitalservicestax.controllers.{CallbackNotification, routes}
 import uk.gov.hmrc.digitalservicestax.data
@@ -70,8 +70,8 @@ class TaxEnrolmentCallbackControllerSpec
     "auditing.consumer.baseUri.port"                   -> WireMockSupport.port
   )
 
-  val formBundleNumber: String @@ data.FormBundleNumber.Tag = FormBundleNumber("123456789112")
-  val safeId: String @@ data.SafeId.Tag                     = SafeId("XE0001234567890")
+  val formBundleNumber: data.FormBundleNumber = FormBundleNumber("123456789112")
+  val safeId: data.SafeId                     = SafeId("XE0001234567890")
 
   override lazy val app: Application = new GuiceApplicationBuilder()
     .overrides(
@@ -99,7 +99,7 @@ class TaxEnrolmentCallbackControllerSpec
 
         // When
         val fakeRequest =
-          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber).url)
+          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber.value).url)
             .withJsonBody(Json.toJson(callbackNotification))
         val result      = Helpers.route(app, fakeRequest).value
 
@@ -129,8 +129,8 @@ class TaxEnrolmentCallbackControllerSpec
 
         val expectedEventDetail = Json
           .obj(
-            "subscriptionId"        -> formBundleNumber,
-            "dstRegistrationNumber" -> dstRegNumber,
+            "subscriptionId"        -> formBundleNumber.value,
+            "dstRegistrationNumber" -> dstRegNumber.value,
             "outcome"               -> "SUCCESS"
           )
           .toString()
@@ -153,7 +153,7 @@ class TaxEnrolmentCallbackControllerSpec
 
         // When
         val fakeRequest =
-          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber).url)
+          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber.value).url)
             .withJsonBody(Json.toJson(callbackNotification))
         val result      = Helpers.route(app, fakeRequest).value
 
@@ -169,7 +169,7 @@ class TaxEnrolmentCallbackControllerSpec
           optReg.head.registrationNumber mustEqual None
         }
 
-        verify(0, getRequestedFor(urlEqualTo(s"""/tax-enrolments/subscriptions/$formBundleNumber""")))
+        verify(0, getRequestedFor(urlEqualTo(s"""/tax-enrolments/subscriptions/${formBundleNumber.value}""")))
         verify(0, getRequestedFor(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/""")))
 
         verify(
@@ -180,7 +180,7 @@ class TaxEnrolmentCallbackControllerSpec
 
         val expectedEventDetail = Json
           .obj(
-            "subscriptionId" -> formBundleNumber,
+            "subscriptionId" -> formBundleNumber.value,
             "outcome"        -> "ERROR"
           )
           .toString()
@@ -204,7 +204,7 @@ class TaxEnrolmentCallbackControllerSpec
 
         // When
         val fakeRequest =
-          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber).url)
+          FakeRequest(HttpVerbs.POST, routes.TaxEnrolmentCallbackController.callback(formBundleNumber.value).url)
             .withJsonBody(Json.toJson(callbackNotification))
         val result      = Helpers.route(app, fakeRequest).value
 

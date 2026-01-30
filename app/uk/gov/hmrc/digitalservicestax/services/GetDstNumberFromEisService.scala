@@ -20,7 +20,7 @@ import play.api.Logging
 import uk.gov.hmrc.digitalservicestax.backend_data.SubscriptionStatus
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
-import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
+import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration, UTR}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
@@ -36,7 +36,7 @@ class GetDstNumberFromEisService @Inject() (
 ) extends Logging {
 
   private def getDstNumberFromEis(
-    utr: String
+    utr: UTR
   )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Option[String]] =
     rosmConnector.retrieveROSMDetails(utr).flatMap {
       case Some(companyRegWrapper) =>
@@ -55,7 +55,7 @@ class GetDstNumberFromEisService @Inject() (
       case _                       => Future.successful(None)
     }
 
-  def getDstNumberAndActivateEnrolment(utr: String, groupId: String)(implicit
+  def getDstNumberAndActivateEnrolment(utr: UTR, groupId: String)(implicit
     hc: HeaderCarrier,
     executionContext: ExecutionContext
   ): Future[Option[Registration]] =

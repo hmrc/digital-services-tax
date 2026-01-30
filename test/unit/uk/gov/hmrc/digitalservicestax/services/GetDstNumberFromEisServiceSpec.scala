@@ -74,7 +74,7 @@ class GetDstNumberFromEisServiceSpec
       val internal                                       = arbitrary[InternalId].sample.value
       val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
+        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber.value))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
@@ -87,7 +87,7 @@ class GetDstNumberFromEisServiceSpec
       ) thenReturn Future.successful(subscriptionStatus)
 
       when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber.value))(any(), any())
       ) thenReturn Future.successful(true)
 
       when(
@@ -115,7 +115,7 @@ class GetDstNumberFromEisServiceSpec
       val internal                                       = arbitrary[InternalId].sample.value
       val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
+        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber.value))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
@@ -128,7 +128,7 @@ class GetDstNumberFromEisServiceSpec
       ) thenReturn Future.successful(subscriptionStatus)
 
       when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber.value))(any(), any())
       ) thenReturn Future.successful(false)
 
       when(
@@ -181,7 +181,7 @@ class GetDstNumberFromEisServiceSpec
       val internal                                       = arbitrary[InternalId].sample.value
       val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Other, Some("ZDST"), Some(dstNumber))
+        SubscriptionStatusResponse(SubscriptionStatus.Other, Some("ZDST"), Some(dstNumber.value))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
@@ -213,7 +213,7 @@ class GetDstNumberFromEisServiceSpec
       val internal                                       = arbitrary[InternalId].sample.value
       val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
+        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber.value))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
@@ -226,7 +226,7 @@ class GetDstNumberFromEisServiceSpec
       ) thenReturn Future.successful(subscriptionStatus)
 
       when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber.value))(any(), any())
       ) thenReturn Future.successful(true)
 
       when(
@@ -254,7 +254,7 @@ class GetDstNumberFromEisServiceSpec
       val internal                                       = arbitrary[InternalId].sample.value
       val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
       val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZXXX"), Some(dstNumber))
+        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZXXX"), Some(dstNumber.value))
 
       when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
@@ -267,7 +267,7 @@ class GetDstNumberFromEisServiceSpec
       ) thenReturn Future.successful(subscriptionStatus)
 
       when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber.value))(any(), any())
       ) thenReturn Future.successful(true)
 
       when(

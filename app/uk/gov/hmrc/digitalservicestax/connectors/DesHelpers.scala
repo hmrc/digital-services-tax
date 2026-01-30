@@ -18,6 +18,7 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.{Json, Writes}
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, StringContextOps}

@@ -62,7 +62,7 @@ trait ReturnsWireMockStubs {
         |""".stripMargin
 
     stubFor(
-      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNo/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
+      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/${dstRegNo.value}/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
           1
         )}"""))
         .willReturn(aResponse().withStatus(200).withBody(jsonResponse))
@@ -71,7 +71,7 @@ trait ReturnsWireMockStubs {
 
   def stubGetPeriodsError(dstRegNo: DSTRegNumber): StubMapping =
     stubFor(
-      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNo/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
+      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/${dstRegNo.value}/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
           1
         )}"""))
         .willReturn(serverError())
@@ -79,7 +79,7 @@ trait ReturnsWireMockStubs {
 
   def stubReturnSendSuccess(dstRegNo: DSTRegNumber): StubMapping =
     stubFor(
-      post(urlEqualTo(s"""/cross-regime/return/DST/zdst/$dstRegNo"""))
+      post(urlEqualTo(s"""/cross-regime/return/DST/zdst/${dstRegNo.value}"""))
         .willReturn(
           aResponse()
             .withStatus(201)

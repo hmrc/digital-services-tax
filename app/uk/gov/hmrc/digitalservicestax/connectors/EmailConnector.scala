@@ -18,9 +18,10 @@ package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.data._
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.digitalservicestax.data.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
@@ -65,7 +66,7 @@ class EmailConnector @Inject() (http: HttpClientV2, appConfig: AppConfig) {
       "to"         -> Seq(contact.email.toString),
       "templateId" -> "dst_registration_received",
       "parameters" -> Json.obj(
-        "name"             -> s"${contact.forename} ${contact.surname}",
+        "name"             -> s"${contact.forename.toString} ${contact.surname.toString}",
         "companyName"      -> companyName.toString,
         "groupCompanyName" -> parentCompany.fold("unknown") {
           _.name.toString

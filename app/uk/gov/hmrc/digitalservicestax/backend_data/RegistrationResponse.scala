@@ -17,7 +17,7 @@
 package uk.gov.hmrc.digitalservicestax.backend_data
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.digitalservicestax.data.FormBundleNumber
+import uk.gov.hmrc.digitalservicestax.data.*
 
 case class RegistrationResponse(
   processingDate: String,

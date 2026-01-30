@@ -21,8 +21,8 @@ import play.api.libs.json.{Json, OFormat}
 case class GroupEnrolmentsResponse(enrolments: List[EnrolmentDetail])
 
 object GroupEnrolmentsResponse {
-  implicit val enrolmentReads       = Json.format[EnrolmentDetail]
-  implicit val groupEnrolmentsReads = Json.format[GroupEnrolmentsResponse]
+  implicit val enrolmentReads: OFormat[EnrolmentDetail]           = Json.format[EnrolmentDetail]
+  implicit val groupEnrolmentsReads: OFormat[GroupEnrolmentsResponse] = Json.format[GroupEnrolmentsResponse]
 }
 
 case class EnrolmentDetail(service: String, identifiers: Seq[ServiceIdentifier], state: String) {

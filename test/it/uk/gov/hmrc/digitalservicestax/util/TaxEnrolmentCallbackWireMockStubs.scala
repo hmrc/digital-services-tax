@@ -32,10 +32,10 @@ trait TaxEnrolmentCallbackWireMockStubs {
     dstRegNumber: DSTRegNumber
   ): StubMapping = {
     val enrolmentSubscription =
-      TaxEnrolmentsSubscription(Some(Seq(Identifier("DST", dstRegNumber))), "SUCCEEDED", None)
+      TaxEnrolmentsSubscription(Some(Seq(Identifier("DST", dstRegNumber.value))), "SUCCEEDED", None)
     stubFor(
       WireMock
-        .get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$formBundleNumber"""))
+        .get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/${formBundleNumber.value}"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -79,7 +79,7 @@ trait TaxEnrolmentCallbackWireMockStubs {
         |""".stripMargin
 
     stubFor(
-      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNo/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
+      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/${dstRegNo.value}/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
           1
         )}"""))
         .willReturn(aResponse().withStatus(200).withBody(jsonResponse))
@@ -122,7 +122,7 @@ trait TaxEnrolmentCallbackWireMockStubs {
         |""".stripMargin
 
     stubFor(
-      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNo/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
+      get(urlEqualTo(s"""/enterprise/obligation-data/zdst/${dstRegNo.value}/DST?from=2020-04-01&to=${LocalDate.now.plusYears(
           1
         )}"""))
         .willReturn(aResponse().withStatus(200).withBody(jsonResponse))

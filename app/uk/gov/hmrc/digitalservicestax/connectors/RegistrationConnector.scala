@@ -69,7 +69,7 @@ class RegistrationConnector @Inject() (
     ec: ExecutionContext
   ): Future[SubscriptionStatusResponse] =
     desGet[Either[UpstreamErrorResponse, SubscriptionStatusResponse]](
-      s"${appConfig.desURL}/$getSubscriptionStatusPath/$sapNumber/status"
+      s"${appConfig.desURL}/$getSubscriptionStatusPath/${sapNumber.value}/status"
     )(implicitly, addHeaders, implicitly).map {
       case Right(value) => value
       case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)

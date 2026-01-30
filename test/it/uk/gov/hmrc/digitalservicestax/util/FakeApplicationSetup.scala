@@ -29,6 +29,7 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -37,7 +38,7 @@ import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClientV2Provider}
 import java.io.File
 import java.time.Clock
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 trait FakeApplicationSetup
     extends PlaySpec
@@ -52,7 +53,7 @@ trait FakeApplicationSetup
 
   implicit val defaultPatience: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 100.millis)
   implicit val clock: Clock                    = Clock.systemDefaultZone()
-  implicit val c                               = this.mongoComponent
+  implicit val c: MongoComponent               = this.mongoComponent
 
   lazy val appConfig: AppConfig              = app.injector.instanceOf[AppConfig]
   lazy val environment: Environment          = Environment.simple(new File("."))

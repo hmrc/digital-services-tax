@@ -91,7 +91,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -100,9 +100,9 @@ class ActionsSpec
         _     <- mongoPersistence.registrations.update(internal, reg)
         block <- action.invokeBlock(
                    req,
-                   { req: RegisteredRequest[_] =>
+                   { (req: RegisteredRequest[_]) =>
                      Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
+                       Results.Ok(req.registration.registrationNumber.value.value)
                      )
                    }
                  )
@@ -130,7 +130,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -139,9 +139,9 @@ class ActionsSpec
         _     <- mongoPersistence.registrations.update(internal, reg)
         block <- action.invokeBlock(
                    req,
-                   { req: RegisteredRequest[_] =>
+                   { (req: RegisteredRequest[_]) =>
                      Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
+                       Results.Ok(req.registration.registrationNumber.value.value)
                      )
                    }
                  )
@@ -170,7 +170,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -179,9 +179,9 @@ class ActionsSpec
         _     <- mongoPersistence.registrations.update(internal, regWithNoId)
         block <- action.invokeBlock(
                    req,
-                   { req: RegisteredRequest[_] =>
+                   { (req: RegisteredRequest[_]) =>
                      Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
+                       Results.Ok(req.registration.registrationNumber.value.value)
                      )
                    }
                  )
@@ -208,7 +208,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -235,7 +235,7 @@ class ActionsSpec
       val loggedInReq = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -244,9 +244,9 @@ class ActionsSpec
         _     <- mongoPersistence.registrations.update(internal, reg)
         block <- action.invokeBlock(
                    loggedInReq,
-                   { req: RegisteredRequest[_] =>
+                   { (req: RegisteredRequest[_]) =>
                      Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
+                       Results.Ok(req.registration.registrationNumber.value.value)
                      )
                    }
                  )
@@ -270,7 +270,7 @@ class ActionsSpec
           val reg      = arbitrary[Registration].sample.value
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber.value)
           when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
           when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
 
@@ -311,7 +311,7 @@ class ActionsSpec
           val reg      = arbitrary[Registration].sample.value
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber.value)
           when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
           when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
 
@@ -350,7 +350,7 @@ class ActionsSpec
           val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber.value)
           when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
           when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387428400"
 
@@ -388,7 +388,7 @@ class ActionsSpec
           val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
           val fbNumber = arbitrary[FormBundleNumber].sample.value
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber.value)
           when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
           when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387420000"
 
@@ -436,7 +436,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -472,7 +472,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -498,7 +498,7 @@ class ActionsSpec
       val reg        = arbitrary[Registration].sample.value
       val enrolments = Enrolments(
         Set(
-          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated")
+          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.value.value)), "Activated")
         )
       )
 
@@ -509,7 +509,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -542,8 +542,8 @@ class ActionsSpec
       val reg        = arbitrary[Registration].sample.value
       val enrolments = Enrolments(
         Set(
-          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated"),
-          Enrolment("IR-SA", Seq(EnrolmentIdentifier("UTR", utr)), "Activated")
+          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.value.value)), "Activated"),
+          Enrolment("IR-SA", Seq(EnrolmentIdentifier("UTR", utr.value)), "Activated")
         )
       )
 
@@ -555,7 +555,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )
@@ -594,7 +594,7 @@ class ActionsSpec
       )
       when(
         mockGetDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(same("1234567890"), same("groupId"))(any(), any())
+          .getDstNumberAndActivateEnrolment(same(UTR("1234567890")), same("groupId"))(any(), any())
       ) thenReturn Future.successful(
         None
       )
@@ -602,7 +602,7 @@ class ActionsSpec
       val req = LoggedInRequest(
         internal,
         enrolments,
-        providerId,
+        providerId.value,
         Some("groupId"),
         FakeRequest()
       )

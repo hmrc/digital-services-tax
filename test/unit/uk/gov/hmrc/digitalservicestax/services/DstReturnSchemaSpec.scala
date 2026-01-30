@@ -28,7 +28,7 @@ class DstReturnSchemaSpec extends AnyFlatSpec with Matchers with ScalaCheckDrive
 
   "A return API call"       should "conform to the schema" in {
     forAll { (period: Period, ret: Return) =>
-      val json = EeittInterface.returnRequestWriter("aoeu", period).writes(ret)
+      val json = EeittInterface.returnRequestWriter(DSTRegNumber("AADST1234567890"), period).writes(ret)
       SchemaChecker.EeittReturn.request.errorsIn(json) should be(None)
 
       // testing that the receivedAt timestamp seconds is in millis

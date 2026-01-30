@@ -35,7 +35,7 @@ trait RegistrationWireMockStubs {
   ): StubMapping = {
     val desRegistrationResponse = regResponse.getOrElse(RegistrationResponse(LocalDate.now.toString, formBundleNumber))
     stubFor(
-      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/safe/$safeId"""))
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/safe/${safeId.value}"""))
         .willReturn(aResponse().withStatus(200).withBody(Json.toJson(desRegistrationResponse).toString()))
     )
   }
@@ -47,14 +47,14 @@ trait RegistrationWireMockStubs {
   ): StubMapping = {
     val desRegistrationResponse = regResponse.getOrElse(RegistrationResponse(LocalDate.now.toString, formBundleNumber))
     stubFor(
-      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/utr/$utr"""))
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/utr/${utr.value}"""))
         .willReturn(aResponse().withStatus(200).withBody(Json.toJson(desRegistrationResponse).toString()))
     )
   }
 
   def stubDesRegEndpointError(safeId: SafeId): StubMapping =
     stubFor(
-      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/safe/$safeId"""))
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/safe/${safeId.value}"""))
         .willReturn(aResponse().withStatus(500))
     )
 
@@ -65,7 +65,7 @@ trait RegistrationWireMockStubs {
           aResponse()
             .withStatus(200)
             .withBody(
-              Json.toJson(RosmWithoutIDResponse(LocalDate.now.minusYears(1).toString, "123", safeId, None)).toString
+              Json.toJson(RosmWithoutIDResponse(LocalDate.now.minusYears(1).toString, "123", safeId.value, None)).toString
             )
         )
     )
@@ -74,7 +74,7 @@ trait RegistrationWireMockStubs {
     val enrolmentSubscription =
       TaxEnrolmentsSubscription(Some(Seq(Identifier("DST", "AMDST0799721562"))), "SUCCEEDED", None)
     stubFor(
-      put(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$formBundleNumber/subscriber"""))
+      put(urlPathEqualTo(s"""/tax-enrolments/subscriptions/${formBundleNumber.value}/subscriber"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -85,7 +85,7 @@ trait RegistrationWireMockStubs {
 
   def stubTaxEnrolmentsSubscribeEndpointError(formBundleNumber: FormBundleNumber): StubMapping =
     stubFor(
-      put(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$formBundleNumber/subscriber"""))
+      put(urlPathEqualTo(s"""/tax-enrolments/subscriptions/${formBundleNumber.value}/subscriber"""))
         .willReturn(aResponse().withStatus(500))
     )
 
@@ -116,7 +116,7 @@ trait RegistrationWireMockStubs {
     errorResponse: Option[String] = None
   ): StubMapping = {
     val subscriptionResponse = Seq(
-      TaxEnrolmentsSubscription(Some(List(Identifier("DST", dstRegNo))), state, errorResponse)
+      TaxEnrolmentsSubscription(Some(List(Identifier("DST", dstRegNo.value))), state, errorResponse)
     )
 
     stubFor(

@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.config
 
-import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import org.scalatest.matchers.should.Matchers.*
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 
 import java.time.format.DateTimeFormatter

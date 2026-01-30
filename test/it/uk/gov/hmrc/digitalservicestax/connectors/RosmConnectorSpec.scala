@@ -22,9 +22,9 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
-import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
+import uk.gov.hmrc.digitalservicestax.data.*
 import uk.gov.hmrc.http.HeaderCarrier
-import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
+import it.uk.gov.hmrc.digitalservicestax.util.TestInstances.*
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -58,7 +58,7 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
         )
     )
 
-    val response = RosmTestConnector.retrieveROSMDetails("1234567890")
+    val response = RosmTestConnector.retrieveROSMDetails(UTR("1234567890"))
     whenReady(response.failed) { res =>
       res
     }
@@ -82,7 +82,7 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
         )
     )
 
-    whenReady(RosmTestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
+    whenReady(RosmTestConnector.retrieveROSMDetails(UTR("1234567890")).failed) { ex =>
       Console.println(ex.getMessage)
     }
   }

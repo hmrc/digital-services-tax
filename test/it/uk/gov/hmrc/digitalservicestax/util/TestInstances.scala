@@ -39,9 +39,7 @@ object TestInstances {
     //    RegexpGen.from("""^[0-9a-zA-Z{À-˿’}\\- &`'^._|]{1,255}$""")
   )
 
-  implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0, 1000000000000L).map(b => Money(BigDecimal(b).setScale(2)))
-  )
+  implicit val arbMoney: Arbitrary[Money] = Arbitrary(Gen.chooseNum(0, 1000000000).map(b => Money(BigDecimal(b).setScale(2))))
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
     Gen.oneOf(List(User, Assistant))
@@ -59,7 +57,7 @@ object TestInstances {
   )
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
-    Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
+    Gen.chooseNum(0, 100).map(b => Percent(b))
   }
 
   def nonEmptyString: Gen[NonEmptyString] =
@@ -72,7 +70,7 @@ object TestInstances {
   def genActivityPercentMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
     (
       arbitrary[Activity],
-      Gen.choose(0, 100).map(x => Percent.apply(x.asInstanceOf[Byte]))
+      Gen.choose(0, 100).map(x => Percent(x))
     ).tupled
   )
 
@@ -85,7 +83,7 @@ object TestInstances {
     (
       nonEmptyString,
       nonEmptyString
-    ).mapN(EnrolmentIdentifier)
+    ).mapN { (k, v) => EnrolmentIdentifier(k.value, v.value) }
   }
 
   implicit def enrolmentArbitrary: Arbitrary[Enrolment] = Arbitrary {
@@ -95,7 +93,7 @@ object TestInstances {
       enrolments <- Gen.listOfN(sized, genEnrolmentIdentifier.arbitrary)
       state      <- nonEmptyString
       delegate   <- Gen.const(none[String])
-    } yield Enrolment(key, enrolments, state, delegate)
+    } yield Enrolment(key.value, enrolments, state.value, delegate)
   }
 
   implicit def enrolmentsArbitrary: Arbitrary[Enrolments] =
@@ -238,7 +236,7 @@ object TestInstances {
 
   def genAllowanceAmount(g: Gen[Map[Activity, Percent]]): Gen[Option[Money]] =
     g.map {
-      case x if x.forall { case (_, v) => v > 0 } => Gen.some(arbitrary[Money])
+      case x if x.forall { case (_, v) => v.value > 0 } => Gen.some(arbitrary[Money])
       case _                                      => Gen.const(None)
     }.flatten
 
@@ -272,7 +270,7 @@ object TestInstances {
       arbitrary[LocalDate],
       arbitrary[LocalDate],
       arbitrary[LocalDate],
-      arbitrary[NonEmptyString].map(_.take(4)).map(Period.Key(_))
+      arbitrary[NonEmptyString].map(_.value.take(4)).map(Period.Key(_))
     ).mapN(Period.apply)
   )
 
@@ -291,11 +289,11 @@ object TestInstances {
   implicit def arbCountryCode: Arbitrary[CountryCode]           = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber]                 = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR]                           = Arbitrary(UTR.gen)
-  implicit def safeId: Arbitrary[SafeId]                        = Arbitrary(SafeId.gen)
-  implicit def sapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
+  implicit def arbSafeId: Arbitrary[SafeId]                        = Arbitrary(SafeId.gen)
+  implicit def arbSapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
   implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
-  implicit val arbInternalId: Arbitrary[InternalId]             = Arbitrary(InternalId.gen.suchThat(_.length > 5))
+  implicit val arbInternalId: Arbitrary[InternalId]             = Arbitrary(InternalId.gen.suchThat(_.value.length > 5))
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
   implicit def arbEmail: Arbitrary[Email] = Arbitrary {

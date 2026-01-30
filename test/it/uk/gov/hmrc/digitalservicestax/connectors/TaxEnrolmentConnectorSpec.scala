@@ -16,12 +16,12 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentConnector, TaxEnrolmentsSubscription}
-import uk.gov.hmrc.digitalservicestax.data.{AddressLine, CountryCode, DSTRegNumber, ForeignAddress, Postcode, UkAddress}
+import uk.gov.hmrc.digitalservicestax.data.*
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
 import play.api.Application
@@ -46,7 +46,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
-    val subscriptionId = TestInstances.shortString.sample.value
+    val subscriptionId = TestInstances.arbFormBundleNumber.arbitrary.sample.value.value
     val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
 
     stubFor(
@@ -58,7 +58,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         )
     )
 
-    val response = TaxTestConnector.getSubscription(subscriptionId)
+    val response = TaxTestConnector.getSubscription(FormBundleNumber(subscriptionId))
     whenReady(response) { res =>
       res mustEqual enrolment
     }
@@ -70,8 +70,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "create a new subscription for a tax enrolment" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
+    val safeId           = TestInstances.arbSafeId.arbitrary.sample.value.value
+    val formBundleNumber = TestInstances.arbFormBundleNumber.arbitrary.sample.value.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
@@ -82,7 +82,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         )
     )
 
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+    val response = TaxTestConnector.subscribe(SafeId(safeId), FormBundleNumber(formBundleNumber))
     whenReady(response) { res =>
       res.status mustEqual Status.OK
     }
@@ -255,8 +255,8 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   }
 
   "handle an unauthorised exception" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
+    val safeId           = TestInstances.arbSafeId.arbitrary.sample.value.value
+    val formBundleNumber = TestInstances.arbFormBundleNumber.arbitrary.sample.value.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
@@ -266,15 +266,15 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         )
     )
 
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+    val response = TaxTestConnector.subscribe(SafeId(safeId), FormBundleNumber(formBundleNumber))
     whenReady(response) { res =>
       res.status mustEqual Status.UNAUTHORIZED
     }
   }
 
   "handle a BadRequest exception" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
+    val safeId           = TestInstances.arbSafeId.arbitrary.sample.value.value
+    val formBundleNumber = TestInstances.arbFormBundleNumber.arbitrary.sample.value.value
 
     stubFor(
       put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
@@ -284,7 +284,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         )
     )
 
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+    val response = TaxTestConnector.subscribe(SafeId(safeId), FormBundleNumber(formBundleNumber))
     whenReady(response) { res =>
       res.status mustEqual Status.BAD_REQUEST
     }
@@ -293,7 +293,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   "should retrieve a DSTRegNumber" in {
     val req = TaxEnrolmentsSubscription(
       Some(
-        List(Identifier("DstRefNo", DSTRegNumber("ASDST1010101010")))
+        List(Identifier("DstRefNo", "ASDST1010101010"))
       ),
       "state",
       None

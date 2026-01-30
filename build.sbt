@@ -1,6 +1,6 @@
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, integrationTestSettings}
 
-scalaVersion := "2.13.16"
+scalaVersion := "3.3.7"
 val appName = "digital-services-tax"
 PlayKeys.playDefaultPort := 8741
 

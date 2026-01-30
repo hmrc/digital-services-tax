@@ -30,9 +30,10 @@ case class UkAddress(
   line2: Option[AddressLine],
   line3: Option[AddressLine],
   line4: Option[AddressLine],
-  postalCode: Postcode
+  postCode: Postcode
 ) extends Address {
-  def countryCode = CountryCode("GB")
+  override def countryCode = CountryCode("GB")
+  override def postalCode: String = postCode.value
 }
 
 case class ForeignAddress(
@@ -42,5 +43,5 @@ case class ForeignAddress(
   line4: Option[AddressLine],
   countryCode: CountryCode
 ) extends Address {
-  def postalCode: String = ""
+  override def postalCode: String = ""
 }

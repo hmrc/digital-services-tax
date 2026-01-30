@@ -16,14 +16,14 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.data
 
-import cats.implicits._
+import cats.implicits.*
 import cats.kernel.Monoid
 import org.scalacheck.Gen
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.data.{AccountNumber, Activity, Money, Percent, Period, Postcode}
-import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances.{arbMoney, periodArb}
+import uk.gov.hmrc.digitalservicestax.data.*
+import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances.*
 
 class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
@@ -35,7 +35,7 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
 
   it should "correctly add 10 months with the first day of the month for period end days at the end of the month, " +
     "for all other cases add 9 months and one day to a period" in {
-      forAll { period: Period =>
+      forAll { (period: Period) =>
         if (period.end.getDayOfMonth == period.end.lengthOfMonth) {
           period.paymentDue shouldEqual period.end.plusMonths(10).withDayOfMonth(1)
         } else {
@@ -49,7 +49,7 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
   }
 
   it should "store percentages as bytes and initialise percent monoids with float monoids" in {
-    Monoid[Percent].empty shouldEqual Monoid[Float].empty
+    Monoid[Percent].empty shouldEqual Monoid[BigDecimal].empty
   }
 
   it should "add up percentages using monoidal syntax" in {
@@ -57,7 +57,7 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
     val generator = for {
       p1 <- Gen.chooseNum(0, 100)
       p2  = 100 - p1
-    } yield p1.toByte -> p2.toByte
+    } yield p1 -> p2
 
     forAll(generator) { case (p1, p2) =>
       whenever(p1 >= 0 && p2 >= 0) {

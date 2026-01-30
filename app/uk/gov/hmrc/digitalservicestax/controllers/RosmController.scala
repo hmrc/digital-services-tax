@@ -25,6 +25,7 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthProviders, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
+import uk.gov.hmrc.digitalservicestax.data.UTR
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -43,7 +44,7 @@ class RosmController @Inject() (
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments: Enrolments =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { (enrolments: Enrolments) =>
       getUtrFromAuth(enrolments).fold(Future.successful[Result](NotFound)) { utr =>
         rosmConnector
           .retrieveROSMDetails(utr)
@@ -65,7 +66,7 @@ class RosmController @Inject() (
     authorised(AuthProviders(GovernmentGateway)) {
       rosmConnector
         .retrieveROSMDetails(
-          utr
+          UTR(utr)
         )
         .map {
           case Some(r) if r.company.address.postalCode.replaceAll(" ", "") == postcode.replaceAll(" ", "") =>

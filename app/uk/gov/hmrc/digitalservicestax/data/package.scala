@@ -17,89 +17,116 @@
 package uk.gov.hmrc.digitalservicestax
 
 import java.time.LocalDate
-
-import cats.implicits._
 import cats.kernel.Monoid
 import fr.marcwrobel.jbanking.iban.Iban
-import shapeless.tag._
-import shapeless.{:: => _}
 
 package object data extends SimpleJson {
 
-  type UTR = String @@ UTR.Tag
+  opaque type UTR = String
   object UTR
       extends RegexValidatedString(
         "^[0-9]{10}$"
-      )
+      ) {
+    type Validated = UTR
+    def tag(value: String): UTR = value
+  }
 
-  type SafeId = String @@ SafeId.Tag
+  opaque type SafeId = String
   object SafeId
       extends RegexValidatedString(
         "^[A-Z0-9]{1,15}$"
-      )
+      ) {
+    type Validated = SafeId
+    def tag(value: String): SafeId = value
+  }
 
-  type SapNumber = String @@ SapNumber.Tag
+  opaque type SapNumber = String
   object SapNumber
       extends RegexValidatedString(
         "^[a-zA-Z0-9]{10}$"
-      )
+      ) {
+    type Validated = SapNumber
+    def tag(value: String): SapNumber = value
+  }
 
-  type FormBundleNumber = String @@ FormBundleNumber.Tag
+  opaque type FormBundleNumber = String
   object FormBundleNumber
       extends RegexValidatedString(
         regex = "^[0-9]{12}$"
-      )
+      ) {
+    type Validated = FormBundleNumber
+    def tag(value: String): FormBundleNumber = value
+  }
 
-  type InternalId = String @@ InternalId.Tag
+  opaque type InternalId = String
   object InternalId
       extends RegexValidatedString(
         regex = "^Int-[a-f0-9-]*$"
-      )
+      ) {
+    type Validated = InternalId
+    def tag(value: String): InternalId = value
+  }
 
-  type Postcode = String @@ Postcode.Tag
+  opaque type Postcode = String
   object Postcode
       extends RegexValidatedString(
         """^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$""",
         _.trim.replaceAll("[ \\t]+", " ").toUpperCase
-      )
+      ) {
+    type Validated = Postcode
+    def tag(value: String): Postcode = value
+  }
 
-  type Money = BigDecimal @@ Money.Tag
+  opaque type Money = BigDecimal
   object Money extends ValidatedType[BigDecimal] {
+    type Validated = Money
     def validateAndTransform(in: BigDecimal): Option[BigDecimal] =
       Some(in).filter(_.toString.matches("^[0-9]+(\\.[0-9]{1,2})?$"))
 
-    implicit def mon: Monoid[Money] = new Monoid[Money] {
-      val base: Monoid[BigDecimal]                    = implicitly[Monoid[BigDecimal]]
-      override def combine(a: Money, b: Money): Money = Money(base.combine(a, b))
-      override def empty: Money                       = Money(base.empty)
+    def tag(value: BigDecimal): Money = value
+
+    given mon: Monoid[Money] with {
+      override def combine(a: Money, b: Money): Money = tag((a: BigDecimal) + (b: BigDecimal))
+      override def empty: Money                       = tag(BigDecimal(0))
     }
   }
 
-  type NonEmptyString = String @@ NonEmptyString.Tag
+  opaque type NonEmptyString = String
   object NonEmptyString extends ValidatedType[String] {
+    type Validated = NonEmptyString
     def validateAndTransform(in: String): Option[String] =
       Some(in).filter(_.nonEmpty)
+    def tag(value: String): NonEmptyString = value
   }
 
-  type CompanyName = String @@ CompanyName.Tag
+  opaque type CompanyName = String
   object CompanyName
       extends RegexValidatedString(
         regex = """^[a-zA-Z0-9 '&.-]{1,105}$"""
-      )
+      ) {
+    type Validated = CompanyName
+    def tag(value: String): CompanyName = value
+  }
 
-  type AddressLine = String @@ AddressLine.Tag
+  opaque type AddressLine = String
   object AddressLine
       extends RegexValidatedString(
         regex = """^[a-zA-Z0-9 '&.-]{1,35}$"""
-      )
+      ) {
+    type Validated = AddressLine
+    def tag(value: String): AddressLine = value
+  }
 
-  type RestrictiveString = String @@ RestrictiveString.Tag
+  opaque type RestrictiveString = String
   object RestrictiveString
       extends RegexValidatedString(
         """^[a-zA-Z'&-^]{1,35}$"""
-      )
+      ) {
+    type Validated = RestrictiveString
+    def tag(value: String): RestrictiveString = value
+  }
 
-  type CountryCode = String @@ CountryCode.Tag
+  opaque type CountryCode = String
   object CountryCode
       extends RegexValidatedString(
         """^[A-Z][A-Z]$""",
@@ -107,76 +134,119 @@ package object data extends SimpleJson {
           case "UK"  => "GB"
           case other => other
         }
-      )
+      ) {
+    type Validated = CountryCode
+    def tag(value: String): CountryCode = value
+  }
 
-  type SortCode = String @@ SortCode.Tag
+  opaque type SortCode = String
   object SortCode
       extends RegexValidatedString(
         """^[0-9]{6}$""",
         _.filter(_.isDigit)
-      )
+      ) {
+    type Validated = SortCode
+    def tag(value: String): SortCode = value
+  }
 
-  type AccountNumber = String @@ AccountNumber.Tag
+  opaque type AccountNumber = String
   object AccountNumber
       extends RegexValidatedString(
         """^[0-9]{8}$""",
         _.filter(_.isDigit)
-      )
+      ) {
+    type Validated = AccountNumber
+    def tag(value: String): AccountNumber = value
+  }
 
-  type BuildingSocietyRollNumber = String @@ BuildingSocietyRollNumber.Tag
+  opaque type BuildingSocietyRollNumber = String
   object BuildingSocietyRollNumber
       extends RegexValidatedString(
         """^[A-Za-z0-9 -]{1,18}$"""
-      )
+      ) {
+    type Validated = BuildingSocietyRollNumber
+    def tag(value: String): BuildingSocietyRollNumber = value
+  }
 
-  type AccountName = String @@ AccountName.Tag
+  opaque type AccountName = String
   object AccountName
       extends RegexValidatedString(
         """^[a-zA-Z&^]{1,35}$"""
-      )
-
-  type IBAN = String @@ IBAN.Tag
-  object IBAN extends ValidatedType[String] {
-    override def validateAndTransform(in: String): Option[String] =
-      Some(in).map(_.replaceAll("\\s+", "")).filter(Iban.isValid)
+      ) {
+    type Validated = AccountName
+    def tag(value: String): AccountName = value
   }
 
-  type PhoneNumber = String @@ PhoneNumber.Tag
+  opaque type IBAN = String
+  object IBAN extends ValidatedType[String] {
+    type Validated = IBAN
+    override def validateAndTransform(in: String): Option[String] =
+      Some(in).map(_.replaceAll("\\s+", "")).filter(Iban.isValid)
+    def tag(value: String): IBAN = value
+  }
+
+  opaque type PhoneNumber = String
   object PhoneNumber
       extends RegexValidatedString(
         // Regex which fits both eeitt_subscribe
         "^[A-Z0-9 \\-]{1,30}$"
-      )
+      ) {
+    type Validated = PhoneNumber
+    def tag(value: String): PhoneNumber = value
+  }
 
-  type Email = String @@ Email.Tag
+  opaque type Email = String
   object Email extends ValidatedType[String] {
+    type Validated = Email
     def validateAndTransform(email: String): Option[String] = {
       import org.apache.commons.validator.routines.EmailValidator
       Some(email).filter(EmailValidator.getInstance.isValid(_))
     }
+    def tag(value: String): Email = value
   }
 
-  type Percent = Float @@ Percent.Tag
-  object Percent extends ValidatedType[Float] {
-    def validateAndTransform(in: Float): Option[Float] =
-      Some(in).filter { x =>
-        (x >= 0 && x <= 100) && (BigDecimal(x.toString).scale <= 3)
-      }
+  opaque type Percent = BigDecimal
+  object Percent extends ValidatedType[BigDecimal] {
+    type Validated = Percent
+    def validateAndTransform(in: BigDecimal): Option[BigDecimal] =
+      Some(in).filter { x => (x >= 0 && x <= 100) && (x.scale <= 3) }
+      
+    def tag(value: BigDecimal): Percent = value
 
-    implicit def mon: Monoid[Percent] = new Monoid[Percent] {
-      val base: Monoid[Float]                               = implicitly[Monoid[Float]]
-      override def combine(a: Percent, b: Percent): Percent = Percent(base.combine(a, b))
-      override def empty: Percent                           = Percent(base.empty)
+    given mon: Monoid[Percent] with {
+      override def combine(a: Percent, b: Percent): Percent = tag((a: BigDecimal) + (b: BigDecimal))
+      override def empty: Percent = tag(BigDecimal(0))
     }
   }
 
-  type DSTRegNumber = String @@ DSTRegNumber.Tag
+  opaque type DSTRegNumber = String
   object DSTRegNumber
       extends RegexValidatedString(
         "^([A-Z]{2}DST[0-9]{10})$"
-      )
+      ) {
+    type Validated = DSTRegNumber
+    def tag(value: String): DSTRegNumber = value
+  }
 
-  implicit val orderDate = new cats.Order[LocalDate] {
+  given Ordering[LocalDate] with {
     def compare(x: LocalDate, y: LocalDate): Int = x.compareTo(y)
+  }
+
+  // Extension methods for opaque Money type
+  extension (m: Money) {
+    def >(other: Int): Boolean = (m: BigDecimal) > other
+    def >(other: Money): Boolean = (m: BigDecimal) > (other: BigDecimal)
+    def <(other: Money): Boolean = (m: BigDecimal) < (other: BigDecimal)
+    def -(other: Money): Money = Money.tag((m: BigDecimal) - (other: BigDecimal))
+    def +(other: Money): Money = Money.tag((m: BigDecimal) + (other: BigDecimal))
+  }
+
+  // String concatenation support
+  extension (s: RestrictiveString) {
+    @scala.annotation.targetName("restrictiveStringConcat")
+    def +(other: String): String = ((s: String) + other)
+    
+    @scala.annotation.targetName("restrictiveStringConcatRestricted")
+    def +(other: RestrictiveString): String = ((s: String) + (other: String))
   }
 }

@@ -20,7 +20,7 @@ import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import org.scalacheck.Arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import org.scalatest.matchers.must.Matchers.*
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.digitalservicestax.controllers.CallbackNotification
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber, Period, Registration, Return}

@@ -205,7 +205,7 @@ class ReturnsControllerSpec
       val results = for {
         _      <- mongoPersistence.returns.update(regObj, period, ret)
         _      <- mongoPersistence.returns(regObj, period)
-        result <- TestReturnsController.getReturn(period).apply(FakeRequest())
+        result <- TestReturnsController.getReturn(period.value).apply(FakeRequest())
       } yield result
 
       val resultStatus = status(results)
@@ -222,7 +222,7 @@ class ReturnsControllerSpec
 
       val results = for {
         _      <- mongoPersistence.returns.update(regObj, period, ret)
-        result <- TestReturnsController.getReturn(periodkey).apply(FakeRequest())
+        result <- TestReturnsController.getReturn(periodkey.value).apply(FakeRequest())
       } yield result
 
       val resultStatus = status(results)

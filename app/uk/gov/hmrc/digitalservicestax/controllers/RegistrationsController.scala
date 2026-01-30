@@ -68,12 +68,13 @@ class RegistrationsController @Inject() (
                     for {
                       r <- registrationConnector.send(
                              idType = if (data.companyReg.useSafeId) "safe" else "utr",
-                             idNumber = if (data.companyReg.useSafeId) { safeId }
+                             idNumber = if (data.companyReg.useSafeId) { safeId.value }
                              else {
-                               data.companyReg.utr.getOrElse(
+                               data.companyReg.utr.map(_.value).getOrElse(
                                  getUtrFromAuth(
                                    request.enrolments
-                                 ).getOrElse(throw new RuntimeException("Rosm not retrieved safeId and not UTR"))
+                                 ).map(_.value)
+                                   .getOrElse(throw new RuntimeException("Rosm not retrieved safeId and not UTR"))
                                )
                              },
                              data

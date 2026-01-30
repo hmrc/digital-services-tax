@@ -53,7 +53,7 @@ class ReturnConnector @Inject() (val http: HttpClientV2, val mode: Mode, val app
     hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[List[(Period, Option[LocalDate])]] = {
-    val url = s"${appConfig.desURL}/enterprise/obligation-data/zdst/$dstRegNo/DST" +
+    val url = s"${appConfig.desURL}/enterprise/obligation-data/zdst/${dstRegNo.value}/DST" +
       s"?from=${appConfig.obligationStartDate}" +
       s"&to=${LocalDate.now.plusYears(1)}"
 
@@ -78,7 +78,7 @@ class ReturnConnector @Inject() (val http: HttpClientV2, val mode: Mode, val app
 
     JsonSchemaChecker(request, "return-submission")(writes)
 
-    val url    = s"${appConfig.desURL}/cross-regime/return/DST/zdst/$dstRegNo"
+    val url    = s"${appConfig.desURL}/cross-regime/return/DST/zdst/${dstRegNo.value}"
     import uk.gov.hmrc.http.HttpReadsInstances._
     val result = desPost[JsValue, Either[UpstreamErrorResponse, ReturnResponse]](
       url,

@@ -20,7 +20,6 @@ import com.google.inject.Inject
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegisteredAction.givenRegistration
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
 import play.api.mvc._
-import shapeless.tag.@@
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInRequest, RegisteredActionRefiner, RegisteredRequest}
 import uk.gov.hmrc.digitalservicestax.data
@@ -54,7 +53,7 @@ class FakeIdentifierRegisteredAction @Inject() (bodyParser: PlayBodyParsers)(imp
 }
 
 object FakeIdentifierRegisteredAction {
-  val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
+  val internalId: data.InternalId = InternalId("Int-aaff66")
 
   val givenRegistration: Registration =
     Registration(

@@ -17,15 +17,16 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.libs.json.{Format, JsObject, Json}
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
-import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
+import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, FormBundleNumber, SafeId, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http._
-
+import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,34 +40,32 @@ class TaxEnrolmentConnector @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def subscribe(safeId: String, formBundleNumber: String)(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
+  def subscribe(safeId: SafeId, formBundleNumber: FormBundleNumber)(implicit
+                                                          hc: HeaderCarrier,
+                                                          ec: ExecutionContext
   ): Future[HttpResponse] = {
-    import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
-      http.put(url"${subscribeUrl(formBundleNumber)}").withBody(requestBody(safeId, formBundleNumber)).execute[HttpResponse] map {
+      http.put(url"${subscribeUrl(formBundleNumber.value)}").withBody(requestBody(safeId.value, formBundleNumber.value)).execute[HttpResponse] map {
         case responseMessage if responseMessage.status >= 200 && responseMessage.status < 300 =>
           responseMessage
         case responseMessage                                                                  =>
           logger.error(
-            s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber)}"
+            s"Tax enrolment returned ${responseMessage.status}: ${responseMessage.body} for ${subscribeUrl(formBundleNumber.value)}"
           )
           responseMessage
       } recover {
-        case e: UnauthorizedException => handleError(e, formBundleNumber)
-        case e: BadRequestException   => handleError(e, formBundleNumber)
+        case e: UnauthorizedException => handleError(e, formBundleNumber.value)
+        case e: BadRequestException   => handleError(e, formBundleNumber.value)
       }
     } else Future.successful[HttpResponse](HttpResponse(418, ""))
   }
 
   def getSubscription(
-    subscriptionId: String
+    subscriptionId: FormBundleNumber
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
-    import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
       http.get(
-        url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
+        url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/${subscriptionId.value}"
       ).execute[TaxEnrolmentsSubscription]
     else {
       testConnector.getSubscription(subscriptionId)
@@ -76,7 +75,6 @@ class TaxEnrolmentConnector @Inject() (
   def getPendingSubscriptionByGroupId(
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TaxEnrolmentsSubscription]] = {
-    import uk.gov.hmrc.http.HttpReads.Implicits._
     http
       .get(
         url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
@@ -108,7 +106,7 @@ class TaxEnrolmentConnector @Inject() (
 
     val verifierKey: KeyValuePair = address match {
       case ukAddress: UkAddress         => KeyValuePair("Postcode", ukAddress.postalCode)
-      case nonUkAddress: ForeignAddress => KeyValuePair("NonUkCountryCode", nonUkAddress.countryCode)
+      case nonUkAddress: ForeignAddress => KeyValuePair("NonUkCountryCode", nonUkAddress.countryCode.value)
     }
 
     val requestBody =

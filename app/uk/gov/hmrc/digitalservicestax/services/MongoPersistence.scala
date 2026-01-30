@@ -17,17 +17,18 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import cats.instances.future._
-import org.mongodb.scala.model._
-import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data._
+import cats.instances.future.*
+import org.mongodb.scala.*
+import org.mongodb.scala.model.*
+import play.api.libs.json.*
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.*
+import uk.gov.hmrc.digitalservicestax.data.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import java.time.LocalDateTime
-import javax.inject._
-import scala.concurrent._
+import javax.inject.*
+import scala.concurrent.*
 
 object MongoPersistence {
 
@@ -206,7 +207,7 @@ class MongoPersistence @Inject() (
       reg.registrationNumber match {
         case Some(regNo) =>
           repo.collection
-            .find(Filters.equal("regNo", regNo))
+            .find(Filters.equal("regNo", regNo.value))
             .limit(1000)
             .toFuture()
             .map(_.map(x => (x.periodKey, x.data)).toMap)
@@ -223,12 +224,12 @@ class MongoPersistence @Inject() (
       repo.collection
         .findOneAndUpdate(
           Filters.and(
-            Filters.equal("regNo", regNo),
-            Filters.equal("periodKey", period)
+            Filters.equal("regNo", regNo.value),
+            Filters.equal("periodKey", period.value)
           ),
           Updates.combine(
-            Updates.setOnInsert("regNo", regNo),
-            Updates.setOnInsert("periodKey", period),
+            Updates.setOnInsert("regNo", regNo.value),
+            Updates.setOnInsert("periodKey", period.value),
             Updates.set("data", Codecs.toBson(ret)),
             Updates.setOnInsert("created", LocalDateTime.now),
             Updates.set("updated", LocalDateTime.now)

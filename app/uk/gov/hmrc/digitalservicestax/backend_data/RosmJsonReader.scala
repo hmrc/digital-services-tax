@@ -49,7 +49,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
             )
         }
       } catch {
-        case e: JsResultException => throw InvalidAddressException
+        case _: JsResultException => throw InvalidAddressException
       }
     }
   }
@@ -63,7 +63,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
     try {
       { json \ "organisation" \ "organisationName" }.as[CompanyName]
     } catch {
-      case e: JsResultException => throw InvalidCompanyNameException
+      case _: JsResultException => throw InvalidCompanyNameException
     }
 
     JsSuccess(
