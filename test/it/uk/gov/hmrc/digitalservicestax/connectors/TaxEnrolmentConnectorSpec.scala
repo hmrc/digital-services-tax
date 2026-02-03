@@ -46,7 +46,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
-    val subscriptionId = TestInstances.shortString.sample.value
+    val subscriptionId                       = TestInstances.shortString.sample.value
     val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
 
     stubFor(

@@ -18,7 +18,7 @@ package it.uk.gov.hmrc.digitalservicestax.util
 
 import cats.implicits.{none, _}
 import enumeratum.scalacheck._
-import org.scalacheck.Arbitrary.{arbitrary, arbBigDecimal => _, _}
+import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
 import org.scalacheck.Gen.buildableOf
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}

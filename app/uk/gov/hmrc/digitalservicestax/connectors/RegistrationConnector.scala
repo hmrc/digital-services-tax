@@ -33,10 +33,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RegistrationConnector @Inject() (
-                                        val http: HttpClientV2,
-                                        val mode: Mode,
-                                        val appConfig: AppConfig,
-                                        val auditing: AuditConnector
+  val http: HttpClientV2,
+  val mode: Mode,
+  val appConfig: AppConfig,
+  val auditing: AuditConnector
 ) extends DesHelpers
     with AuditWrapper {
 

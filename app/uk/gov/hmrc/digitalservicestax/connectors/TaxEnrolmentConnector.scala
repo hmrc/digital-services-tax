@@ -31,10 +31,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject() (
-                                        val http: HttpClientV2,
-                                        val mode: Mode,
-                                        val appConfig: AppConfig,
-                                        testConnector: TestConnector
+  val http: HttpClientV2,
+  val mode: Mode,
+  val appConfig: AppConfig,
+  testConnector: TestConnector
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
@@ -45,7 +45,10 @@ class TaxEnrolmentConnector @Inject() (
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
-      http.put(url"${subscribeUrl(formBundleNumber)}").withBody(requestBody(safeId, formBundleNumber)).execute[HttpResponse] map {
+      http
+        .put(url"${subscribeUrl(formBundleNumber)}")
+        .withBody(requestBody(safeId, formBundleNumber))
+        .execute[HttpResponse] map {
         case responseMessage if responseMessage.status >= 200 && responseMessage.status < 300 =>
           responseMessage
         case responseMessage                                                                  =>
@@ -65,9 +68,11 @@ class TaxEnrolmentConnector @Inject() (
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
-      http.get(
-        url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
-      ).execute[TaxEnrolmentsSubscription]
+      http
+        .get(
+          url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
+        )
+        .execute[TaxEnrolmentsSubscription]
     else {
       testConnector.getSubscription(subscriptionId)
     }
@@ -80,7 +85,8 @@ class TaxEnrolmentConnector @Inject() (
     http
       .get(
         url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
-      ).execute[Seq[TaxEnrolmentsSubscription]]
+      )
+      .execute[Seq[TaxEnrolmentsSubscription]]
       .map(_.find(_.state == "PENDING"))
   }
 

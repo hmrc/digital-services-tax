@@ -99,7 +99,9 @@ object TestInstances {
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
-  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Arbitrary(Arbitrary.arbitrary[Set[Enrolment]].map(Enrolments.apply))
+  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Arbitrary(
+    Arbitrary.arbitrary[Set[Enrolment]].map(Enrolments.apply)
+  )
 
   val ibanList = List(
     "AD9179714843548170724658",

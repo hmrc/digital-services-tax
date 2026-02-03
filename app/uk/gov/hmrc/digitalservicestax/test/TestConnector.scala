@@ -27,8 +27,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TestConnector @Inject() (
-                                http: HttpClientV2,
-                                appConfig: AppConfig
+  http: HttpClientV2,
+  appConfig: AppConfig
 ) {
 
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =

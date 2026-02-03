@@ -35,9 +35,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RosmConnector @Inject() (
-                                val http: HttpClientV2,
-                                val mode: Mode,
-                                val appConfig: AppConfig
+  val http: HttpClientV2,
+  val mode: Mode,
+  val appConfig: AppConfig
 ) extends DesHelpers {
 
   val logger: Logger = Logger(this.getClass)
