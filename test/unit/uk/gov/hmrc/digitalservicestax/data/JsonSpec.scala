@@ -42,7 +42,7 @@ class JsonSpec
     with OptionValues {
 
   def testJsonRoundtrip[T: Arbitrary: Format]: Assertion =
-    forAll { sample: T =>
+    forAll { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -51,7 +51,7 @@ class JsonSpec
     }
 
   def testJsonRoundtrip[T: Format](gen: Gen[T]): Assertion =
-    forAll(gen) { sample: T =>
+    forAll(gen) { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -64,23 +64,25 @@ class JsonSpec
   }
 
   it should "purge none and empty values from a map of js values" in {
-    val generated = JsString(TestInstances.shortString.sample.value)
-    val source    = JsObject(
-      Seq(
-        "object_example"       -> JsObject(Seq("bla" -> generated)),
-        "null-example"         -> JsNull,
-        "empty-string-example" -> JsString(""),
-        "good-example"         -> JsString("good")
+    forAll(TestInstances.shortString) { generatedOrg =>
+      val generated = JsString(generatedOrg)
+      val source    = JsObject(
+        Seq(
+          "object_example"       -> JsObject(Seq("bla" -> generated)),
+          "null-example"         -> JsNull,
+          "empty-string-example" -> JsString(""),
+          "good-example"         -> JsString("good")
+        )
       )
-    )
 
-    val res = RosmRegisterWithoutIDRequest.purgeNullAndEmpty(source)
-    res.value should contain theSameElementsAs (JsObject(
-      Seq(
-        "object_example" -> JsObject(Seq("bla" -> generated)),
-        "good-example"   -> JsString("good")
-      )
-    ).value)
+      val res = RosmRegisterWithoutIDRequest.purgeNullAndEmpty(source)
+      res.value should contain theSameElementsAs (JsObject(
+        Seq(
+          "object_example" -> JsObject(Seq("bla" -> generated)),
+          "good-example"   -> JsString("good")
+        )
+      ).value)
+    }
   }
 
   it should "fail to validate a postcode from JSON if the source input doesn't match expected regex" in {
@@ -90,12 +92,13 @@ class JsonSpec
   }
 
   it should "fail to validate a postcode from JSON if the source input is in incorrect format" in {
-    val generated = Arbitrary.arbitrary[Int].sample.value.toString
-    val parsed    = Json.parse(s"""$generated""").validate[Postcode]
-    parsed.isSuccess shouldEqual false
-    parsed           shouldEqual JsError(
-      JsPath -> JsonValidationError(Seq(s"""Expected a valid postcode, got $generated instead"""))
-    )
+    forAll { (generated: Int) =>
+      val parsed = Json.parse(s"""$generated""").validate[Postcode]
+      parsed.isSuccess shouldEqual false
+      parsed           shouldEqual JsError(
+        JsPath -> JsonValidationError(Seq(s"""Expected a valid postcode, got ${generated.toString} instead"""))
+      )
+    }
   }
 
   it should "serialize and de-serialise a PhoneNumber instance" in {
@@ -147,11 +150,11 @@ class JsonSpec
   }
 
   it should "fail to validate a percentage from a non numeric value" in {
-    forAll(TestInstances.shortString.sample) { sample =>
-      val parsed = Json.parse(s""" "${sample.value}" """).validate[Percent]
+    forAll(TestInstances.shortString) { sample =>
+      val parsed = Json.parse(s""" "$sample" """).validate[Percent]
 
       parsed shouldEqual JsError(
-        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "${sample.value}" instead"""))
+        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "$sample" instead"""))
       )
     }
   }
@@ -188,19 +191,20 @@ class JsonSpec
   }
 
   it should "fail to parse an invalid LocalDate" in {
-    val source        = JsString(TestInstances.shortString.sample.value)
-    val expectionSpec = implicitly[Format[LocalDate]].reads(source)
-    val lastError     = JsError(expectionSpec.asEither.left.value)
+    forAll(TestInstances.shortString) { generatedOrg =>
+      val source        = JsString(generatedOrg)
+      val expectionSpec = implicitly[Format[LocalDate]].reads(source)
+      val lastError     = JsError(expectionSpec.asEither.left.value)
 
-    val jsError = JsError(
-      List(
-        (JsPath, List(JsonValidationError(List(s"Text '${source.value}' could not be parsed at index 0"))))
+      val jsError = JsError(
+        List(
+          (JsPath, List(JsonValidationError(List(s"Text '${source.value}' could not be parsed at index 0"))))
+        )
       )
-    )
 
-    lastError shouldBe jsError
+      lastError shouldBe jsError
+    }
   }
-
   it should "serialize and de-serialise an optional LocalDate" in {
     testJsonRoundtrip[Option[LocalDate]]
   }
@@ -219,7 +223,7 @@ class JsonSpec
   }
 
   it should "test the JSON schema for Company" in {
-    forAll { company: Company =>
+    forAll { (company: Company) =>
       JsonSchemaChecker[data.Company](company, "rosm-response")
     }
   }
@@ -238,7 +242,7 @@ class JsonSpec
   }
 
   it should "test the JSON schema for registratiom" in {
-    forAll { reg: Registration =>
+    forAll { (reg: Registration) =>
       JsonSchemaChecker[data.Registration](reg, "rosm-response")
     }
   }

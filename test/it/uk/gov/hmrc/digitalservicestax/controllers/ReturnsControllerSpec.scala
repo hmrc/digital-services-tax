@@ -20,8 +20,8 @@ import it.uk.gov.hmrc.digitalservicestax.helpers.ControllerBaseSpec
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalacheck.Arbitrary
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -42,6 +42,7 @@ class ReturnsControllerSpec
     extends ControllerBaseSpec
     with BaseOneAppPerSuite
     with FakeApplicationFactory
+    with ScalaCheckDrivenPropertyChecks
     with CleanMongoCollectionSupport {
 
   val mongoPersistence: MongoPersistence      = app.injector.instanceOf[MongoPersistence]
@@ -199,36 +200,37 @@ class ReturnsControllerSpec
 
   "getReturn" must {
     "return 200 status and a Returns record for the input period key" in {
-      val ret: Return        = Arbitrary.arbitrary[Return].sample.value
-      val period: Period.Key = Period.Key.of("0220").value
+      forAll { (ret: Return) =>
+        val period: Period.Key = Period.Key.of("0220").value
 
-      val results = for {
-        _      <- mongoPersistence.returns.update(regObj, period, ret)
-        _      <- mongoPersistence.returns(regObj, period)
-        result <- TestReturnsController.getReturn(period).apply(FakeRequest())
-      } yield result
+        val results = for {
+          _      <- mongoPersistence.returns.update(regObj, period, ret)
+          _      <- mongoPersistence.returns(regObj, period)
+          result <- TestReturnsController.getReturn(period).apply(FakeRequest())
+        } yield result
 
-      val resultStatus = status(results)
+        val resultStatus = status(results)
 
-      resultStatus mustBe 200
-      contentAsJson(results) mustBe Json.toJson(ret)
-
+        resultStatus mustBe 200
+        contentAsJson(results) mustBe Json.toJson(ret)
+      }
     }
 
     "return 404 status when there is no Returns record for the input period key" in {
-      val ret: Return           = Arbitrary.arbitrary[Return].sample.value
-      val period: Period.Key    = Period.Key.of("0220").value
-      val periodkey: Period.Key = Period.Key.of("0221").value
+      forAll { (ret: Return) =>
+        val period: Period.Key    = Period.Key.of("0220").value
+        val periodkey: Period.Key = Period.Key.of("0221").value
 
-      val results = for {
-        _      <- mongoPersistence.returns.update(regObj, period, ret)
-        result <- TestReturnsController.getReturn(periodkey).apply(FakeRequest())
-      } yield result
+        val results = for {
+          _      <- mongoPersistence.returns.update(regObj, period, ret)
+          result <- TestReturnsController.getReturn(periodkey).apply(FakeRequest())
+        } yield result
 
-      val resultStatus = status(results)
+        val resultStatus = status(results)
 
-      resultStatus mustBe 404
+        resultStatus mustBe 404
 
+      }
     }
   }
 }

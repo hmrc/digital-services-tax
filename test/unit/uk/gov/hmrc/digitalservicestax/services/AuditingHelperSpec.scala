@@ -16,8 +16,6 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.services
 
-import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import org.scalacheck.Arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
@@ -27,6 +25,7 @@ import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, FormBundleNumber, Peri
 import uk.gov.hmrc.digitalservicestax.services.AuditingHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class AuditingHelperSpec extends AnyFreeSpec with ScalaCheckPropertyChecks with OptionValues {
 
@@ -34,14 +33,13 @@ class AuditingHelperSpec extends AnyFreeSpec with ScalaCheckPropertyChecks with 
 
   "AuditingHelper" - {
     "must build Return Submission Audit extended event" in {
+      forAll { (sampleReturn: Return, period: Period) =>
+        val extendedDataEvent: ExtendedDataEvent =
+          AuditingHelper.buildReturnSubmissionAudit(DSTRegNumber("BCDST1234567890"), "", period, sampleReturn, true)
 
-      val sampleReturn                         = Arbitrary.arbitrary[Return].sample.value
-      val period: Period                       = Arbitrary.arbitrary[Period].sample.value
-      val extendedDataEvent: ExtendedDataEvent =
-        AuditingHelper.buildReturnSubmissionAudit(DSTRegNumber("BCDST1234567890"), "", period, sampleReturn, true)
-
-      extendedDataEvent.auditSource mustBe "digital-services-tax"
-      extendedDataEvent.auditType mustBe "returnSubmitted"
+        extendedDataEvent.auditSource mustBe "digital-services-tax"
+        extendedDataEvent.auditType mustBe "returnSubmitted"
+      }
     }
 
     "must build Return Response Audit extended event" in {
@@ -53,17 +51,17 @@ class AuditingHelperSpec extends AnyFreeSpec with ScalaCheckPropertyChecks with 
     }
 
     "must build registration audit event" in {
+      forAll { (registration: Registration) =>
+        val extendedDataEvent: ExtendedDataEvent = AuditingHelper.buildRegistrationAudit(
+          registration,
+          "providerId",
+          Some(FormBundleNumber("112233445566")),
+          "SUCCESS"
+        )
 
-      val registration                         = Arbitrary.arbitrary[Registration].sample.value
-      val extendedDataEvent: ExtendedDataEvent = AuditingHelper.buildRegistrationAudit(
-        registration,
-        "providerId",
-        Some(FormBundleNumber("112233445566")),
-        "SUCCESS"
-      )
-
-      extendedDataEvent.auditSource mustBe "digital-services-tax"
-      extendedDataEvent.auditType mustBe "digitalServicesTaxRegistrationSubmitted"
+        extendedDataEvent.auditSource mustBe "digital-services-tax"
+        extendedDataEvent.auditType mustBe "digitalServicesTaxRegistrationSubmitted"
+      }
     }
 
     "must build callback audit event" in {

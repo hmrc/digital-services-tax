@@ -64,227 +64,215 @@ class GetDstNumberFromEisServiceSpec
     )
   }
 
+  trait Setup {
+    val dataGen = for {
+      registration      <- arbitrary[Registration]
+      companyRegWrapper <- arbitrary[CompanyRegWrapper]
+      utr               <- arbitrary[UTR]
+      internal          <- arbitrary[InternalId]
+    } yield (
+      registration,
+      companyRegWrapper.copy(sapNumber = Some(SapNumber("1234567890"))),
+      utr,
+      internal,
+      registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
+    )
+  }
+
   "GetDstNumberFromEis service" should {
 
-    "return registration details when all details BPR, subscription status exists and successful and enrolment activation is successful" in {
+    "return registration details when all details BPR, subscription status exists and successful and enrolment activation is successful" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapper, utr, internal, dstNumber) =>
+        val subscriptionStatus: SubscriptionStatusResponse =
+          SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
 
-      val registration                                   = arbitrary[Registration].sample.value
-      val companyRegWrapper                              = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = Some(SapNumber("1234567890")))
-      val utr                                            = arbitrary[UTR].sample.value
-      val internal                                       = arbitrary[InternalId].sample.value
-      val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
-      val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
+        when(
+          mockRegistrationConnector
+            .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
+        ) thenReturn Future.successful(subscriptionStatus)
 
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-      when(
-        mockRegistrationConnector
-          .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
-      ) thenReturn Future.successful(subscriptionStatus)
+        when(
+          mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        ) thenReturn Future.successful(true)
 
-      when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
-      ) thenReturn Future.successful(true)
+        when(
+          mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
+        ) thenReturn Future.successful(Some(dstNumber))
 
-      when(
-        mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
-      ) thenReturn Future.successful(Some(dstNumber))
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
 
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe Some(registration)
-      }
-
-    }
-
-    "return None when BPR, subscription status exists and successful and enrolment activation fails" in {
-
-      val registration                                   = arbitrary[Registration].sample.value
-      val companyRegWrapper                              = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = Some(SapNumber("1234567890")))
-      val utr                                            = arbitrary[UTR].sample.value
-      val internal                                       = arbitrary[InternalId].sample.value
-      val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
-      val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
-
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
-
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-      when(
-        mockRegistrationConnector
-          .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
-      ) thenReturn Future.successful(subscriptionStatus)
-
-      when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
-      ) thenReturn Future.successful(false)
-
-      when(
-        mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
-      ) thenReturn Future.successful(Some(dstNumber))
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe None
-      }
-
-    }
-
-    "return None when BPR or SapNumber does not exists" in {
-
-      val registration      = arbitrary[Registration].sample.value
-      val companyRegWrapper = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = None)
-      val utr               = arbitrary[UTR].sample.value
-      val internal          = arbitrary[InternalId].sample.value
-
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
-
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe None
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe Some(registration)
+        }
       }
     }
 
-    "return None when BPR exists but subscription status is not successful" in {
+    "return None when BPR, subscription status exists and successful and enrolment activation fails" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapper, utr, internal, dstNumber) =>
+        val subscriptionStatus: SubscriptionStatusResponse =
+          SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
 
-      val registration                                   = arbitrary[Registration].sample.value
-      val companyRegWrapper                              = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = Some(SapNumber("1234567890")))
-      val utr                                            = arbitrary[UTR].sample.value
-      val internal                                       = arbitrary[InternalId].sample.value
-      val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
-      val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Other, Some("ZDST"), Some(dstNumber))
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
+        when(
+          mockRegistrationConnector
+            .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
+        ) thenReturn Future.successful(subscriptionStatus)
 
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-      when(
-        mockRegistrationConnector
-          .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
-      ) thenReturn Future.successful(subscriptionStatus)
+        when(
+          mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        ) thenReturn Future.successful(false)
 
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
+        when(
+          mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
+        ) thenReturn Future.successful(Some(dstNumber))
 
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe None
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
+
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe None
+        }
       }
-
-    }
-    "return None when BPR, subscription status exists and successful and enrolment activation is successful but eacd returned different DstRegNumber" in {
-
-      val registration                                   = arbitrary[Registration].sample.value
-      val companyRegWrapper                              = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = Some(SapNumber("1234567890")))
-      val utr                                            = arbitrary[UTR].sample.value
-      val internal                                       = arbitrary[InternalId].sample.value
-      val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
-      val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
-
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
-
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-      when(
-        mockRegistrationConnector
-          .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
-      ) thenReturn Future.successful(subscriptionStatus)
-
-      when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
-      ) thenReturn Future.successful(true)
-
-      when(
-        mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
-      ) thenReturn Future.successful(Some("XYDST0000000001"))
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe None
-      }
-
     }
 
-    "return None when BPR exists but subscription id is not DST" in {
+    "return None when BPR or SapNumber does not exists" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapperOrg, utr, internal, _) =>
+        val companyRegWrapper = companyRegWrapperOrg.copy(sapNumber = None)
 
-      val registration                                   = arbitrary[Registration].sample.value
-      val companyRegWrapper                              = arbitrary[CompanyRegWrapper].sample.value.copy(sapNumber = Some(SapNumber("1234567890")))
-      val utr                                            = arbitrary[UTR].sample.value
-      val internal                                       = arbitrary[InternalId].sample.value
-      val dstNumber                                      = registration.registrationNumber.getOrElse(DSTRegNumber("XYDST0000000000"))
-      val subscriptionStatus: SubscriptionStatusResponse =
-        SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZXXX"), Some(dstNumber))
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
 
-      when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
-        Some(companyRegWrapper)
-      )
-      when(
-        mockRegistrationConnector
-          .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
-      ) thenReturn Future.successful(subscriptionStatus)
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
 
-      when(
-        mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
-      ) thenReturn Future.successful(true)
-
-      when(
-        mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
-      ) thenReturn Future.successful(Some(dstNumber))
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Option[Registration] = getDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(utr, "groupId")
-          .futureValue
-        result mustBe None
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe None
+        }
       }
+    }
 
+    "return None when BPR exists but subscription status is not successful" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapper, utr, internal, dstNumber) =>
+        val subscriptionStatus: SubscriptionStatusResponse =
+          SubscriptionStatusResponse(SubscriptionStatus.Other, Some("ZDST"), Some(dstNumber))
+
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
+        when(
+          mockRegistrationConnector
+            .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
+        ) thenReturn Future.successful(subscriptionStatus)
+
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
+
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe None
+        }
+      }
+    }
+    "return None when BPR, subscription status exists and successful and enrolment activation is successful but eacd returned different DstRegNumber" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapper, utr, internal, dstNumber) =>
+        val subscriptionStatus: SubscriptionStatusResponse =
+          SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZDST"), Some(dstNumber))
+
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
+        when(
+          mockRegistrationConnector
+            .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
+        ) thenReturn Future.successful(subscriptionStatus)
+
+        when(
+          mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        ) thenReturn Future.successful(true)
+
+        when(
+          mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
+        ) thenReturn Future.successful(Some("XYDST0000000001"))
+
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
+
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe None
+        }
+      }
+    }
+
+    "return None when BPR exists but subscription id is not DST" in new Setup {
+      forAll(dataGen) { case (registration, companyRegWrapper, utr, internal, dstNumber) =>
+        val subscriptionStatus: SubscriptionStatusResponse =
+          SubscriptionStatusResponse(SubscriptionStatus.Subscribed, Some("ZXXX"), Some(dstNumber))
+
+        when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+
+        when(mockRosmConnector.retrieveROSMDetails(same(utr))(any(), any())) thenReturn Future.successful(
+          Some(companyRegWrapper)
+        )
+        when(
+          mockRegistrationConnector
+            .getSubscriptionStatus(same(SapNumber("1234567890")))(any(), any())
+        ) thenReturn Future.successful(subscriptionStatus)
+
+        when(
+          mockTaxEnrolmentsConnector.isAllocateDstGroupEnrolmentSuccess(any(), same(dstNumber))(any(), any())
+        ) thenReturn Future.successful(true)
+
+        when(
+          mockEnrolmentStoreProxyConnector.getDstRefFromGroupAssignedEnrolment(same("groupId"))(any(), any())
+        ) thenReturn Future.successful(Some(dstNumber))
+
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, registration)
+        } yield r
+
+        whenReady(chain) { _ =>
+          val result: Option[Registration] = getDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(utr, "groupId")
+            .futureValue
+          result mustBe None
+        }
+      }
     }
   }
 }

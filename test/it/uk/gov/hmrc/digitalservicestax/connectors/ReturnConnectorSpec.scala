@@ -16,6 +16,7 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
+import cats.implicits.catsSyntaxTuple2Semigroupal
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -27,6 +28,8 @@ import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
+import org.scalacheck.Gen
+import org.scalacheck.cats.implicits.genInstances
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
@@ -46,118 +49,121 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the latest DST period json for a DSTRegNumber" in {
-    val dstRegNumber = arbitrary[DSTRegNumber].sample.value
-    val periods      = s"""{
-                          |   "obligations":[
-                          |      {
-                          |         "obligationDetails":[
-                          |            {
-                          |               "status":"O",
-                          |               "inboundCorrespondenceFromDate":"2023-09-27",
-                          |               "inboundCorrespondenceToDate":"2024-09-26",
-                          |               "inboundCorrespondenceDueDate":"2025-09-26",
-                          |               "periodKey":"#005"
-                          |            },
-                          |            {
-                          |               "status":"O",
-                          |               "inboundCorrespondenceFromDate":"2022-09-27",
-                          |               "inboundCorrespondenceToDate":"2023-09-26",
-                          |               "inboundCorrespondenceDueDate":"2024-09-26",
-                          |               "periodKey":"#004"
-                          |            },
-                          |            {
-                          |               "status":"O",
-                          |               "inboundCorrespondenceFromDate":"2021-09-27",
-                          |               "inboundCorrespondenceToDate":"2022-09-26",
-                          |               "inboundCorrespondenceDueDate":"2023-09-26",
-                          |               "periodKey":"#003"
-                          |            },
-                          |            {
-                          |               "status":"F",
-                          |               "inboundCorrespondenceFromDate":"2020-09-27",
-                          |               "inboundCorrespondenceToDate":"2021-09-26",
-                          |               "inboundCorrespondenceDateReceived":"2022-06-20",
-                          |               "inboundCorrespondenceDueDate":"2022-09-26",
-                          |               "periodKey":"#002"
-                          |            },
-                          |            {
-                          |               "status":"F",
-                          |               "inboundCorrespondenceFromDate":"2020-04-01",
-                          |               "inboundCorrespondenceToDate":"2020-09-26",
-                          |               "inboundCorrespondenceDateReceived":"2021-06-22",
-                          |               "inboundCorrespondenceDueDate":"2021-09-26",
-                          |               "periodKey":"#001"
-                          |            }
-                          |         ]
-                          |      }
-                          |   ]
-                          |}""".stripMargin
+    forAll { (dstRegNumber: DSTRegNumber) =>
+      val periods =
+        s"""{
+             |   "obligations":[
+             |      {
+             |         "obligationDetails":[
+             |            {
+             |               "status":"O",
+             |               "inboundCorrespondenceFromDate":"2023-09-27",
+             |               "inboundCorrespondenceToDate":"2024-09-26",
+             |               "inboundCorrespondenceDueDate":"2025-09-26",
+             |               "periodKey":"#005"
+             |            },
+             |            {
+             |               "status":"O",
+             |               "inboundCorrespondenceFromDate":"2022-09-27",
+             |               "inboundCorrespondenceToDate":"2023-09-26",
+             |               "inboundCorrespondenceDueDate":"2024-09-26",
+             |               "periodKey":"#004"
+             |            },
+             |            {
+             |               "status":"O",
+             |               "inboundCorrespondenceFromDate":"2021-09-27",
+             |               "inboundCorrespondenceToDate":"2022-09-26",
+             |               "inboundCorrespondenceDueDate":"2023-09-26",
+             |               "periodKey":"#003"
+             |            },
+             |            {
+             |               "status":"F",
+             |               "inboundCorrespondenceFromDate":"2020-09-27",
+             |               "inboundCorrespondenceToDate":"2021-09-26",
+             |               "inboundCorrespondenceDateReceived":"2022-06-20",
+             |               "inboundCorrespondenceDueDate":"2022-09-26",
+             |               "periodKey":"#002"
+             |            },
+             |            {
+             |               "status":"F",
+             |               "inboundCorrespondenceFromDate":"2020-04-01",
+             |               "inboundCorrespondenceToDate":"2020-09-26",
+             |               "inboundCorrespondenceDateReceived":"2021-06-22",
+             |               "inboundCorrespondenceDueDate":"2021-09-26",
+             |               "periodKey":"#001"
+             |            }
+             |         ]
+             |      }
+             |   ]
+             |}""".stripMargin
 
-    val expectedResponse = List(
-      (
-        Period(LocalDate.of(2023, 9, 27), LocalDate.of(2024, 9, 26), LocalDate.of(2025, 9, 26), Key("005")),
-        None
-      ),
-      (
-        Period(LocalDate.of(2022, 9, 27), LocalDate.of(2023, 9, 26), LocalDate.of(2024, 9, 26), Key("004")),
-        None
-      ),
-      (
-        Period(LocalDate.of(2021, 9, 27), LocalDate.of(2022, 9, 26), LocalDate.of(2023, 9, 26), Key("003")),
-        None
-      ),
-      (
-        Period(
-          LocalDate.of(2020, 9, 27),
-          LocalDate.of(2021, 9, 26),
-          LocalDate.of(2022, 9, 26),
-          Key("002")
+      val expectedResponse = List(
+        (
+          Period(LocalDate.of(2023, 9, 27), LocalDate.of(2024, 9, 26), LocalDate.of(2025, 9, 26), Key("005")),
+          None
         ),
-        Some(LocalDate.of(2022, 6, 20))
-      ),
-      (
-        Period(LocalDate.of(2020, 4, 1), LocalDate.of(2020, 9, 26), LocalDate.of(2021, 9, 26), Key("001")),
-        Some(LocalDate.of(2021, 6, 22))
+        (
+          Period(LocalDate.of(2022, 9, 27), LocalDate.of(2023, 9, 26), LocalDate.of(2024, 9, 26), Key("004")),
+          None
+        ),
+        (
+          Period(LocalDate.of(2021, 9, 27), LocalDate.of(2022, 9, 26), LocalDate.of(2023, 9, 26), Key("003")),
+          None
+        ),
+        (
+          Period(
+            LocalDate.of(2020, 9, 27),
+            LocalDate.of(2021, 9, 26),
+            LocalDate.of(2022, 9, 26),
+            Key("002")
+          ),
+          Some(LocalDate.of(2022, 6, 20))
+        ),
+        (
+          Period(LocalDate.of(2020, 4, 1), LocalDate.of(2020, 9, 26), LocalDate.of(2021, 9, 26), Key("001")),
+          Some(LocalDate.of(2021, 6, 22))
+        )
       )
-    )
 
-    stubFor(
-      get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200).withBody(periods))
-    )
+      stubFor(
+        get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
+          .willReturn(aResponse().withStatus(200).withBody(periods))
+      )
 
-    val response = ReturnTestConnector.getPeriods(dstRegNumber)
-    whenReady(response) { res =>
-      res mustEqual expectedResponse
+      val response = ReturnTestConnector.getPeriods(dstRegNumber)
+      whenReady(response) { res =>
+        res mustEqual expectedResponse
+      }
     }
   }
 
   "should retrieve the latest DST period for a DSTRegNumber" in {
-    val dstRegNumber = arbitrary[DSTRegNumber].sample.value
+    forAll { (dstRegNumber: DSTRegNumber) =>
+      stubFor(
+        get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
+          .willReturn(aResponse().withStatus(200))
+      )
 
-    stubFor(
-      get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200))
-    )
-
-    val response = ReturnTestConnector.getNextPendingPeriod(dstRegNumber)
-    whenReady(response.failed) { res =>
-      res
+      val response = ReturnTestConnector.getNextPendingPeriod(dstRegNumber)
+      whenReady(response.failed) { res =>
+        res
+      }
     }
   }
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
-    val dstRegNumber = arbitrary[DSTRegNumber].sample.value
-    val periods      = arbitrary[List[Period]].sample.value.map(_ -> Option.empty[LocalDate])
+    forAll(arbitrary[DSTRegNumber], Gen.nonEmptyListOf(arbitrary[Period])) {
+      (dstRegNumber: DSTRegNumber, periodsOrg: List[Period]) =>
+        val periods = periodsOrg.map(_ -> Option.empty[LocalDate])
+        stubFor(
+          get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
+            .willReturn(aResponse().withStatus(200).withBody(Json.toJson(periods).toString()))
+        )
 
-    stubFor(
-      get(urlPathEqualTo(s"""/enterprise/obligation-data/zdst/$dstRegNumber/DST"""))
-        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(periods).toString()))
-    )
-
-    val response = ReturnTestConnector.getPeriods(dstRegNumber)
-    whenReady(response.failed) { res =>
-      res
+        val response = ReturnTestConnector.getPeriods(dstRegNumber)
+        whenReady(response.failed) { res =>
+          res
+        }
     }
   }
 
@@ -166,14 +172,10 @@ class ReturnConnectorSpec extends FakeApplicationSetup with WiremockServer with 
       dstRegNumber <- arbitrary[DSTRegNumber]
       period       <- arbitrary[Period]
       ret          <- arbitrary[Return]
-    } yield (dstRegNumber, period, ret)
+      resp         <- (TestInstances.shortString, TestInstances.shortString).mapN(ReturnResponse.apply)
+    } yield (dstRegNumber, period, ret, resp)
 
-    val resp = ReturnResponse(
-      TestInstances.shortString.sample.value,
-      TestInstances.shortString.sample.value
-    )
-
-    forAll(customGen) { case (dstNo, period, ret) =>
+    forAll(customGen) { case (dstNo, period, ret, resp) =>
       stubFor(
         post(urlPathEqualTo(s"""/cross-regime/return/DST/zdst/$dstNo"""))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
