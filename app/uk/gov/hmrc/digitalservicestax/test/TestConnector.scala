@@ -19,24 +19,25 @@ package uk.gov.hmrc.digitalservicestax.test
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TestConnector @Inject() (
-  http: HttpClient,
+  http: HttpClientV2,
   appConfig: AppConfig
 ) {
 
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    http.GET[HttpResponse](s"${appConfig.desURL}/$url/$param")
+    http.get(url"${appConfig.desURL}/$url/$param").execute[HttpResponse]
 
   def getSubscription(
     subscriptionId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
-    http.GET[DstRegNoWrapper](s"${appConfig.desURL}/get-subscription/$subscriptionId").map { x =>
+    http.get(url"${appConfig.desURL}/get-subscription/$subscriptionId").execute[DstRegNoWrapper].map { x =>
       TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", None)
     }
 

@@ -17,7 +17,6 @@
 package it.uk.gov.hmrc.digitalservicestax.util
 
 import cats.implicits.{none, _}
-import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
 import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
 import org.scalacheck.Gen.buildableOf
@@ -52,7 +51,12 @@ object TestInstances {
     Gen.oneOf(List(AffinityGroup.Agent, AffinityGroup.Individual, AffinityGroup.Organisation))
   }
 
-  implicit val arbCredentials: Arbitrary[Credentials] = Sample.arbitrary[Credentials]
+  implicit val arbCredentials: Arbitrary[Credentials] = Arbitrary(
+    (
+      arbitrary[String],
+      arbitrary[String]
+    ).mapN(Credentials.apply)
+  )
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
     Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
@@ -94,7 +98,8 @@ object TestInstances {
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
-  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Sample.arbitrary[Enrolments]
+  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] =
+    Arbitrary(Arbitrary.arbitrary[Set[Enrolment]].map(Enrolments.apply))
 
   val ibanList = List(
     "AD9179714843548170724658",
@@ -277,6 +282,8 @@ object TestInstances {
       arbitrary[String]
     ).mapN((num, str) => s"$num$str").map(_.take(maxLen)).map(NonEmptyString.apply)
 
+  val shortString: Gen[String] = Gen.stringOfN(20, Gen.alphaNumChar)
+
   implicit def arbNEString: Arbitrary[NonEmptyString]           = Arbitrary(neString())
   implicit def arbPostcode: Arbitrary[Postcode]                 = Arbitrary(Postcode.gen)
   implicit def arbDSTNumber: Arbitrary[DSTRegNumber]            = Arbitrary(DSTRegNumber.gen)
@@ -288,11 +295,7 @@ object TestInstances {
   implicit def sapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
   implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
-
-  implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
-    import com.outworkers.util.samplers._
-    Sample.generator[ShortString].map(s => InternalId(s"Int-${s.value}"))
-  }
+  implicit val arbInternalId: Arbitrary[InternalId]             = Arbitrary(InternalId.gen.suchThat(_.length > 5))
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
   implicit def arbEmail: Arbitrary[Email] = Arbitrary {
