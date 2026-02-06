@@ -52,27 +52,26 @@ class TaxEnrolmentServiceSpec
   "Tax enrolments service" should {
 
     "return Ok when tax enrolments connector returns taxEnrolmentsSubscription with pending state" in {
+      forAll(arbitrary[Registration], TestInstances.arbInternalId.arbitrary) {
+        case (registration: Registration, internal: InternalId) =>
+          val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
+            TaxEnrolmentsSubscription(None, "PENDING", None)
 
-      val registration                                         = arbitrary[Registration].sample.value
-      val internal                                             = TestInstances.arbInternalId.arbitrary.sample.value
-      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
-        TaxEnrolmentsSubscription(None, "PENDING", None)
+          when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+          when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+            .successful(
+              Some(taxEnrolmentsSubscription)
+            )
+          val chain = for {
+            r <- mongoPersistence.registrations.update(internal, registration)
+          } yield r
 
-      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
-        .successful(
-          Some(taxEnrolmentsSubscription)
-        )
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, registration)
-      } yield r
-
-      whenReady(chain) { _ =>
-        val result: Result = dstService.getPendingDSTRegistration(Some("1234")).futureValue
-        result mustBe Ok
+          whenReady(chain) { _ =>
+            val result: Result = dstService.getPendingDSTRegistration(Some("1234")).futureValue
+            result mustBe Ok
+          }
       }
-
     }
 
     "return 'NotFound' when tax enrolments connector returns NotFound" in {

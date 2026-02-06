@@ -16,10 +16,13 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
+import cats.implicits._
+import org.scalacheck.cats.implicits._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatestplus.mockito._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.Application
@@ -50,24 +53,24 @@ class RegistrationConnectorSpec
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
+    forAll(
+      (
+        TestInstances.shortString,
+        arbitrary[FormBundleNumber]
+      ).mapN(RegistrationResponse.apply),
+      TestInstances.shortString,
+      TestInstances.shortString,
+      arbitrary[Registration]
+    ) { case (resp, idType, idNumber, reg) =>
+      stubFor(
+        post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
+      )
 
-    val resp = RegistrationResponse(
-      TestInstances.shortString.sample.value,
-      arbitrary[FormBundleNumber].sample.value
-    )
-
-    val idType   = TestInstances.shortString.sample.value
-    val idNumber = TestInstances.shortString.sample.value
-    val reg      = arbitrary[Registration].sample.value
-
-    stubFor(
-      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
-        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
-    )
-
-    val response = RegTestConnector.send(idType, idNumber, reg)
-    whenReady(response) { res =>
-      res
+      val response = RegTestConnector.send(idType, idNumber, reg)
+      whenReady(response) { res =>
+        res
+      }
     }
   }
 

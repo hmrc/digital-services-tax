@@ -31,7 +31,7 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {
 
   def testJsonRoundtrip[T: Arbitrary: Format]: Assertion =
-    forAll { sample: T =>
+    forAll { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -40,7 +40,7 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
     }
 
   def testJsonRoundtrip[T: Format](gen: Gen[T]): Assertion =
-    forAll(gen) { sample: T =>
+    forAll(gen) { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -242,7 +242,7 @@ class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenProper
     val parsed = RosmJsonReader.reads(json)
     parsed.isSuccess shouldEqual true
 
-    forAll { value: RosmRegisterWithoutIDRequest =>
+    forAll { (value: RosmRegisterWithoutIDRequest) =>
       Json.toJson(value)
     }
   }

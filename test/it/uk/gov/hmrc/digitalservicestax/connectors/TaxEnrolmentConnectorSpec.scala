@@ -43,24 +43,32 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
         testConnector
       )
 
+  trait Setup {
+    val dataGen = for {
+      safeId           <- TestInstances.safeId.arbitrary
+      formBundleNumber <- TestInstances.arbFormBundleNumber.arbitrary
+    } yield (safeId, formBundleNumber)
+  }
+
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  "should retrieve the latest DST period for a DSTRegNumber" in {
-    val subscriptionId                       = TestInstances.shortString.sample.value
-    val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
+  "should retrieve the latest DST period for a DSTRegNumber" in new Setup {
+    forAll(dataGen) { case (_, subscriptionId) =>
+      val enrolment: TaxEnrolmentsSubscription = TaxEnrolmentsSubscription(None, "state", None)
 
-    stubFor(
-      get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$subscriptionId"""))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(Json.toJson(enrolment).toString())
-        )
-    )
+      stubFor(
+        get(urlPathEqualTo(s"""/tax-enrolments/subscriptions/$subscriptionId"""))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(Json.toJson(enrolment).toString())
+          )
+      )
 
-    val response = TaxTestConnector.getSubscription(subscriptionId)
-    whenReady(response) { res =>
-      res mustEqual enrolment
+      val response = TaxTestConnector.getSubscription(subscriptionId)
+      whenReady(response) { res =>
+        res mustEqual enrolment
+      }
     }
   }
 
@@ -69,76 +77,76 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
     enrolment.getDSTNumber mustBe None
   }
 
-  "create a new subscription for a tax enrolment" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
+  "create a new subscription for a tax enrolment" in new Setup {
+    forAll(dataGen) { case (safeId, formBundleNumber) =>
+      stubFor(
+        put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody("""""")
+          )
+      )
 
-    stubFor(
-      put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody("""""")
-        )
-    )
-
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
-    whenReady(response) { res =>
-      res.status mustEqual Status.OK
+      val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+      whenReady(response) { res =>
+        res.status mustEqual Status.OK
+      }
     }
   }
 
-  "getPendingSubscriptionByGroupId" should {
+  "getPendingSubscriptionByGroupId"    should {
     "retrieve the tax enrolment with pending state for a groupId" in {
-      val groupId            = TestInstances.shortString.sample.value
-      val enrolment: JsValue = Json.parse(
-        """[{"created":1676542914173,
+      forAll(TestInstances.shortString) { groupId =>
+        val enrolment: JsValue = Json.parse(
+          """[{"created":1676542914173,
           "serviceName":"HMRC-DST-ORG",
           "identifiers":[{"key":"DSTRefNumber","value":"XZDST0000000694"}],
           "state":"PENDING","etmpId":"XS0000100406365","groupIdentifier":"5551C230-68B2-4D12-A67F-6C1B6A74D53A"}]""".stripMargin
-      )
+        )
 
-      stubFor(
-        get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
-          .willReturn(
-            aResponse()
-              .withStatus(200)
-              .withBody(enrolment.toString())
-          )
-      )
-      val expectedResult =
-        Some(TaxEnrolmentsSubscription(Some(List(Identifier("DSTRefNumber", "XZDST0000000694"))), "PENDING", None))
+        stubFor(
+          get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
+            .willReturn(
+              aResponse()
+                .withStatus(200)
+                .withBody(enrolment.toString())
+            )
+        )
+        val expectedResult =
+          Some(TaxEnrolmentsSubscription(Some(List(Identifier("DSTRefNumber", "XZDST0000000694"))), "PENDING", None))
 
-      val response = TaxTestConnector.getPendingSubscriptionByGroupId(groupId)
-      whenReady(response) { res =>
-        res mustBe expectedResult
+        val response = TaxTestConnector.getPendingSubscriptionByGroupId(groupId)
+        whenReady(response) { res =>
+          res mustBe expectedResult
+        }
       }
     }
     "retrieve the taxenrolment by groupId and return none when state is not pending" in {
-      val groupId            = TestInstances.shortString.sample.value
-      val enrolment: JsValue = Json.parse(
-        """[{"created":1676542914173,
+      forAll(TestInstances.shortString) { groupId =>
+        val enrolment: JsValue = Json.parse(
+          """[{"created":1676542914173,
           "serviceName":"HMRC-DST-ORG",
           "identifiers": null,
           "state":"OFFLINE","etmpId":"XS0000100406365","groupIdentifier":"5551C230-68B2-4D12-A67F-6C1B6A74D53A"}]""".stripMargin
-      )
+        )
 
-      stubFor(
-        get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
-          .willReturn(
-            aResponse()
-              .withStatus(200)
-              .withBody(enrolment.toString())
-          )
-      )
+        stubFor(
+          get(urlPathEqualTo(s"""/tax-enrolments/groups/$groupId/subscriptions"""))
+            .willReturn(
+              aResponse()
+                .withStatus(200)
+                .withBody(enrolment.toString())
+            )
+        )
 
-      val response = TaxTestConnector.getPendingSubscriptionByGroupId(groupId)
-      whenReady(response) { res =>
-        res mustBe None
+        val response = TaxTestConnector.getPendingSubscriptionByGroupId(groupId)
+        whenReady(response) { res =>
+          res mustBe None
+        }
       }
     }
   }
-
   "isAllocateDstGroupEnrolmentSuccess" should {
     "return true when allocate group enrolment is successful and returns 204 with Postcode as verifier" in {
       val requestBody: String = Json
@@ -254,42 +262,38 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
     }
   }
 
-  "handle an unauthorised exception" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
+  "handle an unauthorised exception" in new Setup {
+    forAll(dataGen) { case (safeId, formBundleNumber) =>
+      stubFor(
+        put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.UNAUTHORIZED)
+          )
+      )
 
-    stubFor(
-      put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
-        .willReturn(
-          aResponse()
-            .withStatus(Status.UNAUTHORIZED)
-        )
-    )
-
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
-    whenReady(response) { res =>
-      res.status mustEqual Status.UNAUTHORIZED
+      val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+      whenReady(response) { res =>
+        res.status mustEqual Status.UNAUTHORIZED
+      }
     }
   }
+  "handle a BadRequest exception" in new Setup {
+    forAll(dataGen) { case (safeId, formBundleNumber) =>
+      stubFor(
+        put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.BAD_REQUEST)
+          )
+      )
 
-  "handle a BadRequest exception" in {
-    val safeId           = TestInstances.shortString.sample.value
-    val formBundleNumber = TestInstances.shortString.sample.value
-
-    stubFor(
-      put(urlPathEqualTo(s"/tax-enrolments/subscriptions/$formBundleNumber/subscriber"))
-        .willReturn(
-          aResponse()
-            .withStatus(Status.BAD_REQUEST)
-        )
-    )
-
-    val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
-    whenReady(response) { res =>
-      res.status mustEqual Status.BAD_REQUEST
+      val response = TaxTestConnector.subscribe(safeId, formBundleNumber)
+      whenReady(response) { res =>
+        res.status mustEqual Status.BAD_REQUEST
+      }
     }
   }
-
   "should retrieve a DSTRegNumber" in {
     val req = TaxEnrolmentsSubscription(
       Some(

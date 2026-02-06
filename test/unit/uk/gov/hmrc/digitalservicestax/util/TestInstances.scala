@@ -41,7 +41,7 @@ object TestInstances {
   )
 
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0, 1000000000000L).map(b => Money(BigDecimal(b).setScale(2)))
+    Gen.choose(0, 1000000000).map(b => Money(BigDecimal(b).setScale(2)))
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
@@ -60,7 +60,7 @@ object TestInstances {
   )
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
-    Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
+    Gen.chooseNum(0, 100).map(b => Percent(b))
   }
 
   def nonEmptyString: Gen[NonEmptyString] =
@@ -293,8 +293,8 @@ object TestInstances {
   implicit def arbCountryCode: Arbitrary[CountryCode]           = Arbitrary(CountryCode.gen)
   implicit def arbPhone: Arbitrary[PhoneNumber]                 = Arbitrary(PhoneNumber.gen)
   implicit def arbUTR: Arbitrary[UTR]                           = Arbitrary(UTR.gen)
-  implicit def safeId: Arbitrary[SafeId]                        = Arbitrary(SafeId.gen)
-  implicit def sapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
+  implicit def arbSafeId: Arbitrary[SafeId]                     = Arbitrary(SafeId.gen)
+  implicit def arbSapNumber: Arbitrary[SapNumber]               = Arbitrary(SapNumber.gen)
   implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
   implicit def arbInternalId: Arbitrary[InternalId]             = Arbitrary(InternalId.gen.suchThat(_.length > 5))
