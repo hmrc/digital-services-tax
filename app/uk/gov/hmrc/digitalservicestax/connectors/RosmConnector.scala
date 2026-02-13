@@ -26,16 +26,15 @@ import uk.gov.hmrc.digitalservicestax.backend_data.{RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.{percentFormat => _, _}
 import uk.gov.hmrc.digitalservicestax.services.JsonSchemaChecker
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.http.HttpReads.Implicits.{readOptionOfNotFound, _}
-import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RosmConnector @Inject() (
-  val http: HttpClientV2,
+  val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig
 ) extends DesHelpers {
