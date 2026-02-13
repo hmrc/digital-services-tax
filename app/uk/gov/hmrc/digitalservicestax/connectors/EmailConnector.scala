@@ -17,18 +17,17 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EmailConnector @Inject() (http: HttpClientV2, appConfig: AppConfig) {
+class EmailConnector @Inject() (http: HttpClient, appConfig: AppConfig) {
 
   val logger = Logger(this.getClass)
 
@@ -83,7 +82,7 @@ class EmailConnector @Inject() (http: HttpClientV2, appConfig: AppConfig) {
     hc: HeaderCarrier,
     ex: ExecutionContext
   ) =
-    http.post(url"${appConfig.emailUrl}/hmrc/email").withBody(params).execute[HttpResponse].map {
+    http.POST[JsValue, HttpResponse](s"${appConfig.emailUrl}/hmrc/email", params) map {
       case response if response.status == play.api.http.Status.ACCEPTED    =>
         logger.info("email send accepted")
         ()

@@ -35,7 +35,7 @@ class ValidatedTypeSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenP
 
   it should "correctly add 10 months with the first day of the month for period end days at the end of the month, " +
     "for all other cases add 9 months and one day to a period" in {
-      forAll { (period: Period) =>
+      forAll { period: Period =>
         if (period.end.getDayOfMonth == period.end.lengthOfMonth) {
           period.paymentDue shouldEqual period.end.plusMonths(10).withDayOfMonth(1)
         } else {

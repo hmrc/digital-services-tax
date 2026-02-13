@@ -24,8 +24,7 @@ import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
 import uk.gov.hmrc.digitalservicestax.data.{Registration, SapNumber}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import javax.inject.{Inject, Singleton}
@@ -33,7 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RegistrationConnector @Inject() (
-  val http: HttpClientV2,
+  val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig,
   val auditing: AuditConnector
