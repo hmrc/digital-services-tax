@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
 import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
+import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.http.HeaderCarrier
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
@@ -40,56 +42,68 @@ class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with Sc
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should get no response back if des is not available" in {
-    forAll { reqOrg: RosmRegisterWithoutIDRequest =>
-      val req = reqOrg.copy(isAnAgent = false, isAGroup = false)
-      stubFor(
-        post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-          .willReturn(
-            aResponse()
-              .withBody(Json.toJson(req).toString())
-              .withStatus(500)
-          )
-      )
+    val req = RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      arbitrary[Company].sample.value,
+      arbitrary[ContactDetails].sample.value
+    )
 
-      val response = RosmTestConnector.retrieveROSMDetails("1234567890")
-      whenReady(response.failed) { res =>
-        res
-      }
+    stubFor(
+      post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
+        .willReturn(
+          aResponse()
+            .withBody(Json.toJson(req).toString())
+            .withStatus(500)
+        )
+    )
+
+    val response = RosmTestConnector.retrieveROSMDetails("1234567890")
+    whenReady(response.failed) { res =>
+      res
     }
+
   }
 
   "should get an upstream5xx response if des is returning 429" in {
-    forAll { reqOrg: RosmRegisterWithoutIDRequest =>
-      val req = reqOrg.copy(isAnAgent = false, isAGroup = false)
-      stubFor(
-        post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
-          .willReturn(
-            aResponse()
-              .withBody(Json.toJson(req).toString())
-              .withStatus(429)
-          )
-      )
+    val req = RosmRegisterWithoutIDRequest(
+      isAnAgent = false,
+      isAGroup = false,
+      arbitrary[Company].sample.value,
+      arbitrary[ContactDetails].sample.value
+    )
 
-      whenReady(RosmTestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
-        Console.println(ex.getMessage)
-      }
+    stubFor(
+      post(urlPathEqualTo("/registration/organisation/utr/1234567890"))
+        .willReturn(
+          aResponse()
+            .withBody(Json.toJson(req).toString())
+            .withStatus(429)
+        )
+    )
+
+    whenReady(RosmTestConnector.retrieveROSMDetails("1234567890").failed) { ex =>
+      Console.println(ex.getMessage)
     }
   }
 
   "retrieve ROSM details without ID" in {
-    forAll { (req: RosmRegisterWithoutIDRequest) =>
-      stubFor(
-        post(urlPathEqualTo(s"${appConfig.desURL}/${RosmTestConnector.serviceURLWithoutId}"))
-          .willReturn(
-            aResponse()
-              .withStatus(200)
-          )
-      )
 
-      val future = RosmTestConnector.retrieveROSMDetailsWithoutID(req)
-      whenReady(future) { x =>
-        x mustBe empty
-      }
+    import RosmTestConnector.serviceURLWithoutId
+
+    val req = arbitrary[RosmRegisterWithoutIDRequest].sample.value
+
+    stubFor(
+      post(urlPathEqualTo(s"${appConfig.desURL}/$serviceURLWithoutId"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+        )
+    )
+
+    val future = RosmTestConnector.retrieveROSMDetailsWithoutID(req)
+    whenReady(future) { x =>
+      x mustBe empty
     }
   }
 }

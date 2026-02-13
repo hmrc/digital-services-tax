@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.digitalservicestax.connectors
 
-import play.api.libs.json.{Format, JsObject, Json}
+import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.{HttpClient, _}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject() (
-  val http: HttpClientV2,
+  val http: HttpClient,
   val mode: Mode,
   val appConfig: AppConfig,
   testConnector: TestConnector
@@ -45,10 +44,7 @@ class TaxEnrolmentConnector @Inject() (
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
-      http
-        .put(url"${subscribeUrl(formBundleNumber)}")
-        .withBody(requestBody(safeId, formBundleNumber))
-        .execute[HttpResponse] map {
+      http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         case responseMessage if responseMessage.status >= 200 && responseMessage.status < 300 =>
           responseMessage
         case responseMessage                                                                  =>
@@ -68,11 +64,9 @@ class TaxEnrolmentConnector @Inject() (
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
-      http
-        .get(
-          url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
-        )
-        .execute[TaxEnrolmentsSubscription]
+      http.GET[TaxEnrolmentsSubscription](
+        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
+      )
     else {
       testConnector.getSubscription(subscriptionId)
     }
@@ -83,10 +77,9 @@ class TaxEnrolmentConnector @Inject() (
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TaxEnrolmentsSubscription]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     http
-      .get(
-        url"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
+      .GET[Seq[TaxEnrolmentsSubscription]](
+        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
       )
-      .execute[Seq[TaxEnrolmentsSubscription]]
       .map(_.find(_.state == "PENDING"))
   }
 
@@ -120,7 +113,7 @@ class TaxEnrolmentConnector @Inject() (
     val requestBody =
       Enrolments(List(verifierKey), List(KeyValuePair("DSTRefNumber", dstRegNumber)))
 
-    http.put(url"$allocateDstEnrolmentToGroup").withBody(Json.toJson(requestBody)).execute[HttpResponse] map {
+    http.PUT[Enrolments, HttpResponse](allocateDstEnrolmentToGroup, requestBody) map {
       case responseMessage if responseMessage.status == 204 => true
       case responseMessage                                  =>
         logger.error(

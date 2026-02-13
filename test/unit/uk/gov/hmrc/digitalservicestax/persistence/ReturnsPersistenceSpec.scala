@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
   private[this] val period: Period.Key = Period.Key.of("0220").value
 
   "it fail to retrieve a non existing return with a NoSuchElementException" in {
-    forAll { (reg: Registration) =>
+    forAll { reg: Registration =>
       whenReady(mongoPersistence.returns(reg, period).failed) { ex =>
         ex mustBe a[NoSuchElementException]
         ex.getMessage mustBe s"return not found: $reg/$period"
@@ -39,7 +39,7 @@ class ReturnsPersistenceSpec extends FakeApplicationSetup with ScalaFutures with
   }
 
   "it fail to persist a return if the registration key doesn't have a DST Reg number" in {
-    forAll { (reg: Registration) =>
+    forAll { reg: Registration =>
       val adjustedReg = reg.copy(registrationNumber = None)
 
       whenReady(mongoPersistence.returns.get(adjustedReg).failed) { ex =>

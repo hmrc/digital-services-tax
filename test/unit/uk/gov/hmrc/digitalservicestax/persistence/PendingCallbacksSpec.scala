@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class PendingCallbacksSpec
     PropertyCheckConfiguration(minSize = 1, minSuccessful = PosInt(1))
 
   "it fail to retrieve a non existing form bundle with a NoSuchElementException" in {
-    forAll { (formNo: FormBundleNumber) =>
+    forAll { formNo: FormBundleNumber =>
       whenReady(mongoPersistence.pendingCallbacks(formNo).failed) { ex =>
         ex mustBe a[NoSuchElementException]
         ex.getMessage mustBe s"formBundle not found: $formNo"

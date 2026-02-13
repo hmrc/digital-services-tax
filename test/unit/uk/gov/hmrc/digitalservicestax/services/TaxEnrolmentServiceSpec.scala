@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import uk.gov.hmrc.digitalservicestax.connectors
 import uk.gov.hmrc.digitalservicestax.connectors.{TaxEnrolmentConnector, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.digitalservicestax.data.{InternalId, Registration}
 import uk.gov.hmrc.digitalservicestax.services.TaxEnrolmentService
-import unit.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances}
+import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 import scala.concurrent.Future
@@ -52,26 +52,27 @@ class TaxEnrolmentServiceSpec
   "Tax enrolments service" should {
 
     "return Ok when tax enrolments connector returns taxEnrolmentsSubscription with pending state" in {
-      forAll(arbitrary[Registration], TestInstances.arbInternalId.arbitrary) {
-        case (registration: Registration, internal: InternalId) =>
-          val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
-            TaxEnrolmentsSubscription(None, "PENDING", None)
 
-          when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
+      val registration                                         = arbitrary[Registration].sample.value
+      val internal                                             = arbitrary[InternalId].sample.value
+      val taxEnrolmentsSubscription: TaxEnrolmentsSubscription =
+        TaxEnrolmentsSubscription(None, "PENDING", None)
 
-          when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
-            .successful(
-              Some(taxEnrolmentsSubscription)
-            )
-          val chain = for {
-            r <- mongoPersistence.registrations.update(internal, registration)
-          } yield r
+      when(mockAppConfig.dstNewSolutionFeatureFlag).thenReturn(true)
 
-          whenReady(chain) { _ =>
-            val result: Result = dstService.getPendingDSTRegistration(Some("1234")).futureValue
-            result mustBe Ok
-          }
+      when(mockTaxEnrolmentsConnector.getPendingSubscriptionByGroupId(any())(any(), any())) thenReturn Future
+        .successful(
+          Some(taxEnrolmentsSubscription)
+        )
+      val chain = for {
+        r <- mongoPersistence.registrations.update(internal, registration)
+      } yield r
+
+      whenReady(chain) { _ =>
+        val result: Result = dstService.getPendingDSTRegistration(Some("1234")).futureValue
+        result mustBe Ok
       }
+
     }
 
     "return 'NotFound' when tax enrolments connector returns NotFound" in {

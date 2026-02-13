@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package it.uk.gov.hmrc.digitalservicestax.util
 
 import cats.implicits.{none, _}
+import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
 import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
 import org.scalacheck.Gen.buildableOf
@@ -40,7 +41,7 @@ object TestInstances {
   )
 
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0, 1000000000).map(b => Money(BigDecimal(b).setScale(2)))
+    Gen.choose(0, 1000000000000L).map(b => Money(BigDecimal(b).setScale(2)))
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
@@ -51,15 +52,10 @@ object TestInstances {
     Gen.oneOf(List(AffinityGroup.Agent, AffinityGroup.Individual, AffinityGroup.Organisation))
   }
 
-  implicit val arbCredentials: Arbitrary[Credentials] = Arbitrary(
-    (
-      arbitrary[String],
-      arbitrary[String]
-    ).mapN(Credentials.apply)
-  )
+  implicit val arbCredentials: Arbitrary[Credentials] = Sample.arbitrary[Credentials]
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
-    Gen.chooseNum(0, 100).map(b => Percent(b))
+    Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
   }
 
   def nonEmptyString: Gen[NonEmptyString] =
@@ -72,7 +68,7 @@ object TestInstances {
   def genActivityPercentMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
     (
       arbitrary[Activity],
-      Gen.choose(0, 100).map(x => Percent(x))
+      Gen.choose(0, 100).map(x => Percent.apply(x.asInstanceOf[Byte]))
     ).tupled
   )
 
@@ -98,8 +94,7 @@ object TestInstances {
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
-  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] =
-    Arbitrary(Arbitrary.arbitrary[Set[Enrolment]].map(Enrolments.apply))
+  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Sample.arbitrary[Enrolments]
 
   val ibanList = List(
     "AD9179714843548170724658",
@@ -282,8 +277,6 @@ object TestInstances {
       arbitrary[String]
     ).mapN((num, str) => s"$num$str").map(_.take(maxLen)).map(NonEmptyString.apply)
 
-  val shortString: Gen[String] = Gen.stringOfN(20, Gen.alphaNumChar)
-
   implicit def arbNEString: Arbitrary[NonEmptyString]           = Arbitrary(neString())
   implicit def arbPostcode: Arbitrary[Postcode]                 = Arbitrary(Postcode.gen)
   implicit def arbDSTNumber: Arbitrary[DSTRegNumber]            = Arbitrary(DSTRegNumber.gen)
@@ -295,7 +288,11 @@ object TestInstances {
   implicit def sapNumber: Arbitrary[SapNumber]                  = Arbitrary(SapNumber.gen)
   implicit def arbAddressLine: Arbitrary[AddressLine]           = Arbitrary(AddressLine.gen)
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
-  implicit val arbInternalId: Arbitrary[InternalId]             = Arbitrary(InternalId.gen.suchThat(_.length > 5))
+
+  implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
+    import com.outworkers.util.samplers._
+    Sample.generator[ShortString].map(s => InternalId(s"Int-${s.value}"))
+  }
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
   implicit def arbEmail: Arbitrary[Email] = Arbitrary {

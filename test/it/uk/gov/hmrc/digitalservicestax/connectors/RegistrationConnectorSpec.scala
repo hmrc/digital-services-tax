@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
-import cats.implicits._
-import org.scalacheck.cats.implicits._
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.outworkers.util.samplers._
 import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
-import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, TestInstances, WiremockServer}
+import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatestplus.mockito._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.Application
@@ -53,24 +51,24 @@ class RegistrationConnectorSpec
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "should retrieve the a list of DST periods for a DSTRegNumber" in {
-    forAll(
-      (
-        TestInstances.shortString,
-        arbitrary[FormBundleNumber]
-      ).mapN(RegistrationResponse.apply),
-      TestInstances.shortString,
-      TestInstances.shortString,
-      arbitrary[Registration]
-    ) { case (resp, idType, idNumber, reg) =>
-      stubFor(
-        post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
-          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
-      )
 
-      val response = RegTestConnector.send(idType, idNumber, reg)
-      whenReady(response) { res =>
-        res
-      }
+    val resp = RegistrationResponse(
+      gen[ShortString].value,
+      arbitrary[FormBundleNumber].sample.value
+    )
+
+    val idType   = gen[ShortString].value
+    val idNumber = gen[ShortString].value
+    val reg      = arbitrary[Registration].sample.value
+
+    stubFor(
+      post(urlPathEqualTo(s"""/cross-regime/subscription/DST/$idType/$idNumber"""))
+        .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString()))
+    )
+
+    val response = RegTestConnector.send(idType, idNumber, reg)
+    whenReady(response) { res =>
+      res
     }
   }
 
