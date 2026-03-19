@@ -8,7 +8,8 @@ object AppDependencies {
   val bootstrapVersion = "10.7.0"
 
   val compile = Seq(
-    "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14",
+    "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14" exclude ("org.mozilla", "rhino"),
+    "org.mozilla"                % "rhino"                         % "1.8.1",
     "org.typelevel"             %% "cats-core"                     % "2.10.0",
     "uk.gov.hmrc.mongo"         %% s"hmrc-mongo-play-$play"        % hmrcMongoVersion,
     "uk.gov.hmrc"               %% s"bootstrap-backend-play-$play" % bootstrapVersion,
