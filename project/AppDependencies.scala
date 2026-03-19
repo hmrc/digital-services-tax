@@ -3,12 +3,13 @@ import sbt._
 
 object AppDependencies {
 
-  val hmrcMongoVersion = "2.6.0"
+  val hmrcMongoVersion = "2.12.0"
   val play             = "30"
-  val bootstrapVersion = "9.16.0"
+  val bootstrapVersion = "10.7.0"
 
   val compile = Seq(
-    "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14",
+    "com.github.java-json-tools" % "json-schema-validator"         % "2.2.14" exclude ("org.mozilla", "rhino"),
+    "org.mozilla"                % "rhino"                         % "1.8.1",
     "org.typelevel"             %% "cats-core"                     % "2.10.0",
     "uk.gov.hmrc.mongo"         %% s"hmrc-mongo-play-$play"        % hmrcMongoVersion,
     "uk.gov.hmrc"               %% s"bootstrap-backend-play-$play" % bootstrapVersion,
