@@ -23,14 +23,15 @@ import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxEnrolmentConnector @Inject() (
-  val http: HttpClient,
+  val http: HttpClientV2,
   val mode: Mode,
   val appConfig: AppConfig,
   testConnector: TestConnector
@@ -44,7 +45,7 @@ class TaxEnrolmentConnector @Inject() (
   ): Future[HttpResponse] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
     if (appConfig.taxEnrolmentsEnabled) {
-      http.PUT[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
+      desPut[JsValue, HttpResponse](subscribeUrl(formBundleNumber), requestBody(safeId, formBundleNumber)) map {
         case responseMessage if responseMessage.status >= 200 && responseMessage.status < 300 =>
           responseMessage
         case responseMessage                                                                  =>
@@ -64,7 +65,7 @@ class TaxEnrolmentConnector @Inject() (
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
     if (appConfig.taxEnrolmentsEnabled)
-      http.GET[TaxEnrolmentsSubscription](
+      desGet[TaxEnrolmentsSubscription](
         s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/subscriptions/$subscriptionId"
       )
     else {
@@ -76,11 +77,9 @@ class TaxEnrolmentConnector @Inject() (
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TaxEnrolmentsSubscription]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits._
-    http
-      .GET[Seq[TaxEnrolmentsSubscription]](
-        s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
-      )
-      .map(_.find(_.state == "PENDING"))
+    desGet[Seq[TaxEnrolmentsSubscription]](
+      s"${appConfig.taxEnrolmentsUrl}/tax-enrolments/groups/$groupId/subscriptions"
+    ).map(_.find(_.state == "PENDING"))
   }
 
   private def handleError(e: HttpException, formBundleNumber: String): HttpResponse = {
@@ -113,7 +112,7 @@ class TaxEnrolmentConnector @Inject() (
     val requestBody =
       Enrolments(List(verifierKey), List(KeyValuePair("DSTRefNumber", dstRegNumber)))
 
-    http.PUT[Enrolments, HttpResponse](allocateDstEnrolmentToGroup, requestBody) map {
+    desPut[Enrolments, HttpResponse](allocateDstEnrolmentToGroup, requestBody) map {
       case responseMessage if responseMessage.status == 204 => true
       case responseMessage                                  =>
         logger.error(

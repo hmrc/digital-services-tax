@@ -28,7 +28,7 @@ import play.api.{Application, Configuration, Environment}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -60,7 +60,7 @@ trait FakeApplicationSetup
   lazy val messagesApi: MessagesApi          = app.injector.instanceOf[MessagesApi]
   lazy val wsClient: WSClient                = app.injector.instanceOf[WSClient]
   lazy val httpAuditing: HttpAuditing        = app.injector.instanceOf[HttpAuditing]
-  lazy val httpClient: HttpClient            = new DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem)
+  lazy val httpClient: HttpClientV2          = app.injector.instanceOf[HttpClientV2]
   lazy val mcc: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
 
   val mongoPersistence: MongoPersistence = app.injector.instanceOf[MongoPersistence]

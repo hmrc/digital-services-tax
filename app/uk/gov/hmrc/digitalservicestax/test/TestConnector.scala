@@ -17,26 +17,27 @@
 package uk.gov.hmrc.digitalservicestax.test
 
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
-import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
+import uk.gov.hmrc.digitalservicestax.connectors.{DesHelpers, Identifier, TaxEnrolmentsSubscription}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TestConnector @Inject() (
-  http: HttpClient,
-  appConfig: AppConfig
-) {
+  val http: HttpClientV2,
+  val appConfig: AppConfig
+) extends DesHelpers {
 
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    http.GET[HttpResponse](s"${appConfig.desURL}/$url/$param")
+    desGet[HttpResponse](s"${appConfig.desURL}/$url/$param")
 
   def getSubscription(
     subscriptionId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TaxEnrolmentsSubscription] =
-    http.GET[DstRegNoWrapper](s"${appConfig.desURL}/get-subscription/$subscriptionId").map { x =>
+    desGet[DstRegNoWrapper](s"${appConfig.desURL}/get-subscription/$subscriptionId").map { x =>
       TaxEnrolmentsSubscription(Some(List(Identifier("DstRefNo", x.dstRegNo))), "FOOBAR", None)
     }
 

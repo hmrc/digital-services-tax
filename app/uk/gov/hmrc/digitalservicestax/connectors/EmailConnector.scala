@@ -21,16 +21,16 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data._
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EmailConnector @Inject() (http: HttpClient, appConfig: AppConfig) {
+class EmailConnector @Inject() (val http: HttpClientV2, val appConfig: AppConfig) extends DesHelpers {
 
   val logger = Logger(this.getClass)
-
   def sendConfirmationEmail(
     contact: ContactDetails,
     companyName: CompanyName,
@@ -82,7 +82,7 @@ class EmailConnector @Inject() (http: HttpClient, appConfig: AppConfig) {
     hc: HeaderCarrier,
     ex: ExecutionContext
   ) =
-    http.POST[JsValue, HttpResponse](s"${appConfig.emailUrl}/hmrc/email", params) map {
+    desPost[JsValue, HttpResponse](s"${appConfig.emailUrl}/hmrc/email", params) map {
       case response if response.status == play.api.http.Status.ACCEPTED    =>
         logger.info("email send accepted")
         ()

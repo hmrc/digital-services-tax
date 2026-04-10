@@ -87,7 +87,7 @@ or specifically for only the backend
 
 In order to test backend changes, the service needs to be ran in line with the SM profile to ensure that the callback is triggered successfully (allowing for the return journey), you need to run the service using the following command:
 
-`sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes -Dconfig.resource=application.conf -Dmicroservice.services.tax-enrolments.enabled=false -Drun.mode=Dev`
+`sbt run -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes -Dconfig.resource=application.conf -Dmicroservice.services.tax-enrolments.enabled=false`
 
 
 ## Running the tests
