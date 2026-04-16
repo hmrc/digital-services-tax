@@ -18,7 +18,6 @@ package unit.uk.gov.hmrc.digitalservicestax.actions
 
 import org.mockito.ArgumentMatchers.{any, same}
 import org.mockito.Mockito.{reset, when}
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.anyvals.PosInt
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
@@ -82,33 +81,30 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
+        )
 
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
+        val chain = for {
+          _     <- mongoPersistence.registrations.update(internal, reg)
+          block <- action.invokeBlock(
+                     req,
+                     { req: RegisteredRequest[_] =>
+                       Future.successful(
+                         Results.Ok(req.registration.registrationNumber.value)
+                       )
+                     }
+                   )
+        } yield block
 
-      val chain = for {
-        _     <- mongoPersistence.registrations.update(internal, reg)
-        block <- action.invokeBlock(
-                   req,
-                   { req: RegisteredRequest[_] =>
-                     Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
-                     )
-                   }
-                 )
-      } yield block
-
-      whenReady(chain) { resp =>
-        resp.header.status mustEqual Status.OK
+        whenReady(chain) { resp =>
+          resp.header.status mustEqual Status.OK
+        }
       }
     }
 
@@ -121,33 +117,30 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
+        )
 
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
+        val chain = for {
+          _     <- mongoPersistence.registrations.update(internal, reg)
+          block <- action.invokeBlock(
+                     req,
+                     { req: RegisteredRequest[_] =>
+                       Future.successful(
+                         Results.Ok(req.registration.registrationNumber.value)
+                       )
+                     }
+                   )
+        } yield block
 
-      val chain = for {
-        _     <- mongoPersistence.registrations.update(internal, reg)
-        block <- action.invokeBlock(
-                   req,
-                   { req: RegisteredRequest[_] =>
-                     Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
-                     )
-                   }
-                 )
-      } yield block
-
-      whenReady(chain) { resp =>
-        resp.header.status mustEqual Status.OK
+        whenReady(chain) { resp =>
+          resp.header.status mustEqual Status.OK
+        }
       }
     }
 
@@ -160,34 +153,32 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal    = arbitrary[InternalId].sample.value
-      val enrolments  = arbitrary[Enrolments].sample.value
-      val providerId  = arbitrary[NonEmptyString].sample.value
-      val reg         = arbitrary[Registration].sample.value
-      val regWithNoId = reg.copy(registrationNumber = None)
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
+        val regWithNoId = reg.copy(registrationNumber = None)
 
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
+        )
 
-      val chain = for {
-        _     <- mongoPersistence.registrations.update(internal, regWithNoId)
-        block <- action.invokeBlock(
-                   req,
-                   { req: RegisteredRequest[_] =>
-                     Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
-                     )
-                   }
-                 )
-      } yield block
+        val chain = for {
+          _     <- mongoPersistence.registrations.update(internal, regWithNoId)
+          block <- action.invokeBlock(
+                     req,
+                     { req: RegisteredRequest[_] =>
+                       Future.successful(
+                         Results.Ok(req.registration.registrationNumber.value)
+                       )
+                     }
+                   )
+        } yield block
 
-      whenReady(chain) { resp =>
-        resp.header.status mustEqual Status.FORBIDDEN
+        whenReady(chain) { resp =>
+          resp.header.status mustEqual Status.FORBIDDEN
+        }
       }
     }
 
@@ -200,20 +191,18 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
+        )
 
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
-
-      whenReady(action.refine(req)) { res =>
-        res.left.value.header.status mustBe Status.FORBIDDEN
+        whenReady(action.refine(req)) { res =>
+          res.left.value.header.status mustBe Status.FORBIDDEN
+        }
       }
     }
 
@@ -226,33 +215,30 @@ class ActionsSpec
         mockTaxEnrolmentConnector
       )
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
+        val loggedInReq = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
+        )
 
-      val loggedInReq = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
+        val chain = for {
+          _     <- mongoPersistence.registrations.update(internal, reg)
+          block <- action.invokeBlock(
+                     loggedInReq,
+                     { req: RegisteredRequest[_] =>
+                       Future.successful(
+                         Results.Ok(req.registration.registrationNumber.value)
+                       )
+                     }
+                   )
+        } yield block
 
-      val chain = for {
-        _     <- mongoPersistence.registrations.update(internal, reg)
-        block <- action.invokeBlock(
-                   loggedInReq,
-                   { req: RegisteredRequest[_] =>
-                     Future.successful(
-                       Results.Ok(req.registration.registrationNumber.value)
-                     )
-                   }
-                 )
-      } yield block
-
-      whenReady(chain) { resp =>
-        resp.header.status mustEqual Status.OK
+        whenReady(chain) { resp =>
+          resp.header.status mustEqual Status.OK
+        }
       }
     }
   }
@@ -265,40 +251,37 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
-          val reg      = arbitrary[Registration].sample.value
-          val fbNumber = arbitrary[FormBundleNumber].sample.value
+          forAll { (internal: InternalId, reg: Registration, fbNumber: FormBundleNumber) =>
+            when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+            when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+            when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
-          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
-          when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
-
-          when(
-            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
-          ) thenReturn Future
-            .successful(true)
-          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
-            Some(reg.registrationNumber.value)
-          )
-
-          val chain = for {
-            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
-            r <- mongoPersistence.registrations.update(internal, reg.copy(registrationNumber = None))
-          } yield r
-
-          whenReady(chain) { _ =>
-            val registration = await(
-              new RegisteredOrPending(
-                mongoPersistence,
-                mockAppConfig,
-                mockEspConnector,
-                mockGetDstNumberFromEisService,
-                mockTaxEnrolmentConnector
+            when(
+              mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+            ) thenReturn Future.successful(true)
+            when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future
+              .successful(
+                Some(reg.registrationNumber.value)
               )
-                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
-            )
-            registration mustEqual Some(reg)
-            registration.get.registrationNumber mustEqual reg.registrationNumber
+
+            val chain = for {
+              m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+              r <- mongoPersistence.registrations.update(internal, reg.copy(registrationNumber = None))
+            } yield r
+
+            whenReady(chain) { _ =>
+              val registration = await(
+                new RegisteredOrPending(
+                  mongoPersistence,
+                  mockAppConfig,
+                  mockEspConnector,
+                  mockGetDstNumberFromEisService,
+                  mockTaxEnrolmentConnector
+                ).activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+              )
+              registration mustEqual Some(reg)
+              registration.get.registrationNumber mustEqual reg.registrationNumber
+            }
           }
         }
         "return None when record does not exists with Fb number" in {
@@ -306,38 +289,35 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
-          val reg      = arbitrary[Registration].sample.value
-          val fbNumber = arbitrary[FormBundleNumber].sample.value
+          forAll { (internal: InternalId, reg: Registration, fbNumber: FormBundleNumber) =>
+            when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+            when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+            when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
-          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
-          when(mockAppConfig.dstRefNumberForActivation) thenReturn reg.registrationNumber.get
-
-          when(
-            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
-          ) thenReturn Future
-            .successful(true)
-          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
-            Some(reg.registrationNumber.value)
-          )
-
-          val chain = for {
-            r <- mongoPersistence.registrations.update(internal, reg)
-          } yield r
-
-          whenReady(chain) { _ =>
-            val registration = await(
-              new RegisteredOrPending(
-                mongoPersistence,
-                mockAppConfig,
-                mockEspConnector,
-                mockGetDstNumberFromEisService,
-                mockTaxEnrolmentConnector
+            when(
+              mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+            ) thenReturn Future.successful(true)
+            when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future
+              .successful(
+                Some(reg.registrationNumber.value)
               )
-                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
-            )
-            registration mustEqual None
+
+            val chain = for {
+              r <- mongoPersistence.registrations.update(internal, reg)
+            } yield r
+
+            whenReady(chain) { _ =>
+              val registration = await(
+                new RegisteredOrPending(
+                  mongoPersistence,
+                  mockAppConfig,
+                  mockEspConnector,
+                  mockGetDstNumberFromEisService,
+                  mockTaxEnrolmentConnector
+                ).activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+              )
+              registration mustEqual None
+            }
           }
         }
         "return registration details with no dst ref when record exists with Fb number but Tax enrolment call fails" in {
@@ -345,37 +325,34 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
-          val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
-          val fbNumber = arbitrary[FormBundleNumber].sample.value
+          forAll { (internal: InternalId, reg: Registration, fbNumber: FormBundleNumber) =>
+            val regNo = reg.copy(registrationNumber = None)
+            when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+            when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+            when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387428400"
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
-          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
-          when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387428400"
+            when(
+              mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+            ) thenReturn Future.successful(false)
 
-          when(
-            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
-          ) thenReturn Future
-            .successful(false)
+            val chain = for {
+              m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+              r <- mongoPersistence.registrations.update(internal, regNo)
+            } yield r
 
-          val chain = for {
-            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
-            r <- mongoPersistence.registrations.update(internal, reg)
-          } yield r
-
-          whenReady(chain) { _ =>
-            val registration = await(
-              new RegisteredOrPending(
-                mongoPersistence,
-                mockAppConfig,
-                mockEspConnector,
-                mockGetDstNumberFromEisService,
-                mockTaxEnrolmentConnector
+            whenReady(chain) { _ =>
+              val registration = await(
+                new RegisteredOrPending(
+                  mongoPersistence,
+                  mockAppConfig,
+                  mockEspConnector,
+                  mockGetDstNumberFromEisService,
+                  mockTaxEnrolmentConnector
+                ).activateDstEnrolmentFromConfig("groupId", mockAppConfig)
               )
-                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
-            )
-            registration mustEqual Some(reg)
-            registration.get.registrationNumber mustEqual None
+              registration mustEqual Some(regNo)
+              registration.get.registrationNumber mustEqual None
+            }
           }
         }
         "return registration details with no Dst reference number when tax enrolment is successful but no ES record" in {
@@ -383,40 +360,38 @@ class ActionsSpec
           when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
           when(mockAppConfig.dstRefAndGroupIdActivationFeatureFlag) thenReturn true
 
-          val internal = arbitrary[InternalId].sample.value
-          val reg      = arbitrary[Registration].sample.value.copy(registrationNumber = None)
-          val fbNumber = arbitrary[FormBundleNumber].sample.value
+          forAll { (internal: InternalId, reg: Registration, fbNumber: FormBundleNumber) =>
+            val regNo = reg.copy(registrationNumber = None)
+            when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
+            when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
+            when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387420000"
 
-          when(mockAppConfig.fbNumberForActivation) thenReturn FormBundleNumber(fbNumber)
-          when(mockAppConfig.groupIdForActivation) thenReturn "groupId"
-          when(mockAppConfig.dstRefNumberForActivation) thenReturn "KODST8387420000"
-
-          when(
-            mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
-          ) thenReturn Future
-            .successful(true)
-          when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
-            None
-          )
-
-          val chain = for {
-            m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
-            r <- mongoPersistence.registrations.update(internal, reg)
-          } yield r
-
-          whenReady(chain) { _ =>
-            val registration = await(
-              new RegisteredOrPending(
-                mongoPersistence,
-                mockAppConfig,
-                mockEspConnector,
-                mockGetDstNumberFromEisService,
-                mockTaxEnrolmentConnector
+            when(
+              mockTaxEnrolmentConnector.isAllocateDstGroupEnrolmentSuccess(any(), any())(any(), any())
+            ) thenReturn Future.successful(true)
+            when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future
+              .successful(
+                None
               )
-                .activateDstEnrolmentFromConfig("groupId", mockAppConfig)
-            )
-            registration mustEqual Some(reg)
-            registration.get.registrationNumber mustEqual None
+
+            val chain = for {
+              m <- mongoPersistence.pendingCallbacks.update(fbNumber, internal)
+              r <- mongoPersistence.registrations.update(internal, regNo)
+            } yield r
+
+            whenReady(chain) { _ =>
+              val registration = await(
+                new RegisteredOrPending(
+                  mongoPersistence,
+                  mockAppConfig,
+                  mockEspConnector,
+                  mockGetDstNumberFromEisService,
+                  mockTaxEnrolmentConnector
+                ).activateDstEnrolmentFromConfig("groupId", mockAppConfig)
+              )
+              registration mustEqual Some(regNo)
+              registration.get.registrationNumber mustEqual None
+            }
           }
         }
       }
@@ -427,36 +402,30 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
-
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, reg)
-      } yield r
-
-      whenReady(chain) { _ =>
-        await(
-          new RegisteredOrPending(
-            mongoPersistence,
-            mockAppConfig,
-            mockEspConnector,
-            mockGetDstNumberFromEisService,
-            mockTaxEnrolmentConnector
-          )
-            .getRegistration(req, mockAppConfig)
-        ) mustBe Some(
-          reg
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString, reg: Registration) =>
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
         )
+
+        val chain = for {
+          r <- mongoPersistence.registrations.update(internal, reg)
+        } yield r
+
+        whenReady(chain) { _ =>
+          await(
+            new RegisteredOrPending(
+              mongoPersistence,
+              mockAppConfig,
+              mockEspConnector,
+              mockGetDstNumberFromEisService,
+              mockTaxEnrolmentConnector
+            ).getRegistration(req, mockAppConfig)
+          ) mustBe Some(reg)
+        }
       }
     }
 
@@ -464,60 +433,15 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn false
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = arbitrary[Enrolments].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
-
-      await(
-        new RegisteredOrPending(
-          mongoPersistence,
-          mockAppConfig,
-          mockEspConnector,
-          mockGetDstNumberFromEisService,
-          mockTaxEnrolmentConnector
+      forAll { (internal: InternalId, enrolments: Enrolments, providerId: NonEmptyString) =>
+        val req = LoggedInRequest(
+          internal,
+          enrolments,
+          providerId,
+          Some("groupId"),
+          FakeRequest()
         )
-          .getRegistration(req, mockAppConfig)
-      ) mustEqual None
-    }
 
-    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists in EACD" in {
-
-      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
-
-      val internal   = arbitrary[InternalId].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
-      val enrolments = Enrolments(
-        Set(
-          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated")
-        )
-      )
-
-      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
-        Some(reg.registrationNumber.value)
-      )
-
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, reg)
-      } yield r
-
-      whenReady(chain) { _ =>
         await(
           new RegisteredOrPending(
             mongoPersistence,
@@ -525,9 +449,41 @@ class ActionsSpec
             mockEspConnector,
             mockGetDstNumberFromEisService,
             mockTaxEnrolmentConnector
+          ).getRegistration(req, mockAppConfig)
+        ) mustEqual None
+      }
+    }
+
+    "execute an getRegistration details using LoggedInRequest with dstNewSolutionFeatureFlag true and DST enrolment exists in EACD" in {
+
+      when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
+
+      forAll { (internal: InternalId, providerId: NonEmptyString, reg: Registration) =>
+        val enrolments = Enrolments(
+          Set(
+            Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated")
           )
-            .getRegistration(req, mockAppConfig)
-        ) mustEqual Some(reg)
+        )
+
+        when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+          Some(reg.registrationNumber.value)
+        )
+
+        val req = LoggedInRequest(internal, enrolments, providerId, Some("groupId"), FakeRequest())
+
+        val chain = for { r <- mongoPersistence.registrations.update(internal, reg) } yield r
+
+        whenReady(chain) { _ =>
+          await(
+            new RegisteredOrPending(
+              mongoPersistence,
+              mockAppConfig,
+              mockEspConnector,
+              mockGetDstNumberFromEisService,
+              mockTaxEnrolmentConnector
+            ).getRegistration(req, mockAppConfig)
+          ) mustEqual Some(reg)
+        }
       }
     }
 
@@ -535,45 +491,40 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
-      val internal   = arbitrary[InternalId].sample.value
-      val utr        = arbitrary[UTR].sample.value
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
-      val enrolments = Enrolments(
-        Set(
-          Enrolment("HMRC-DST-ORG", Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)), "Activated"),
-          Enrolment("IR-SA", Seq(EnrolmentIdentifier("UTR", utr)), "Activated")
-        )
-      )
-
-      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(None)
-      when(
-        mockGetDstNumberFromEisService.getDstNumberAndActivateEnrolment(same(utr), same("groupId"))(any(), any())
-      ) thenReturn Future.successful(Some(reg))
-
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
-
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, reg)
-      } yield r
-
-      whenReady(chain) { _ =>
-        await(
-          new RegisteredOrPending(
-            mongoPersistence,
-            mockAppConfig,
-            mockEspConnector,
-            mockGetDstNumberFromEisService,
-            mockTaxEnrolmentConnector
+      forAll { (internal: InternalId, utr: UTR, providerId: NonEmptyString, reg: Registration) =>
+        val enrolments = Enrolments(
+          Set(
+            Enrolment(
+              "HMRC-DST-ORG",
+              Seq(EnrolmentIdentifier("DSTRefNumber", reg.registrationNumber.get)),
+              "Activated"
+            ),
+            Enrolment("IR-SA", Seq(EnrolmentIdentifier("UTR", utr)), "Activated")
           )
-            .getRegistration(req, mockAppConfig)
-        ) mustEqual Some(reg)
+        )
+
+        when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+          None
+        )
+        when(
+          mockGetDstNumberFromEisService.getDstNumberAndActivateEnrolment(same(utr), same("groupId"))(any(), any())
+        ) thenReturn Future.successful(Some(reg))
+
+        val req = LoggedInRequest(internal, enrolments, providerId, Some("groupId"), FakeRequest())
+
+        val chain = for { r <- mongoPersistence.registrations.update(internal, reg) } yield r
+
+        whenReady(chain) { _ =>
+          await(
+            new RegisteredOrPending(
+              mongoPersistence,
+              mockAppConfig,
+              mockEspConnector,
+              mockGetDstNumberFromEisService,
+              mockTaxEnrolmentConnector
+            ).getRegistration(req, mockAppConfig)
+          ) mustEqual Some(reg)
+        }
       }
     }
 
@@ -581,46 +532,32 @@ class ActionsSpec
 
       when(mockAppConfig.dstNewSolutionFeatureFlag) thenReturn true
 
-      val internal   = arbitrary[InternalId].sample.value
-      val enrolments = Enrolments(
-        Set(Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated"))
-      )
-      val providerId = arbitrary[NonEmptyString].sample.value
-      val reg        = arbitrary[Registration].sample.value
+      forAll { (internal: InternalId, providerId: NonEmptyString, reg: Registration) =>
+        val enrolments = Enrolments(Set(Enrolment("IR-CT", Seq(EnrolmentIdentifier("UTR", "1234567890")), "Activated")))
 
-      when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
-        None
-      )
-      when(
-        mockGetDstNumberFromEisService
-          .getDstNumberAndActivateEnrolment(same("1234567890"), same("groupId"))(any(), any())
-      ) thenReturn Future.successful(
-        None
-      )
+        when(mockEspConnector.getDstRefFromGroupAssignedEnrolment(any())(any(), any())) thenReturn Future.successful(
+          None
+        )
+        when(
+          mockGetDstNumberFromEisService
+            .getDstNumberAndActivateEnrolment(same("1234567890"), same("groupId"))(any(), any())
+        ) thenReturn Future.successful(None)
 
-      val req = LoggedInRequest(
-        internal,
-        enrolments,
-        providerId,
-        Some("groupId"),
-        FakeRequest()
-      )
+        val req = LoggedInRequest(internal, enrolments, providerId, Some("groupId"), FakeRequest())
 
-      val chain = for {
-        r <- mongoPersistence.registrations.update(internal, reg)
-      } yield r
+        val chain = for { r <- mongoPersistence.registrations.update(internal, reg) } yield r
 
-      whenReady(chain) { _ =>
-        await(
-          new RegisteredOrPending(
-            mongoPersistence,
-            mockAppConfig,
-            mockEspConnector,
-            mockGetDstNumberFromEisService,
-            mockTaxEnrolmentConnector
-          )
-            .getRegistration(req, mockAppConfig)
-        ) mustEqual None
+        whenReady(chain) { _ =>
+          await(
+            new RegisteredOrPending(
+              mongoPersistence,
+              mockAppConfig,
+              mockEspConnector,
+              mockGetDstNumberFromEisService,
+              mockTaxEnrolmentConnector
+            ).getRegistration(req, mockAppConfig)
+          ) mustEqual None
+        }
       }
     }
   }

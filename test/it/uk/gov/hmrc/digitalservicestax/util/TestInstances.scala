@@ -17,7 +17,6 @@
 package it.uk.gov.hmrc.digitalservicestax.util
 
 import cats.implicits.{none, _}
-import com.outworkers.util.samplers.Sample
 import enumeratum.scalacheck._
 import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
 import org.scalacheck.Gen.buildableOf
@@ -52,7 +51,12 @@ object TestInstances {
     Gen.oneOf(List(AffinityGroup.Agent, AffinityGroup.Individual, AffinityGroup.Organisation))
   }
 
-  implicit val arbCredentials: Arbitrary[Credentials] = Sample.arbitrary[Credentials]
+  implicit val arbCredentials: Arbitrary[Credentials] = Arbitrary(
+    for {
+      id           <- arbitrary[String].suchThat(_.nonEmpty)
+      providerType <- arbitrary[String].suchThat(_.nonEmpty)
+    } yield Credentials(id, providerType)
+  )
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
     Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
@@ -94,7 +98,9 @@ object TestInstances {
     } yield Enrolment(key, enrolments, state, delegate)
   }
 
-  implicit def enrolmentsArbitrary: Arbitrary[Enrolments] = Sample.arbitrary[Enrolments]
+  implicit val arbAuthEnrolments: Arbitrary[Enrolments] = Arbitrary {
+    Gen.listOf(arbitrary[Enrolment]).map(xs => Enrolments(xs.toSet))
+  }
 
   val ibanList = List(
     "AD9179714843548170724658",
@@ -271,7 +277,7 @@ object TestInstances {
     ).mapN(Period.apply)
   )
 
-  def neString(maxLen: Int = 255) =
+  def neString(maxLen: Int = 255): Gen[NonEmptyString] =
     (
       Gen.alphaNumChar,
       arbitrary[String]
@@ -290,8 +296,33 @@ object TestInstances {
   implicit def arbCompanyName: Arbitrary[CompanyName]           = Arbitrary(CompanyName.gen)
 
   implicit val arbInternalId: Arbitrary[InternalId] = Arbitrary {
-    import com.outworkers.util.samplers._
-    Sample.generator[ShortString].map(s => InternalId(s"Int-${s.value}"))
+    val hexCharGen = Gen.oneOf((('0' to '9') ++ ('a' to 'f')).toSeq).map(_.toString)
+    Gen.listOfN(12, hexCharGen).map(chars => InternalId(s"Int-${chars.mkString}"))
+  }
+
+  import scala.reflect.ClassTag
+
+  def gen[T](implicit a: Arbitrary[T], ct: ClassTag[T], tries: Int = 100): T =
+    (1 to tries).iterator
+      .map(_ => arbitrary[T].sample)
+      .collectFirst { case Some(v) => v }
+      .getOrElse(
+        throw new IllegalStateException(
+          s"Failed to generate a sample for ${ct.runtimeClass.getName} after $tries attempts"
+        )
+      )
+
+  def shortStringGen(minLen: Int = 1, maxLen: Int = 36): Gen[String] =
+    Gen.chooseNum(minLen, maxLen).flatMap { n =>
+      Gen.listOfN(n, Gen.alphaNumChar).map(_.mkString)
+    }
+
+  def shortString(minLen: Int = 1, maxLen: Int = 36, tries: Int = 100): String = {
+    val g = shortStringGen(minLen, maxLen)
+    (1 to tries).iterator
+      .map(_ => g.sample)
+      .collectFirst { case Some(s) => s }
+      .getOrElse("sample short string")
   }
 
   // note this does NOT check all RFC-compliant email addresses (e.g. '"luke tebbs"@company.co.uk')
