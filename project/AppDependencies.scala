@@ -25,14 +25,13 @@ object AppDependencies {
     "org.scalatest"                %% "scalatest"                   % "3.2.18"         % Test,
     "org.scalatestplus.play"       %% "scalatestplus-play"          % "7.0.1"          % "test, it",
     "uk.gov.hmrc"                  %% s"bootstrap-test-play-$play"  % bootstrapVersion         % Test,
-    "org.scalatestplus"            %% "mockito-3-12"                % "3.2.10.0"       % Test,
-    "org.scalatestplus"            %% "scalacheck-1-15"             % "3.2.11.0"       % Test,
-    "org.scalacheck"               %% "scalacheck"                  % "1.18.0"         % Test,
+    "org.scalatestplus"            %% "mockito-4-11"                % "3.2.17.0"       % Test,
+    "org.scalatestplus"            %% "scalacheck-1-18"             % "3.2.19.0"       % Test,
+    "org.scalacheck"               %% "scalacheck"                  % "1.19.0"         % Test,
     "io.chrisdavenport"            %% "cats-scalacheck"             % "0.3.2"          % Test,
     "com.beachape"                 %% "enumeratum-scalacheck"       % "1.7.3"          % Test,
-    "wolfendale"                   %% "scalacheck-gen-regexp"       % "0.1.2"          % Test,
+    "io.github.wolfendale"         %% "scalacheck-gen-regexp"       % "1.1.0"          % Test,
     "com.vladsch.flexmark"          % "flexmark-all"                % "0.64.8"         % Test,
-    "com.outworkers"               %% "util-samplers"               % "0.57.0"         % Test,
     "uk.gov.hmrc.mongo"            %% s"hmrc-mongo-test-play-$play" % hmrcMongoVersion % Test
   )
 

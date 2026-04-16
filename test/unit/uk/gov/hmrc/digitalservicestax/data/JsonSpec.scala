@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.digitalservicestax.data
 
-import com.outworkers.util.samplers._
 import enumeratum.scalacheck._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
@@ -65,7 +64,7 @@ class JsonSpec
   }
 
   it should "purge none and empty values from a map of js values" in {
-    val generated = JsString(gen[ShortString].value)
+    val generated = JsString(TestInstances.shortString())
     val source    = JsObject(
       Seq(
         "object_example"       -> JsObject(Seq("bla" -> generated)),
@@ -91,7 +90,7 @@ class JsonSpec
   }
 
   it should "fail to validate a postcode from JSON if the source input is in incorrect format" in {
-    val generated = gen[Int]
+    val generated = TestInstances.gen[Int]
     val parsed    = Json.parse(s"""$generated""").validate[Postcode]
     parsed.isSuccess shouldEqual false
     parsed           shouldEqual JsError(
@@ -148,11 +147,11 @@ class JsonSpec
   }
 
   it should "fail to validate a percentage from a non numeric value" in {
-    forAll(Sample.generator[ShortString]) { sample =>
-      val parsed = Json.parse(s""" "${sample.value}" """).validate[Percent]
+    forAll(org.scalacheck.Gen.alphaNumStr.suchThat(_.nonEmpty)) { sample =>
+      val parsed = Json.parse(s""" "$sample" """").validate[Percent]
 
       parsed shouldEqual JsError(
-        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "${sample.value}" instead"""))
+        JsPath -> JsonValidationError(Seq(s"""Expected a valid percentage, got "$sample" instead"""))
       )
     }
   }
@@ -189,7 +188,7 @@ class JsonSpec
   }
 
   it should "fail to parse an invalid LocalDate" in {
-    val source        = JsString(gen[ShortString].value)
+    val source        = JsString("not-a-valid-localdate")
     val expectionSpec = implicitly[Format[LocalDate]].reads(source)
     val lastError     = JsError(expectionSpec.asEither.left.value)
 
