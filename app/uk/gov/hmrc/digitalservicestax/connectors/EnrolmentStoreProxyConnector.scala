@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class EnrolmentStoreProxyConnector @Inject() (
   val http: HttpClientV2,
   val appConfig: AppConfig
-) extends DesHelpers {
+) {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -43,7 +43,7 @@ class EnrolmentStoreProxyConnector @Inject() (
     groupId: String
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
     import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-    desGet[HttpResponse](es3DstUrl(groupId)) map {
+    http.get(url"${es3DstUrl(groupId)}").execute[HttpResponse] map {
       case response if response.status == NO_CONTENT || response.status == NOT_FOUND => None
       case response if response.status == OK                                         =>
         response.json

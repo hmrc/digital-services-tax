@@ -56,7 +56,7 @@ class RegistrationConnector @Inject() (
     desPost[JsValue, Either[UpstreamErrorResponse, RegistrationResponse]](
       s"${appConfig.desURL}/$registerPath/$idType/$idNumber",
       Json.toJson(request)
-    )(implicitly, implicitly, addHeaders, implicitly).map {
+    ).map {
       case Right(value) => value
       case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)
     }
@@ -70,7 +70,7 @@ class RegistrationConnector @Inject() (
   ): Future[SubscriptionStatusResponse] =
     desGet[Either[UpstreamErrorResponse, SubscriptionStatusResponse]](
       s"${appConfig.desURL}/$getSubscriptionStatusPath/$sapNumber/status"
-    )(implicitly, addHeaders, implicitly).map {
+    ).map {
       case Right(value) => value
       case Left(e)      => throw UpstreamErrorResponse(e.message, e.statusCode)
     }

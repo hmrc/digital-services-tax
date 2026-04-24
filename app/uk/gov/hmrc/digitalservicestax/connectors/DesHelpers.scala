@@ -24,7 +24,10 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.StringContextOps
 
 import scala.concurrent.{ExecutionContext, Future}
-
+/*
+ * This trait is only used by the DES connectors, which add additional headers and use a DES bearer token.
+ * Do not use this for any other connectors, as it will add unnecessary headers and use the wrong token.
+ */
 trait DesHelpers {
 
   def http: HttpClientV2
@@ -53,20 +56,5 @@ trait DesHelpers {
       .setHeader(headers: _*)
       .withBody(Json.toJson(body))
       .execute[O]
-
-  def desPut[I, O](url: String, body: I)(implicit
-    wts: Writes[I],
-    rds: HttpReads[O],
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[O] =
-    http
-      .put(url"$url")
-      .setHeader(headers: _*)
-      .withBody(Json.toJson(body))
-      .execute[O]
-
-  def addHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
-    hc.copy(authorization = None)
 
 }
