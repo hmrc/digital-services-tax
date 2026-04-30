@@ -94,11 +94,10 @@ class ActionsSpec
           _     <- mongoPersistence.registrations.update(internal, reg)
           block <- action.invokeBlock(
                      req,
-                     { req: RegisteredRequest[_] =>
+                     (req: RegisteredRequest[_]) =>
                        Future.successful(
-                         Results.Ok(req.registration.registrationNumber.value)
+                         Results.Ok(req.registration.registrationNumber.value.value)
                        )
-                     }
                    )
         } yield block
 
@@ -130,11 +129,10 @@ class ActionsSpec
           _     <- mongoPersistence.registrations.update(internal, reg)
           block <- action.invokeBlock(
                      req,
-                     { req: RegisteredRequest[_] =>
+                     (req: RegisteredRequest[_]) =>
                        Future.successful(
-                         Results.Ok(req.registration.registrationNumber.value)
+                         Results.Ok(req.registration.registrationNumber.value.value)
                        )
-                     }
                    )
         } yield block
 
@@ -168,11 +166,10 @@ class ActionsSpec
           _     <- mongoPersistence.registrations.update(internal, regWithNoId)
           block <- action.invokeBlock(
                      req,
-                     { req: RegisteredRequest[_] =>
+                     (req: RegisteredRequest[_]) =>
                        Future.successful(
-                         Results.Ok(req.registration.registrationNumber.value)
+                         Results.Ok(req.registration.registrationNumber.value.value)
                        )
-                     }
                    )
         } yield block
 
@@ -228,11 +225,10 @@ class ActionsSpec
           _     <- mongoPersistence.registrations.update(internal, reg)
           block <- action.invokeBlock(
                      loggedInReq,
-                     { req: RegisteredRequest[_] =>
+                     (req: RegisteredRequest[_]) =>
                        Future.successful(
-                         Results.Ok(req.registration.registrationNumber.value)
+                         Results.Ok(req.registration.registrationNumber.value.value)
                        )
-                     }
                    )
         } yield block
 

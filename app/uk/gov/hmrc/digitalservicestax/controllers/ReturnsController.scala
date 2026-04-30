@@ -72,7 +72,7 @@ class ReturnsController @Inject() (
           _                 <- auditing.sendExtendedEvent(AuditingHelper.buildReturnResponseAudit("SUCCESS"))
         } yield Ok(JsNull)
       }.recoverWith {
-        case e: NoSuchElementException =>
+        case _: NoSuchElementException =>
           Future.successful(NotFound)
         case e                         =>
           auditing.sendExtendedEvent(

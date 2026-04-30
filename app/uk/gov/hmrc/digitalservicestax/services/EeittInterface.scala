@@ -41,8 +41,8 @@ object EeittInterface {
     def writes(value: ListMap[String, String]): JsValue =
       JsArray(
         value.toList.zipWithIndex flatMap {
-          case ((key, ""), i)    => Nil
-          case ((key, value), i) =>
+          case ((_, ""), _)      => Nil
+          case ((key, value), _) =>
             List(
               Json.obj(
                 "paramSequence" -> "01",
@@ -57,8 +57,8 @@ object EeittInterface {
   def strDate(d: LocalDate): String =
     d.format(format.DateTimeFormatter.BASIC_ISO_DATE)
 
-  implicit val registrationWriter = new Writes[Registration] {
-    implicit val trueFalseIndicatorType = new Writes[Boolean] {
+  implicit val registrationWriter: Writes[Registration] = new Writes[Registration] {
+    implicit val trueFalseIndicatorType: Writes[Boolean] = new Writes[Boolean] {
       def writes(b: Boolean): JsValue = if (b) JsString("1") else JsString("0")
     }
 
@@ -89,8 +89,8 @@ object EeittInterface {
               "postCode"                  -> Some(contactAddress.postalCode).filter(_.nonEmpty),
               "addressNotInUK"            -> contactAddress.isInstanceOf[ForeignAddress],
               "nonUKCountry"              -> Some(contactAddress).collect { case f: ForeignAddress => f.countryCode },
-              "email"                     -> Some(contact.email).filter(_.nonEmpty),
-              "telephoneNumber"           -> Some(contact.phoneNumber).filter(_.nonEmpty)
+              "email"                     -> Some(contact.email).filter(_.value.nonEmpty),
+              "telephoneNumber"           -> Some(contact.phoneNumber).filter(_.value.nonEmpty)
             )
           ),
           "regimeSpecificDetails" -> ListMap[String, String](
@@ -102,10 +102,10 @@ object EeittInterface {
             "A_DST_PERIOD_END_DATE"   -> strDate(accountingPeriodEnd),
             "A_TAX_START_DATE"        -> strDate(dateLiable),
             "A_CORR_ADR_LINE_1"       -> companyReg.company.address.line1,
-            "A_CORR_ADR_LINE_2"       -> companyReg.company.address.line2.getOrElse(""),
-            "A_CORR_ADR_LINE_3"       -> companyReg.company.address.line3.getOrElse(""),
-            "A_CORR_ADR_LINE_4"       -> companyReg.company.address.line4.getOrElse(""),
-            "A_CORR_ADR_POST_CODE"    -> companyReg.company.address.postalCode,
+            "A_CORR_ADR_LINE_2"       -> companyReg.company.address.line2.map(_.value).getOrElse(""),
+            "A_CORR_ADR_LINE_3"       -> companyReg.company.address.line3.map(_.value).getOrElse(""),
+            "A_CORR_ADR_LINE_4"       -> companyReg.company.address.line4.map(_.value).getOrElse(""),
+            "A_CORR_ADR_POST_CODE"    -> companyReg.company.address.postalCode.fold("")(_.value),
             "A_CORR_ADR_COUNTRY_CODE" -> companyReg.company.address.countryCode
           )
         )
@@ -138,7 +138,7 @@ object EeittInterface {
 
           List(
             s"A_DST_${key}_CHARGE_PROVISION" -> bool(true),
-            s"A_DST_${key}_LOSS"             -> bool(v == 0),
+            s"A_DST_${key}_LOSS"             -> bool(v.value == 0),
             s"A_DST_${key}_OP_MARGIN"        -> v.toString
           )
         }
@@ -163,6 +163,7 @@ object EeittInterface {
               "A_BANK_SORT_CODE" -> sortCode, // Branch sort code CHAR6
               "A_BANK_ACC_NO"    -> acctNo // Account number CHAR8
             ) ++ bsNo
+              .map(_.value)
               .filter(_.nonEmpty)
               .map { a =>
                 "A_BUILDING_SOC_ROLE" -> a // Building Society reference CHAR20
@@ -208,7 +209,9 @@ object EeittInterface {
         Seq(
           "A_DST_GROUP_MEMBER"        -> company.name, // Group Member Company Name CHAR40
           "A_DST_GROUP_MEM_LIABILITY" -> amt.toString, // DST liability amount per group member BETRW_KK
-          "A_DST_GROUP_MEM_ID"        -> company.utr.getOrElse("NA") // UTR is optional for user but required in api
+          "A_DST_GROUP_MEM_ID"        -> company.utr
+            .map(_.value)
+            .getOrElse("NA") // UTR is optional for user but required in api
         )
 
       val breakdownEntries = companiesAmount.toList.map { case (company, amt) =>

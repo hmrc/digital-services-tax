@@ -29,7 +29,7 @@ class TestDesSchemas extends AnyFlatSpec with Matchers {
       schemaFile.exists shouldBe true
     }
 
-    it                 should s"conform to its schema" in {
+    it should s"conform to its schema" in {
       val is      = new java.io.FileInputStream(schemaFile)
       val checker = SchemaChecker(is)
       val source  = scala.io.Source.fromFile(file)

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.digitalservicestax
 package controllers
 
+import cats.implicits.catsSyntaxOptionId
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
@@ -43,7 +44,7 @@ class RosmController @Inject() (
   implicit val ec: ExecutionContext = cc.executionContext
 
   def lookupCompany(): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { enrolments: Enrolments =>
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments) { (enrolments: Enrolments) =>
       getUtrFromAuth(enrolments).fold(Future.successful[Result](NotFound)) { utr =>
         rosmConnector
           .retrieveROSMDetails(utr)
@@ -68,11 +69,14 @@ class RosmController @Inject() (
           utr
         )
         .map {
-          case Some(r) if r.company.address.postalCode.replaceAll(" ", "") == postcode.replaceAll(" ", "") =>
+          case Some(r)
+              if r.company.address.postalCode
+                .map(_.replaceAll(" ", ""))
+                .getOrElse("") == postcode.replaceAll(" ", "") =>
             import data.BackendAndFrontendJson._
             JsonSchemaChecker[data.Company](r.company, "rosm-response")
             Ok(Json.toJson(r))
-          case Some(r)                                                                                     =>
+          case Some(r) =>
             // $COVERAGE-OFF$
             logger.warn(
               s"Record found for UTR $utr, but postcode is '${r.company.address.postalCode}' " +
@@ -80,7 +84,7 @@ class RosmController @Inject() (
             )
             // $COVERAGE-ON$
             NotFound
-          case _                                                                                           =>
+          case _       =>
             logger.warn(s"No record found for UTR $utr")
             NotFound
         }

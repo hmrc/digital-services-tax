@@ -16,6 +16,7 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers
 
+import cats.implicits.catsSyntaxOptionId
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{equalTo, equalToJson, getRequestedFor, matchingJsonPath, postRequestedFor, urlEqualTo, verify}
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
@@ -28,17 +29,17 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.inject._
+import play.api.inject.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsJson, Result, Results}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HttpVerbs
 import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
 import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.controllers.routes
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.*
 import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, InternalId, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper}
@@ -467,18 +468,18 @@ class RegistrationsControllerSpec
       CompanyRegWrapper(
         Company(
           CompanyName("Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))
+          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP").some)
         ),
         Some(UTR("1234567890")),
         safeId,
         useSafeId = true,
         None
       ),
-      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX"))),
+      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX").some)),
       Some(
         Company(
           CompanyName("Ultimate Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP"))
+          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP").some)
         )
       ),
       ContactDetails(

@@ -79,7 +79,7 @@ class RosmControllerSpec
             Some(AddressLine("Wokingham")),
             Some(AddressLine("Surrey")),
             Some(AddressLine("London")),
-            Postcode("DH14 1EJ")
+            Some(Postcode("DH14 1EJ"))
           )
         ),
         None,
@@ -131,7 +131,7 @@ class RosmControllerSpec
             Some(AddressLine("Wokingham")),
             Some(AddressLine("Surrey")),
             Some(AddressLine("London")),
-            Postcode("DH14 1EJ")
+            Some(Postcode("DH14 1EJ"))
           )
         ),
         None,
