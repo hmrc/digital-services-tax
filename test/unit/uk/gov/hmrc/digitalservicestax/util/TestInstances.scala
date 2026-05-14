@@ -41,7 +41,7 @@ object TestInstances {
   )
 
   implicit val arbMoney: Arbitrary[Money] = Arbitrary(
-    Gen.choose(0, 1000000000000L).map(b => Money(BigDecimal(b).setScale(2)))
+    Gen.choose(0, 1000000000).map(b => Money(BigDecimal(b).setScale(2)))
   )
 
   implicit def arbCredRole: Arbitrary[CredentialRole] = Arbitrary {
@@ -60,7 +60,7 @@ object TestInstances {
   )
 
   implicit val arbPercent: Arbitrary[Percent] = Arbitrary {
-    Gen.chooseNum(0, 100).map(b => Percent(b.toByte))
+    Gen.chooseNum(0, 100).map(Percent(_))
   }
 
   def nonEmptyString: Gen[NonEmptyString] =
@@ -73,7 +73,7 @@ object TestInstances {
   def genActivityPercentMap: Gen[Map[Activity, Percent]] = Gen.mapOf(
     (
       arbitrary[Activity],
-      Gen.choose(0, 100).map(x => Percent.apply(x.asInstanceOf[Byte]))
+      Gen.choose(0, 100).map(Percent(_))
     ).tupled
   )
 
@@ -86,7 +86,7 @@ object TestInstances {
     (
       nonEmptyString,
       nonEmptyString
-    ).mapN(EnrolmentIdentifier)
+    ).mapN(EnrolmentIdentifier(_, _))
   }
 
   implicit def enrolmentArbitrary: Arbitrary[Enrolment] = Arbitrary {
@@ -286,7 +286,7 @@ object TestInstances {
       arbitrary[LocalDate],
       arbitrary[LocalDate],
       arbitrary[LocalDate],
-      arbitrary[NonEmptyString].map(_.take(4)).map(Period.Key(_))
+      arbitrary[NonEmptyString].map(_.value.take(4)).map(Period.Key(_))
     ).mapN(Period.apply)
   )
 
@@ -363,7 +363,7 @@ object TestInstances {
         arbitrary[Option[AddressLine]],
         arbitrary[Option[AddressLine]],
         arbitrary[Option[AddressLine]],
-        arbitrary[Postcode]
+        arbitrary[Option[Postcode]]
       ).mapN(UkAddress.apply)
 
     Gen.oneOf(ukGen, foreignGen)

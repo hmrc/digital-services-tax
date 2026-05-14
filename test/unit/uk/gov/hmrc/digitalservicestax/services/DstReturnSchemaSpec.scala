@@ -26,7 +26,7 @@ import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class DstReturnSchemaSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
-  "A return API call"       should "conform to the schema" in {
+  "A return API call" should "conform to the schema" in {
     forAll { (period: Period, ret: Return) =>
       val json = EeittInterface.returnRequestWriter("aoeu", period).writes(ret)
       SchemaChecker.EeittReturn.request.errorsIn(json) should be(None)

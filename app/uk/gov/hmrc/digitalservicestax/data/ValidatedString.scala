@@ -17,33 +17,34 @@
 package uk.gov.hmrc.digitalservicestax.data
 
 import cats.implicits._
-import shapeless._
-import tag._
 
 import scala.util.matching.Regex
 
 trait ValidatedType[BaseType] {
-
-  trait Tag
+  opaque type Type = BaseType
 
   lazy val className: String = this.getClass.getSimpleName
 
   def validateAndTransform(in: BaseType): Option[BaseType]
 
-  def apply(in: BaseType): BaseType @@ Tag =
+  def apply(in: BaseType): Type =
     of(in).getOrElse {
       throw new IllegalArgumentException(
         s""""$in" is not a valid ${className.init}"""
       )
     }
 
-  def of(in: BaseType): Option[BaseType @@ Tag] =
-    validateAndTransform(in) map { x =>
-      tag[Tag][BaseType](x)
-    }
+  def of(in: BaseType): Option[Type] =
+    validateAndTransform(in)
+
+  extension (v: Type) {
+    def value: BaseType = v
+  }
+
+  given Conversion[Type, BaseType] = identity
 }
 
-class RegexValidatedString(
+abstract class RegexValidatedString(
   val regex: String,
   transform: String => String = identity
 ) extends ValidatedType[String] {

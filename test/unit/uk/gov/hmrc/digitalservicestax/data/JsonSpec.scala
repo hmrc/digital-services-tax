@@ -42,7 +42,7 @@ class JsonSpec
     with OptionValues {
 
   def testJsonRoundtrip[T: Arbitrary: Format]: Assertion =
-    forAll { sample: T =>
+    forAll { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -51,7 +51,7 @@ class JsonSpec
     }
 
   def testJsonRoundtrip[T: Format](gen: Gen[T]): Assertion =
-    forAll(gen) { sample: T =>
+    forAll(gen) { (sample: T) =>
       val js = Json.toJson(sample)
 
       val parsed = js.validate[T]
@@ -219,9 +219,7 @@ class JsonSpec
   }
 
   it should "test the JSON schema for Company" in {
-    forAll { company: Company =>
-      JsonSchemaChecker[data.Company](company, "rosm-response")
-    }
+    forAll((company: Company) => JsonSchemaChecker[data.Company](company, "rosm-response"))
   }
 
   it should "serialize a scala.Unit" in {
@@ -238,7 +236,7 @@ class JsonSpec
   }
 
   it should "test the JSON schema for registratiom" in {
-    forAll { reg: Registration =>
+    forAll { (reg: Registration) =>
       JsonSchemaChecker[data.Registration](reg, "rosm-response")
     }
   }

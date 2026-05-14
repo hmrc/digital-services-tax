@@ -17,13 +17,14 @@
 package uk.gov.hmrc.digitalservicestax.connectors
 
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.{Logger, Mode}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.data.enrolments.KeyValuePair
 import uk.gov.hmrc.digitalservicestax.data.enrolments.Enrolments
 import uk.gov.hmrc.digitalservicestax.data.{Address, DSTRegNumber, ForeignAddress, UkAddress}
 import uk.gov.hmrc.digitalservicestax.test.TestConnector
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
@@ -111,7 +112,7 @@ class TaxEnrolmentConnector @Inject() (
   ): Future[Boolean] = {
 
     val verifierKey: KeyValuePair = address match {
-      case ukAddress: UkAddress         => KeyValuePair("Postcode", ukAddress.postalCode)
+      case ukAddress: UkAddress         => KeyValuePair("Postcode", ukAddress.postalCode.fold("")(_.value))
       case nonUkAddress: ForeignAddress => KeyValuePair("NonUkCountryCode", nonUkAddress.countryCode)
     }
 

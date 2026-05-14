@@ -16,7 +16,8 @@
 
 package it.uk.gov.hmrc.digitalservicestax.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import cats.implicits.catsSyntaxOptionId
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
@@ -174,7 +175,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       )
 
       val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
-        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2BB")),
+        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2BB").some),
         "1234567890"
       )
       whenReady(response) { res =>
@@ -230,7 +231,7 @@ class TaxEnrolmentConnectorSpec extends FakeApplicationSetup with WiremockServer
       )
 
       val response = TaxTestConnector.isAllocateDstGroupEnrolmentSuccess(
-        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2CC")),
+        UkAddress(AddressLine("address line 1"), None, None, None, Postcode("AA1 2CC").some),
         "1234567890"
       )
       whenReady(response) { res =>

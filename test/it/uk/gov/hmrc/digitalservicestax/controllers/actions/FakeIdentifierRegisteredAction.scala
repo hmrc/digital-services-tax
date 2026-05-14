@@ -16,11 +16,11 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers.actions
 
+import cats.syntax.all.catsSyntaxOptionId
 import com.google.inject.Inject
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegisteredAction.givenRegistration
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
-import play.api.mvc._
-import shapeless.tag.@@
+import play.api.mvc.*
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.digitalservicestax.actions.{IdentifierAction, LoggedInRequest, RegisteredActionRefiner, RegisteredRequest}
 import uk.gov.hmrc.digitalservicestax.data
@@ -54,25 +54,25 @@ class FakeIdentifierRegisteredAction @Inject() (bodyParser: PlayBodyParsers)(imp
 }
 
 object FakeIdentifierRegisteredAction {
-  val internalId: String @@ data.InternalId.Tag = InternalId("Int-aaff66")
+  val internalId: InternalId = InternalId("Int-aaff66")
 
   val givenRegistration: Registration =
     Registration(
       CompanyRegWrapper(
         Company(
           CompanyName("Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))
+          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP").some)
         ),
         Some(UTR("1234567890")),
         Some(SafeId("XE0001234567890")),
         useSafeId = true,
         None
       ),
-      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX"))),
+      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX").some)),
       Some(
         Company(
           CompanyName("Ultimate Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP"))
+          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP").some)
         )
       ),
       ContactDetails(

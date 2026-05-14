@@ -17,17 +17,18 @@
 package uk.gov.hmrc.digitalservicestax
 package services
 
-import cats.instances.future._
-import org.mongodb.scala.model._
-import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
-import uk.gov.hmrc.digitalservicestax.data._
+import cats.instances.future.*
+import org.mongodb.scala.*
+import org.mongodb.scala.model.*
+import play.api.libs.json.*
+import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.*
+import uk.gov.hmrc.digitalservicestax.data.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import java.time.LocalDateTime
-import javax.inject._
-import scala.concurrent._
+import javax.inject.*
+import scala.concurrent.*
 
 object MongoPersistence {
 

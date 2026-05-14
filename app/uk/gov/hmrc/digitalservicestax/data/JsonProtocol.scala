@@ -18,21 +18,20 @@ package uk.gov.hmrc.digitalservicestax.data
 
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
-
-import cats.implicits._
+import cats.implicits.*
 import enumeratum.EnumFormats
 import play.api.libs.json.Json.fromJson
-import play.api.libs.json._
-import shapeless.tag.@@
+import play.api.libs.json.*
 import uk.gov.hmrc.auth.core.Enrolment
 import Enrolment.idFormat
+import uk.gov.hmrc.digitalservicestax.data
 
 import scala.collection.immutable.ListMap
 
 trait SimpleJson {
 
-  def validatedStringFormat(A: ValidatedType[String], name: String) = new Format[String @@ A.Tag] {
-    override def reads(json: JsValue): JsResult[String @@ A.Tag] = json match {
+  def validatedStringFormat(A: ValidatedType[String], name: String) = new Format[A.Type] {
+    override def reads(json: JsValue): JsResult[A.Type] = json match {
       case JsString(value) =>
         A.validateAndTransform(value) match {
           case Some(v) => JsSuccess(A(v))
@@ -41,7 +40,7 @@ trait SimpleJson {
       case xs: JsValue     => JsError(JsPath -> JsonValidationError(Seq(s"""Expected a valid $name, got $xs instead""")))
     }
 
-    override def writes(o: String @@ A.Tag): JsValue = JsString(o)
+    override def writes(o: A.Type): JsValue = JsString(o)
   }
 
   implicit val nonEmptyStringFormat: Format[NonEmptyString] = new Format[NonEmptyString] {
@@ -53,26 +52,28 @@ trait SimpleJson {
     override def writes(o: NonEmptyString): JsValue = JsString(o)
   }
 
-  implicit val postcodeFormat                  = validatedStringFormat(Postcode, "postcode")
-  implicit val phoneNumberFormat               = validatedStringFormat(PhoneNumber, "phone number")
-  implicit val utrFormat                       = validatedStringFormat(UTR, "UTR")
-  implicit val safeIfFormat                    = validatedStringFormat(SafeId, "SafeId")
-  implicit val sapNumberFormat                 = validatedStringFormat(SapNumber, "SapNumber")
-  implicit val formBundleNoFormat              = validatedStringFormat(FormBundleNumber, "FormBundleNumber")
-  implicit val internalIdFormat                = validatedStringFormat(InternalId, "internal id")
-  implicit val emailFormat                     = validatedStringFormat(Email, "email")
-  implicit val countryCodeFormat               = validatedStringFormat(CountryCode, "country code")
-  implicit val sortCodeFormat                  = validatedStringFormat(SortCode, "sort code")
-  implicit val accountNumberFormat             = validatedStringFormat(AccountNumber, "account number")
-  implicit val buildingSocietyRollNumberFormat =
+  implicit val postcodeFormat: Format[Postcode]                                   = validatedStringFormat(Postcode, "postcode")
+  implicit val phoneNumberFormat: Format[PhoneNumber]                             = validatedStringFormat(PhoneNumber, "phone number")
+  implicit val utrFormat: Format[UTR]                                             = validatedStringFormat(UTR, "UTR")
+  implicit val safeIfFormat: Format[SafeId]                                       = validatedStringFormat(SafeId, "SafeId")
+  implicit val sapNumberFormat: Format[SapNumber]                                 = validatedStringFormat(SapNumber, "SapNumber")
+  implicit val formBundleNoFormat: Format[FormBundleNumber]                       =
+    validatedStringFormat(FormBundleNumber, "FormBundleNumber")
+  implicit val internalIdFormat: Format[InternalId]                               = validatedStringFormat(InternalId, "internal id")
+  implicit val emailFormat: Format[Email]                                         = validatedStringFormat(Email, "email")
+  implicit val countryCodeFormat: Format[CountryCode]                             = validatedStringFormat(CountryCode, "country code")
+  implicit val sortCodeFormat: Format[SortCode]                                   = validatedStringFormat(SortCode, "sort code")
+  implicit val accountNumberFormat: Format[AccountNumber]                         = validatedStringFormat(AccountNumber, "account number")
+  implicit val buildingSocietyRollNumberFormat: Format[BuildingSocietyRollNumber] =
     validatedStringFormat(BuildingSocietyRollNumber, "building society roll number")
-  implicit val accountNameFormat               = validatedStringFormat(AccountName, "account name")
-  implicit val ibanFormat                      = validatedStringFormat(IBAN, "IBAN number")
-  implicit val periodKeyFormat                 = validatedStringFormat(Period.Key, "Period Key")
-  implicit val restrictiveFormat               = validatedStringFormat(RestrictiveString, "name")
-  implicit val companyNameFormat               = validatedStringFormat(CompanyName, "company name")
-  implicit val mandatoryAddressLineFormat      = validatedStringFormat(AddressLine, "address line")
-  implicit val dstRegNoFormat                  = validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
+  implicit val accountNameFormat: Format[AccountName]                             = validatedStringFormat(AccountName, "account name")
+  implicit val ibanFormat: Format[IBAN]                                           = validatedStringFormat(IBAN, "IBAN number")
+  implicit val periodKeyFormat: Format[Period.Key]                                = validatedStringFormat(Period.Key, "Period Key")
+  implicit val restrictiveFormat: Format[RestrictiveString]                       = validatedStringFormat(RestrictiveString, "name")
+  implicit val companyNameFormat: Format[CompanyName]                             = validatedStringFormat(CompanyName, "company name")
+  implicit val mandatoryAddressLineFormat: Format[AddressLine]                    = validatedStringFormat(AddressLine, "address line")
+  implicit val dstRegNoFormat: Format[DSTRegNumber]                               =
+    validatedStringFormat(DSTRegNumber, "Digital Services Tax Registration Number")
 
   implicit val moneyFormat: Format[Money] = new Format[Money] {
     override def reads(json: JsValue): JsResult[Money] =
@@ -96,7 +97,7 @@ trait SimpleJson {
     override def reads(json: JsValue): JsResult[Percent] =
       json match {
         case JsNumber(value) =>
-          Percent.validateAndTransform(value.toByte) match {
+          Percent.validateAndTransform(value) match {
             case Some(validCode) => JsSuccess(Percent(validCode))
             case None            => JsError(s"Expected a valid percentage, got $value instead.")
           }
@@ -128,7 +129,7 @@ object BackendAndFrontendJson extends SimpleJson {
   implicit val activityMapFormat: Format[Map[Activity, Percent]] = new Format[Map[Activity, Percent]] {
     override def reads(json: JsValue): JsResult[Map[Activity, Percent]] =
       JsSuccess(json.as[Map[String, JsNumber]].map { case (k, v) =>
-        Activity.values.find(_.entryName == k).get -> Percent.apply(v.value.toFloat)
+        Activity.values.find(_.entryName == k).get -> Percent.apply(v.value)
       })
 
     override def writes(o: Map[Activity, Percent]): JsValue =
@@ -277,7 +278,7 @@ object BackendAndFrontendJson extends SimpleJson {
     }
   }
 
-  implicit def optFormat[A](implicit in: Format[A]) = new Format[Option[A]] {
+  implicit def optFormat[A](implicit in: Format[A]): Format[Option[A]] = new Format[Option[A]] {
     def reads(json: JsValue): JsResult[Option[A]] = json match {
       case JsNull => JsSuccess(None)
       case x      => in.reads(x).map(Some(_))
@@ -285,7 +286,7 @@ object BackendAndFrontendJson extends SimpleJson {
     def writes(o: Option[A]): JsValue             = o.fold(JsNull: JsValue)(in.writes)
   }
 
-  implicit val unitFormat = new Format[Unit] {
+  implicit val unitFormat: Format[Unit] = new Format[Unit] {
     def reads(json: JsValue): JsResult[Unit] = json match {
       case JsNull                   => JsSuccess(())
       case JsObject(e) if e.isEmpty => JsSuccess(())

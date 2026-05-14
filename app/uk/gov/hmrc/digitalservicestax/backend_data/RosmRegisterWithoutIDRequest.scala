@@ -54,7 +54,9 @@ object RosmRegisterWithoutIDRequest {
 
     override def writes(o: RosmRegisterWithoutIDRequest): JsValue =
       Json.obj(
-        "acknowledgementReference" -> AcknowledgementReference.generate(o.organisation.address.postalCode),
+        "acknowledgementReference" -> AcknowledgementReference.generate(
+          o.organisation.address.postalCode.fold("")(_.value)
+        ),
         "regime"                   -> "DST",
         "isAnAgent"                -> o.isAnAgent,
         "isAGroup"                 -> o.isAGroup,

@@ -37,7 +37,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
               { json \ "addressLine2" }.asOpt[AddressLine],
               { json \ "addressLine3" }.asOpt[AddressLine],
               { json \ "addressLine4" }.asOpt[AddressLine],
-              { json \ "postalCode" }.as[Postcode]
+              { json \ "postalCode" }.asOpt[Postcode]
             )
           case country =>
             ForeignAddress(
@@ -49,7 +49,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
             )
         }
       } catch {
-        case e: JsResultException => throw InvalidAddressException
+        case _: JsResultException => throw InvalidAddressException
       }
     }
   }
@@ -63,7 +63,7 @@ object RosmJsonReader extends Reads[CompanyRegWrapper] {
     try {
       { json \ "organisation" \ "organisationName" }.as[CompanyName]
     } catch {
-      case e: JsResultException => throw InvalidCompanyNameException
+      case _: JsResultException => throw InvalidCompanyNameException
     }
 
     JsSuccess(

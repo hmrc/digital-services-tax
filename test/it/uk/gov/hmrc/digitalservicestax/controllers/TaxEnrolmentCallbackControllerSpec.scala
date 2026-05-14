@@ -16,11 +16,13 @@
 
 package it.uk.gov.hmrc.digitalservicestax.controllers
 
+import cats.implicits.catsSyntaxOptionId
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{absent, equalTo, equalToJson, getRequestedFor, matchingJsonPath, postRequestedFor, urlEqualTo, urlPathEqualTo, verify}
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegistrationAction.internalId
 import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, TaxEnrolmentCallbackWireMockStubs, WiremockServer}
+import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.result.InsertOneResult
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -28,14 +30,13 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.inject._
+import play.api.inject.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Results
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HttpVerbs
-import shapeless.tag.@@
 import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
 import uk.gov.hmrc.digitalservicestax.controllers.{CallbackNotification, routes}
 import uk.gov.hmrc.digitalservicestax.data
@@ -70,8 +71,8 @@ class TaxEnrolmentCallbackControllerSpec
     "auditing.consumer.baseUri.port"                   -> WireMockSupport.port
   )
 
-  val formBundleNumber: String @@ data.FormBundleNumber.Tag = FormBundleNumber("123456789112")
-  val safeId: String @@ data.SafeId.Tag                     = SafeId("XE0001234567890")
+  val formBundleNumber: FormBundleNumber = FormBundleNumber("123456789112")
+  val safeId: SafeId                     = SafeId("XE0001234567890")
 
   override lazy val app: Application = new GuiceApplicationBuilder()
     .overrides(
@@ -264,18 +265,18 @@ class TaxEnrolmentCallbackControllerSpec
       CompanyRegWrapper(
         Company(
           CompanyName("Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP"))
+          UkAddress(AddressLine("Test Line 1"), None, None, None, Postcode("NW11 4RP").some)
         ),
         Some(UTR("1234567890")),
         safeId,
         useSafeId = true,
         None
       ),
-      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX"))),
+      Some(UkAddress(AddressLine("Test Line 2"), None, None, None, Postcode("NW8 5AX").some)),
       Some(
         Company(
           CompanyName("Ultimate Test Solutions Ltd"),
-          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP"))
+          UkAddress(AddressLine("Test Line 3"), None, None, None, Postcode("NW11 4XP").some)
         )
       ),
       ContactDetails(
