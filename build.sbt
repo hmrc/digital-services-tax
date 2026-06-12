@@ -21,6 +21,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     majorVersion := 0,
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    dependencyOverrides ++= AppDependencies.rhinoOverrides,
     scalacOptions += "-Wconf:src=routes/.*:s",
     scalacOptions += "-Wconf:cat=unused-imports&src=html/.*:s"
   )
@@ -31,7 +32,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(scoverageSettings)
   .configs(IntegrationTest)
   .settings(integrationTestSettings ++ unitTestSettings)
-  .settings(resolvers ++= Seq(Resolver.jcenterRepo, Resolver.bintrayRepo("wolfendale", "maven")))
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
 
 // If you want integration tests in the test package you need to extend Test config ...
