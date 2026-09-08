@@ -25,8 +25,8 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, SubscriptionStatus, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.connectors.RegistrationConnector
+import uk.gov.hmrc.digitalservicestax.data.backend_data.{RegistrationResponse, SubscriptionStatus, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.data.{FormBundleNumber, Registration, SapNumber}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector

@@ -19,8 +19,8 @@ package it.uk.gov.hmrc.digitalservicestax.util
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
 import uk.gov.hmrc.digitalservicestax.data.DSTRegNumber
+import uk.gov.hmrc.digitalservicestax.data.backend_data.ReturnResponse
 
 import java.time.LocalDate
 

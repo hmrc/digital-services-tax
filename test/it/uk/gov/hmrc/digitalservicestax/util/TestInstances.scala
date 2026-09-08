@@ -16,16 +16,16 @@
 
 package it.uk.gov.hmrc.digitalservicestax.util
 
-import cats.implicits.{none, _}
+import cats.implicits.*
 import enumeratum.scalacheck._
-import org.scalacheck.Arbitrary.{arbBigDecimal => _, arbitrary, _}
+import org.scalacheck.Arbitrary.{arbBigDecimal as _, *}
 import org.scalacheck.Gen.buildableOf
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.Credentials
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
-import uk.gov.hmrc.digitalservicestax.data.{SafeId, _}
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmRegisterWithoutIDRequest
+import uk.gov.hmrc.digitalservicestax.data.*
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.LocalDate

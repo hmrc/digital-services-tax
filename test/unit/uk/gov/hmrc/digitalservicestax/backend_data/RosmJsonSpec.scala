@@ -23,9 +23,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RosmJsonReader, RosmRegisterWithoutIDRequest}
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmJsonReader.NotAnOrganisationException
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmJsonReader.NotAnOrganisationException
 import uk.gov.hmrc.digitalservicestax.data._
+import uk.gov.hmrc.digitalservicestax.data.backend_data.{RosmJsonReader, RosmRegisterWithoutIDRequest}
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 
 class RosmJsonSpec extends AnyFlatSpec with Matchers with ScalaCheckDrivenPropertyChecks with OptionValues {

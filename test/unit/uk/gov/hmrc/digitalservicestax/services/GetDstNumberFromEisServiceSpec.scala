@@ -22,9 +22,9 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import uk.gov.hmrc.digitalservicestax.backend_data.{SubscriptionStatus, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.data.backend_data.{SubscriptionStatus, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.data.{CompanyRegWrapper, DSTRegNumber, InternalId, Registration, SapNumber, UTR}
 import uk.gov.hmrc.digitalservicestax.services.GetDstNumberFromEisService
 import unit.uk.gov.hmrc.digitalservicestax.util.FakeApplicationSetup

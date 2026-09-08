@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.connectors.RosmConnector
 import uk.gov.hmrc.digitalservicestax.data.{Company, ContactDetails}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -28,6 +27,7 @@ import it.uk.gov.hmrc.digitalservicestax.util.TestInstances._
 import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockServer}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmRegisterWithoutIDRequest
 
 class RosmConnectorSpec extends FakeApplicationSetup with WiremockServer with ScalaCheckDrivenPropertyChecks {
 

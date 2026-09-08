@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax
-package backend_data
+package uk.gov.hmrc.digitalservicestax.data.backend_data
 
 import cats.implicits._
 import play.api.libs.json._

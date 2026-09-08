@@ -23,9 +23,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmFormats.rosmRegisterWithoutIDRequestFormat
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmRegisterWithoutIDRequest
 import uk.gov.hmrc.digitalservicestax.data.{Activity, Company, CompanyRegWrapper, CountryCode, Email, GroupCompany, Money, NonEmptyString, Percent, PhoneNumber, Postcode, Registration, SapNumber, UTR}
 import uk.gov.hmrc.digitalservicestax.services.{EeittInterface, JsonSchemaChecker}
 import unit.uk.gov.hmrc.digitalservicestax.util.TestInstances
@@ -61,6 +62,10 @@ class JsonSpec
 
   it should "serialize and de-serialise a Postcode instance" in {
     testJsonRoundtrip[Postcode]
+  }
+
+  it should "serialize and de-serialise a RosmRegisterWithoutIDRequest instance" in {
+    testJsonRoundtrip[RosmRegisterWithoutIDRequest]
   }
 
   it should "purge none and empty values from a map of js values" in {
@@ -124,6 +129,12 @@ class JsonSpec
     testJsonRoundtrip[CountryCode]
   }
 
+  it should "validate a UK countryCode from JSON if the source input doesn't match expected regex" in {
+    val parsed = Json.parse(s""" "UK" """).validate[CountryCode]
+    parsed.isSuccess shouldEqual true
+    parsed.get.value shouldEqual "GB"
+  }
+
   it should "serialize and de-serialise a UTR instance" in {
     testJsonRoundtrip[UTR]
   }
@@ -165,6 +176,10 @@ class JsonSpec
       val name             = (param \ "paramValue").get.as[String]
       name shouldEqual reg.ultimateParent.get.name
     }(implicitly, arbRegWithParent, implicitly, implicitly, implicitly, implicitly)
+  }
+
+  it should "serialize and de-serialise CompanyRegWrapper" in {
+    testJsonRoundtrip[CompanyRegWrapper]
   }
 
   it should "serialize and de-serialise a GroupCompany instance" in {

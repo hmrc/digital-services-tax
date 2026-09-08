@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend_data
+package uk.gov.hmrc.digitalservicestax.data.backend_data
 
 import play.api.libs.json.{JsString, JsSuccess, Json, Reads}
 

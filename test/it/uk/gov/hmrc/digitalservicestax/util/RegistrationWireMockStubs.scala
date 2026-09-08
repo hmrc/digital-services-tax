@@ -19,9 +19,9 @@ package it.uk.gov.hmrc.digitalservicestax.util
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.RosmFormats._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RosmFormats._
 import uk.gov.hmrc.digitalservicestax.connectors.{Identifier, TaxEnrolmentsSubscription}
+import uk.gov.hmrc.digitalservicestax.data.backend_data.{RegistrationResponse, RosmWithoutIDResponse}
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, EnrolmentDetail, FormBundleNumber, GroupEnrolmentsResponse, SafeId, ServiceIdentifier, UTR}
 
 import java.time.LocalDate

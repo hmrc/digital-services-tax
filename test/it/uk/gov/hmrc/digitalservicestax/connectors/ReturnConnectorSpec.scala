@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
-import uk.gov.hmrc.digitalservicestax.backend_data.ReturnResponse
 import uk.gov.hmrc.digitalservicestax.connectors.ReturnConnector
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Period, Return}
@@ -30,6 +29,7 @@ import it.uk.gov.hmrc.digitalservicestax.util.{FakeApplicationSetup, WiremockSer
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.digitalservicestax.data.Period.Key
+import uk.gov.hmrc.digitalservicestax.data.backend_data.ReturnResponse
 
 import java.time.LocalDate
 
