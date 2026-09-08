@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend_data
+package uk.gov.hmrc.digitalservicestax.data.backend_data
 
-import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson._
+import java.time.Instant
 
-object RosmFormats {
-
-  implicit val rosmWithoutIDResponseFormat: Format[RosmWithoutIDResponse]                = Json.format[RosmWithoutIDResponse]
-  implicit val rosmRegisterWithoutIDRequestFormat: OFormat[RosmRegisterWithoutIDRequest] =
-    Json.format[RosmRegisterWithoutIDRequest]
-
+object AcknowledgementReference {
+  def generate(postcode: String): String =
+    postcode.map(_.toInt).mkString + Instant.now.toEpochMilli.toString.slice(0, 32)
 }

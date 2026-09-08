@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.digitalservicestax.backend_data
+package uk.gov.hmrc.digitalservicestax.data.backend_data
 
-import java.time.Instant
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.digitalservicestax.data.*
 
-object AcknowledgementReference {
-  def generate(postcode: String): String =
-    postcode.map(_.toInt).mkString + Instant.now.toEpochMilli.toString.slice(0, 32)
+case class RegistrationResponse(
+  processingDate: String,
+  formBundleNumber: FormBundleNumber
+)
+
+object RegistrationResponse {
+  implicit val format: OFormat[RegistrationResponse] = Json.format[RegistrationResponse]
 }

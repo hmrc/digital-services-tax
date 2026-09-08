@@ -37,9 +37,9 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HttpVerbs
 import uk.gov.hmrc.digitalservicestax.actions.IdentifierAction
-import uk.gov.hmrc.digitalservicestax.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.controllers.routes
 import uk.gov.hmrc.digitalservicestax.data.BackendAndFrontendJson.*
+import uk.gov.hmrc.digitalservicestax.data.backend_data.RegistrationResponse
 import uk.gov.hmrc.digitalservicestax.data.{AddressLine, Company, CompanyName, CompanyRegWrapper, ContactDetails, DSTRegNumber, Email, FormBundleNumber, InternalId, PhoneNumber, Postcode, Registration, RestrictiveString, SafeId, UTR, UkAddress}
 import uk.gov.hmrc.digitalservicestax.services.{AuditingHelper, MongoPersistence}
 import uk.gov.hmrc.digitalservicestax.services.MongoPersistence.{CallbackWrapper, RegWrapper}

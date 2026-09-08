@@ -17,9 +17,9 @@
 package uk.gov.hmrc.digitalservicestax.services
 
 import play.api.Logging
-import uk.gov.hmrc.digitalservicestax.backend_data.SubscriptionStatus
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.connectors.{EnrolmentStoreProxyConnector, RegistrationConnector, RosmConnector, TaxEnrolmentConnector}
+import uk.gov.hmrc.digitalservicestax.data.backend_data.SubscriptionStatus
 import uk.gov.hmrc.digitalservicestax.data.{DSTRegNumber, Registration}
 import uk.gov.hmrc.http.HeaderCarrier
 

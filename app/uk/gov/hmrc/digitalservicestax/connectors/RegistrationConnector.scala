@@ -19,9 +19,9 @@ package connectors
 
 import play.api.Mode
 import play.api.libs.json._
-import uk.gov.hmrc.digitalservicestax.backend_data.{RegistrationResponse, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.config.AppConfig
 import uk.gov.hmrc.digitalservicestax.controllers.AuditWrapper
+import uk.gov.hmrc.digitalservicestax.data.backend_data.{RegistrationResponse, SubscriptionStatusResponse}
 import uk.gov.hmrc.digitalservicestax.data.{Registration, SapNumber}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
