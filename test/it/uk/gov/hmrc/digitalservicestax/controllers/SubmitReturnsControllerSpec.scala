@@ -22,7 +22,7 @@ import it.uk.gov.hmrc.digitalservicestax.controllers.actions.FakeIdentifierRegis
 import it.uk.gov.hmrc.digitalservicestax.controllers.actions.{FakeIdentifierRegisteredAction, FakeIdentifierRegistrationAction}
 import it.uk.gov.hmrc.digitalservicestax.util.{AuditingEmailStubs, ReturnsWireMockStubs, WiremockServer}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -53,6 +53,7 @@ class SubmitReturnsControllerSpec
     with GuiceOneServerPerSuite
     with BeforeAndAfterEach
     with ScalaFutures
+    with Eventually
     with IntegrationPatience
     with WiremockServer
     with ReturnsWireMockStubs
@@ -110,17 +111,19 @@ class SubmitReturnsControllerSpec
         optRetWrapper.head mustEqual submitReturn
       }
 
-      verify(
-        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
-          matchingJsonPath("$.auditType", equalTo("returnSubmissionResponse"))
+      eventually {
+        verify(
+          postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+            matchingJsonPath("$.auditType", equalTo("returnSubmissionResponse"))
+          )
         )
-      )
 
-      verify(
-        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
-          matchingJsonPath("$.auditType", equalTo("returnSubmitted"))
+        verify(
+          postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+            matchingJsonPath("$.auditType", equalTo("returnSubmitted"))
+          )
         )
-      )
+      }
 
       // TODO receivedAt needs to be exlucded in the comparison for this to work
       /*implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -190,12 +193,6 @@ class SubmitReturnsControllerSpec
       // Then
       caught.getMessage mustEqual s"GET of 'http://localhost:11111/enterprise/obligation-data/zdst/AMDST0799721562/DST?from=2020-04-01&to=${LocalDate.now().plusYears(1)}' returned 500. Response body: ''"
 
-      verify(
-        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
-          matchingJsonPath("$.auditType", equalTo("returnSubmissionResponse"))
-        )
-      )
-
       val expectedEventDetail = Json
         .obj(
           "responseStatus" -> "ERROR",
@@ -203,11 +200,19 @@ class SubmitReturnsControllerSpec
         )
         .toString()
 
-      verify(
-        postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
-          matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+      eventually {
+        verify(
+          postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+            matchingJsonPath("$.auditType", equalTo("returnSubmissionResponse"))
+          )
         )
-      )
+
+        verify(
+          postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(
+            matchingJsonPath("$.detail", equalToJson(expectedEventDetail))
+          )
+        )
+      }
     }
   }
 
